@@ -1,0 +1,718 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1441</width>
+    <height>616</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>1200</width>
+    <height>600</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>PRESSIQ - Smart Oil Systems</string>
+  </property>
+  <property name="styleSheet">
+   <string>
+QMainWindow { background-color: #f3f6f5; font-family: Segoe UI, Helvetica, Arial, sans-serif; font-size: 11px; }
+#centralwidget { background-color: #f3f6f5; }
+QLabel { color:#111827; }
+
+/* HEADER */
+#frameHeader { background-color: #2c3e2e; min-height: 50px; }
+#labelLogo { color: white; font-size: 20px; font-weight: bold; }
+#labelSubtitle { color: #d4a63a; font-size: 10px; font-weight: 600; }
+#labelOnline { color: #4ade80; font-size: 11px; }
+#labelVersion { background:#d4a63a; color:#2c3e2e; padding:6px 12px; font-size:11px; border-radius:4px; }
+
+/* NAVIGATION */
+#frameNavigation { background-color:#2c3e2e; border-bottom:1px solid #1f2937; min-height:42px; }
+#frameNavigation QPushButton { background:transparent; border:none; padding:8px 18px; font-size:12px; color:white; }
+#frameNavigation QPushButton:checked { color:white; border-bottom:2px solid #d4a63a; font-weight:600; }
+
+/* TITLE */
+#labelSectionTitle { font-size:18px; font-weight:700; color:#000000; }
+
+/* CARDS */
+#cardAdmins,#cardOperators,#cardManagers { border-radius:8px; min-height:75px; }
+#cardAdmins{background:#dbeafe;border:1px solid #bfdbfe;}
+#cardOperators{background:#fffbeb;border:1px solid #fed7aa;}
+#cardManagers{background:#dcfce7;border:1px solid #bbf7d0;}
+#labelAdminsValue,#labelOperatorsValue,#labelManagersValue{font-size:22px;font-weight:700;color:#111827;}
+#labelAdminsTitle,#labelOperatorsTitle,#labelManagersTitle{font-size:12px;color:#4b5563;}
+
+/* ACTION BAR */
+#frameActions{background:white;border:1px solid #e5e7eb;border-radius:8px;}
+QLineEdit,QComboBox{padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;background:#f9fafb;}
+QLineEdit:focus,QComboBox:focus{border-color:#22c55e;background:white;}
+QPushButton{padding:6px 16px;border-radius:6px;font-size:12px;font-weight:600;border:1px solid transparent;background:#e5e7eb;color:#111827;}
+QPushButton:hover{background:#d1d5db;}
+#btnAdd{background:#16a34a;color:white;border-color:#15803d;}
+#btnAdd:hover{background:#22c55e;}
+#btnExport{background:#f59e0b;color:#1f2937;border-color:#d97706;}
+#btnExport:hover{background:#fbbf24;}
+/* specific style for the role combo so it is clearly visible */
+#comboRole{background:#2c3e2e;color:white;border:1px solid #14532d;padding:6px 18px;}
+#comboRole::drop-down{border:0px;}
+#comboRole QAbstractItemView{background:white;color:#111827;}
+
+/* TABLE */
+QTableView, QTableWidget{background:white;border-radius:8px;border:1px solid #e5e7eb;gridline-color:#f3f4f6;alternate-background-color:#f9fafb;}
+QTableView::item, QTableWidget::item{padding:8px;}
+QTableWidget::item:selected,QTableView::item:selected{background:#065f46;color:white;}
+QHeaderView::section{background:#2c3e2e;color:white;padding:8px 12px;font-size:12px;border:none;}
+
+/* STATUS BAR */
+QStatusBar{background:white;border-top:1px solid #e5e7eb;font-size:11px;}
+   </string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout">
+    <property name="spacing">
+     <number>8</number>
+    </property>
+    <property name="leftMargin">
+     <number>24</number>
+    </property>
+    <property name="topMargin">
+     <number>16</number>
+    </property>
+    <property name="rightMargin">
+     <number>24</number>
+    </property>
+    <property name="bottomMargin">
+     <number>16</number>
+    </property>
+    <item>
+     <widget class="QFrame" name="frameHeader">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>50</height>
+       </size>
+      </property>
+      <layout class="QHBoxLayout">
+       <property name="spacing">
+        <number>0</number>
+       </property>
+       <property name="leftMargin">
+        <number>24</number>
+       </property>
+       <property name="topMargin">
+        <number>8</number>
+       </property>
+       <property name="rightMargin">
+        <number>24</number>
+       </property>
+       <property name="bottomMargin">
+        <number>8</number>
+       </property>
+       <item>
+        <layout class="QVBoxLayout">
+         <item>
+          <widget class="QLabel" name="labelLogo">
+           <property name="text">
+            <string>PRESSIQ</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="labelSubtitle">
+           <property name="text">
+            <string>SMART OIL SYSTEMS</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <spacer name="spacer1">
+         <property name="orientation">
+          <enum>Qt::Orientation::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QLabel" name="labelOnline">
+         <property name="text">
+          <string>● EN LIGNE</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="labelVersion">
+         <property name="text">
+          <string>v1.0</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <widget class="QFrame" name="frameNavigation">
+      <layout class="QHBoxLayout">
+       <property name="spacing">
+        <number>0</number>
+       </property>
+       <property name="leftMargin">
+        <number>24</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>24</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QLabel" name="labelSectionTitle">
+         <property name="font">
+          <font>
+           <pointsize>-1</pointsize>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">color: rgb(255, 255, 255);</string>
+         </property>
+         <property name="text">
+          <string>User &amp; Staff Management</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <layout class="QVBoxLayout">
+      <item>
+       <layout class="QHBoxLayout">
+        <property name="spacing">
+         <number>16</number>
+        </property>
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>8</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>8</number>
+        </property>
+        <item>
+         <widget class="QFrame" name="cardAdmins">
+          <layout class="QVBoxLayout">
+           <property name="spacing">
+            <number>2</number>
+           </property>
+           <property name="leftMargin">
+            <number>16</number>
+           </property>
+           <property name="topMargin">
+            <number>12</number>
+           </property>
+           <property name="rightMargin">
+            <number>16</number>
+           </property>
+           <property name="bottomMargin">
+            <number>12</number>
+           </property>
+           <item>
+            <widget class="QLabel" name="labelAdminsTitle">
+             <property name="text">
+              <string>Administrateurs</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="labelAdminsValue">
+             <property name="text">
+              <string>2</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QFrame" name="cardOperators">
+          <layout class="QVBoxLayout">
+           <property name="spacing">
+            <number>2</number>
+           </property>
+           <property name="leftMargin">
+            <number>16</number>
+           </property>
+           <property name="topMargin">
+            <number>12</number>
+           </property>
+           <property name="rightMargin">
+            <number>16</number>
+           </property>
+           <property name="bottomMargin">
+            <number>12</number>
+           </property>
+           <item>
+            <widget class="QLabel" name="labelOperatorsTitle">
+             <property name="text">
+              <string>Opérateurs</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="labelOperatorsValue">
+             <property name="text">
+              <string>5</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QFrame" name="cardManagers">
+          <layout class="QVBoxLayout">
+           <property name="spacing">
+            <number>2</number>
+           </property>
+           <property name="leftMargin">
+            <number>16</number>
+           </property>
+           <property name="topMargin">
+            <number>12</number>
+           </property>
+           <property name="rightMargin">
+            <number>16</number>
+           </property>
+           <property name="bottomMargin">
+            <number>12</number>
+           </property>
+           <item>
+            <widget class="QLabel" name="labelManagersTitle">
+             <property name="text">
+              <string>Managers</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="labelManagersValue">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+             <property name="text">
+              <string>1</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <widget class="QFrame" name="frameActions">
+        <layout class="QHBoxLayout">
+         <property name="spacing">
+          <number>8</number>
+         </property>
+         <property name="leftMargin">
+          <number>16</number>
+         </property>
+         <property name="topMargin">
+          <number>8</number>
+         </property>
+         <property name="rightMargin">
+          <number>16</number>
+         </property>
+         <property name="bottomMargin">
+          <number>8</number>
+         </property>
+         <item>
+          <widget class="QLineEdit" name="lineSearch">
+           <property name="placeholderText">
+            <string>Rechercher par nom ou email...</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="comboRole">
+           <property name="minimumSize">
+            <size>
+             <width>110</width>
+             <height>0</height>
+            </size>
+           </property>
+           <item>
+            <property name="text">
+             <string>Tous les rôles</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Admin</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Opérateur</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Manager</string>
+            </property>
+           </item>
+          </widget>
+         </item>
+         <item>
+          <spacer name="spacer2">
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>0</width>
+             <height>0</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="btnAdd">
+           <property name="text">
+            <string>+ Ajouter</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="btnExport">
+           <property name="text">
+            <string>Exporter</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QTableWidget" name="tableUsers">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>200</height>
+         </size>
+        </property>
+        <property name="rowCount">
+         <number>8</number>
+        </property>
+        <property name="columnCount">
+         <number>6</number>
+        </property>
+        <row/>
+        <row/>
+        <row/>
+        <row/>
+        <row/>
+        <row/>
+        <row/>
+        <row/>
+        <column>
+         <property name="text">
+          <string>Nom</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Identifiant</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Rôle</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Statut</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Logs</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Actions</string>
+         </property>
+        </column>
+        <item row="0" column="0">
+         <property name="text">
+          <string>Ahmed Ben Ali</string>
+         </property>
+        </item>
+        <item row="0" column="1">
+         <property name="text">
+          <string>ahmed@pressiq.com</string>
+         </property>
+        </item>
+        <item row="0" column="2">
+         <property name="text">
+          <string>Admin</string>
+         </property>
+        </item>
+        <item row="0" column="3">
+         <property name="text">
+          <string>Actif</string>
+         </property>
+        </item>
+        <item row="0" column="4">
+         <property name="text">
+          <string>2026-02-01 10:30</string>
+         </property>
+        </item>
+        <item row="0" column="5">
+         <property name="text">
+          <string>...</string>
+         </property>
+        </item>
+        <item row="1" column="0">
+         <property name="text">
+          <string>Fatima Zahra</string>
+         </property>
+        </item>
+        <item row="1" column="1">
+         <property name="text">
+          <string>fatima@pressiq.com</string>
+         </property>
+        </item>
+        <item row="1" column="2">
+         <property name="text">
+          <string>Admin</string>
+         </property>
+        </item>
+        <item row="1" column="3">
+         <property name="text">
+          <string>Actif</string>
+         </property>
+        </item>
+        <item row="1" column="4">
+         <property name="text">
+          <string>2026-02-01 09:15</string>
+         </property>
+        </item>
+        <item row="1" column="5">
+         <property name="text">
+          <string>...</string>
+         </property>
+        </item>
+        <item row="2" column="0">
+         <property name="text">
+          <string>Mohamed Khalil</string>
+         </property>
+        </item>
+        <item row="2" column="1">
+         <property name="text">
+          <string>mohamed@pressiq.com</string>
+         </property>
+        </item>
+        <item row="2" column="2">
+         <property name="text">
+          <string>Opérateur</string>
+         </property>
+        </item>
+        <item row="2" column="3">
+         <property name="text">
+          <string>Actif</string>
+         </property>
+        </item>
+        <item row="2" column="4">
+         <property name="text">
+          <string>2026-01-31 16:45</string>
+         </property>
+        </item>
+        <item row="2" column="5">
+         <property name="text">
+          <string>...</string>
+         </property>
+        </item>
+        <item row="3" column="0">
+         <property name="text">
+          <string>Sara Benani</string>
+         </property>
+        </item>
+        <item row="3" column="1">
+         <property name="text">
+          <string>sara@pressiq.com</string>
+         </property>
+        </item>
+        <item row="3" column="2">
+         <property name="text">
+          <string>Opérateur</string>
+         </property>
+        </item>
+        <item row="3" column="3">
+         <property name="text">
+          <string>Actif</string>
+         </property>
+        </item>
+        <item row="3" column="4">
+         <property name="text">
+          <string>2026-02-01 08:00</string>
+         </property>
+        </item>
+        <item row="3" column="5">
+         <property name="text">
+          <string>...</string>
+         </property>
+        </item>
+        <item row="4" column="0">
+         <property name="text">
+          <string>Youssef Amrani</string>
+         </property>
+        </item>
+        <item row="4" column="1">
+         <property name="text">
+          <string>youssef@pressiq.com</string>
+         </property>
+        </item>
+        <item row="4" column="2">
+         <property name="text">
+          <string>Opérateur</string>
+         </property>
+        </item>
+        <item row="4" column="3">
+         <property name="text">
+          <string>Inactif</string>
+         </property>
+        </item>
+        <item row="4" column="4">
+         <property name="text">
+          <string>2026-01-25 14:30</string>
+         </property>
+        </item>
+        <item row="4" column="5">
+         <property name="text">
+          <string>...</string>
+         </property>
+        </item>
+        <item row="5" column="0">
+         <property name="text">
+          <string>Nadia Tazi</string>
+         </property>
+        </item>
+        <item row="5" column="1">
+         <property name="text">
+          <string>nadia@pressiq.com</string>
+         </property>
+        </item>
+        <item row="5" column="2">
+         <property name="text">
+          <string>Opérateur</string>
+         </property>
+        </item>
+        <item row="5" column="3">
+         <property name="text">
+          <string>Actif</string>
+         </property>
+        </item>
+        <item row="5" column="4">
+         <property name="text">
+          <string>2026-02-01 11:00</string>
+         </property>
+        </item>
+        <item row="5" column="5">
+         <property name="text">
+          <string>...</string>
+         </property>
+        </item>
+        <item row="6" column="0">
+         <property name="text">
+          <string>Karim Ouzzani</string>
+         </property>
+        </item>
+        <item row="6" column="1">
+         <property name="text">
+          <string>karim@pressiq.com</string>
+         </property>
+        </item>
+        <item row="6" column="2">
+         <property name="text">
+          <string>Opérateur</string>
+         </property>
+        </item>
+        <item row="6" column="3">
+         <property name="text">
+          <string>Actif</string>
+         </property>
+        </item>
+        <item row="6" column="4">
+         <property name="text">
+          <string>2026-01-30 17:20</string>
+         </property>
+        </item>
+        <item row="6" column="5">
+         <property name="text">
+          <string>...</string>
+         </property>
+        </item>
+        <item row="7" column="0">
+         <property name="text">
+          <string>Leila Bennani</string>
+         </property>
+        </item>
+        <item row="7" column="1">
+         <property name="text">
+          <string>leila@pressiq.com</string>
+         </property>
+        </item>
+        <item row="7" column="2">
+         <property name="text">
+          <string>Manager</string>
+         </property>
+        </item>
+        <item row="7" column="3">
+         <property name="text">
+          <string>Actif</string>
+         </property>
+        </item>
+        <item row="7" column="4">
+         <property name="text">
+          <string>2026-02-01 07:45</string>
+         </property>
+        </item>
+        <item row="7" column="5">
+         <property name="text">
+          <string>...</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
