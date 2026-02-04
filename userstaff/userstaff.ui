@@ -1,0 +1,741 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>userstaff</class>
+ <widget class="QMainWindow" name="userstaff">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1440</width>
+    <height>616</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>1440</width>
+    <height>616</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>PressIQ - User &amp; Staff Management</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">QMainWindow {
+    background-color: #f3f6f5;
+    font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
+}
+QLabel {
+    color: #111827;
+}</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="mainLayout">
+    <property name="spacing">
+     <number>0</number>
+    </property>
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
+    <item>
+     <widget class="QFrame" name="headerFrame">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>50</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>50</height>
+       </size>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QFrame#headerFrame {
+    background-color: #2c3e2e;
+    border: none;
+}</string>
+      </property>
+      <layout class="QHBoxLayout" name="headerLayout">
+       <property name="spacing">
+        <number>20</number>
+       </property>
+       <property name="leftMargin">
+        <number>20</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>20</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QFrame" name="brandingFrame">
+         <property name="styleSheet">
+          <string notr="true">background: transparent; border: none;</string>
+         </property>
+         <layout class="QVBoxLayout" name="brandingLayout">
+          <property name="spacing">
+           <number>0</number>
+          </property>
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>4</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>4</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="appNameLabel">
+            <property name="styleSheet">
+             <string notr="true">color: white; font-size: 20px; font-weight: bold; background: transparent;</string>
+            </property>
+            <property name="text">
+             <string>PRESSIQ</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="subtitleLabel">
+            <property name="styleSheet">
+             <string notr="true">color: #d4a63a; font-size: 10px; font-weight: 600; background: transparent;</string>
+            </property>
+            <property name="text">
+             <string>SMART OIL SYSTEMS</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <spacer name="headerSpacer">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QLabel" name="statusLabel">
+         <property name="styleSheet">
+          <string notr="true">color: #4ade80; font-size: 12px; font-weight: 500; background: transparent;</string>
+         </property>
+         <property name="text">
+          <string>● EN LIGNE</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="versionBadge">
+         <property name="styleSheet">
+          <string notr="true">background-color: #d4a63a; color: #2c3e2e; font-size: 11px; font-weight: bold; padding: 6px 12px; border-radius: 4px;</string>
+         </property>
+         <property name="text">
+          <string>v1.0</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <widget class="QFrame" name="sectionTitleFrame">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>42</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>42</height>
+       </size>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QFrame#sectionTitleFrame {
+    background-color: #2c3e2e;
+    border-bottom: 2px solid #1f2937;
+}</string>
+      </property>
+      <layout class="QHBoxLayout" name="sectionTitleLayout">
+       <property name="leftMargin">
+        <number>20</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>20</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QPushButton" name="btnBack">
+         <property name="minimumSize">
+          <size>
+           <width>80</width>
+           <height>30</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>80</width>
+           <height>30</height>
+          </size>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QPushButton {
+    background-color: transparent;
+    color: white;
+    border: 1px solid #4ade80;
+    border-radius: 4px;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+QPushButton:hover {
+    background-color: #4ade80;
+    color: #1f2937;
+}</string>
+         </property>
+         <property name="text">
+          <string>Retour</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="sectionTitleLabel">
+         <property name="styleSheet">
+          <string notr="true">color: white; font-size: 18px; font-weight: bold; background: transparent; margin-left: 15px;</string>
+         </property>
+         <property name="text">
+          <string>User &amp; Staff Management</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="sectionSpacer">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <widget class="QFrame" name="contentFrame">
+      <property name="styleSheet">
+       <string notr="true">QFrame#contentFrame {
+    background-color: #f3f6f5;
+    border: none;
+}</string>
+      </property>
+      <layout class="QVBoxLayout" name="contentLayout">
+       <property name="spacing">
+        <number>16</number>
+       </property>
+       <property name="leftMargin">
+        <number>20</number>
+       </property>
+       <property name="topMargin">
+        <number>16</number>
+       </property>
+       <property name="rightMargin">
+        <number>20</number>
+       </property>
+       <property name="bottomMargin">
+        <number>16</number>
+       </property>
+       <item>
+        <layout class="QHBoxLayout" name="statsLayout">
+         <property name="spacing">
+          <number>16</number>
+         </property>
+         <item>
+          <widget class="QFrame" name="cardAdmin">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>85</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>16777215</width>
+             <height>85</height>
+            </size>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">QFrame#cardAdmin {
+    background-color: #dbeafe;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+}</string>
+           </property>
+           <layout class="QVBoxLayout" name="cardAdminLayout">
+            <property name="spacing">
+             <number>4</number>
+            </property>
+            <property name="leftMargin">
+             <number>16</number>
+            </property>
+            <property name="topMargin">
+             <number>12</number>
+            </property>
+            <property name="rightMargin">
+             <number>16</number>
+            </property>
+            <property name="bottomMargin">
+             <number>12</number>
+            </property>
+            <item>
+             <widget class="QLabel" name="cardAdminTitle">
+              <property name="styleSheet">
+               <string notr="true">color: #4b5563; font-size: 12px; font-weight: 500; background: transparent;</string>
+              </property>
+              <property name="text">
+               <string>Administrateurs</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="cardAdminValue">
+              <property name="styleSheet">
+               <string notr="true">color: #111827; font-size: 22px; font-weight: bold; background: transparent;</string>
+              </property>
+              <property name="text">
+               <string>--</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QFrame" name="cardOperateur">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>85</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>16777215</width>
+             <height>85</height>
+            </size>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">QFrame#cardOperateur {
+    background-color: #fffbeb;
+    border: 1px solid #fed7aa;
+    border-radius: 8px;
+}</string>
+           </property>
+           <layout class="QVBoxLayout" name="cardOperateurLayout">
+            <property name="spacing">
+             <number>4</number>
+            </property>
+            <property name="leftMargin">
+             <number>16</number>
+            </property>
+            <property name="topMargin">
+             <number>12</number>
+            </property>
+            <property name="rightMargin">
+             <number>16</number>
+            </property>
+            <property name="bottomMargin">
+             <number>12</number>
+            </property>
+            <item>
+             <widget class="QLabel" name="cardOperateurTitle">
+              <property name="styleSheet">
+               <string notr="true">color: #4b5563; font-size: 12px; font-weight: 500; background: transparent;</string>
+              </property>
+              <property name="text">
+               <string>Opérateurs</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="cardOperateurValue">
+              <property name="styleSheet">
+               <string notr="true">color: #111827; font-size: 22px; font-weight: bold; background: transparent;</string>
+              </property>
+              <property name="text">
+               <string>--</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QFrame" name="cardManager">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>85</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>16777215</width>
+             <height>85</height>
+            </size>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">QFrame#cardManager {
+    background-color: #dcfce7;
+    border: 1px solid #bbf7d0;
+    border-radius: 8px;
+}</string>
+           </property>
+           <layout class="QVBoxLayout" name="cardManagerLayout">
+            <property name="spacing">
+             <number>4</number>
+            </property>
+            <property name="leftMargin">
+             <number>16</number>
+            </property>
+            <property name="topMargin">
+             <number>12</number>
+            </property>
+            <property name="rightMargin">
+             <number>16</number>
+            </property>
+            <property name="bottomMargin">
+             <number>12</number>
+            </property>
+            <item>
+             <widget class="QLabel" name="cardManagerTitle">
+              <property name="styleSheet">
+               <string notr="true">color: #4b5563; font-size: 12px; font-weight: 500; background: transparent;</string>
+              </property>
+              <property name="text">
+               <string>Managers</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="cardManagerValue">
+              <property name="styleSheet">
+               <string notr="true">color: #111827; font-size: 22px; font-weight: bold; background: transparent;</string>
+              </property>
+              <property name="text">
+               <string>--</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QFrame" name="actionBarFrame">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>55</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>55</height>
+          </size>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QFrame#actionBarFrame {
+    background-color: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+}</string>
+         </property>
+         <layout class="QHBoxLayout" name="actionBarLayout">
+          <property name="spacing">
+           <number>12</number>
+          </property>
+          <property name="leftMargin">
+           <number>12</number>
+          </property>
+          <property name="topMargin">
+           <number>8</number>
+          </property>
+          <property name="rightMargin">
+           <number>12</number>
+          </property>
+          <property name="bottomMargin">
+           <number>8</number>
+          </property>
+          <item>
+           <widget class="QLineEdit" name="searchField">
+            <property name="minimumSize">
+             <size>
+              <width>300</width>
+              <height>35</height>
+             </size>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">QLineEdit {
+    background-color: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 13px;
+    color: #111827;
+}
+QLineEdit:focus {
+    border: 2px solid #22c55e;
+}</string>
+            </property>
+            <property name="placeholderText">
+             <string>Rechercher par nom ou email...</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="roleFilter">
+            <property name="minimumSize">
+             <size>
+              <width>150</width>
+              <height>35</height>
+             </size>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">QComboBox {
+    background-color: #2c3e2e;
+    color: white;
+    border: 1px solid #14532d;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 13px;
+}
+QComboBox::drop-down {
+    border: none;
+    width: 20px;
+}
+QComboBox QAbstractItemView {
+    background-color: #2c3e2e;
+    color: white;
+    selection-background-color: #14532d;
+    border: 1px solid #14532d;
+}</string>
+            </property>
+            <item>
+             <property name="text">
+              <string>Tous les rôles</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Admin</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Opérateur</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Manager</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item>
+           <spacer name="actionSpacer">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnAjouter">
+            <property name="minimumSize">
+             <size>
+              <width>100</width>
+              <height>35</height>
+             </size>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">QPushButton {
+    background-color: #16a34a;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+}
+QPushButton:hover {
+    background-color: #22c55e;
+}</string>
+            </property>
+            <property name="text">
+             <string>+ Ajouter</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnExporter">
+            <property name="minimumSize">
+             <size>
+              <width>100</width>
+              <height>35</height>
+             </size>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">QPushButton {
+    background-color: #f59e0b;
+    color: #1f2937;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+}
+QPushButton:hover {
+    background-color: #fbbf24;
+}</string>
+            </property>
+            <property name="text">
+             <string>Exporter</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QTableWidget" name="userTable">
+         <property name="styleSheet">
+          <string notr="true">QTableWidget {
+    background-color: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    gridline-color: #e5e7eb;
+    font-size: 13px;
+    color: #111827;
+}
+QTableWidget::item {
+    padding: 10px;
+    border-bottom: 1px solid #e5e7eb;
+}
+QTableWidget::item:selected {
+    background-color: #065f46;
+    color: white;
+}
+QTableWidget::item:alternate {
+    background-color: #f9fafb;
+}
+QHeaderView::section {
+    background-color: #2c3e2e;
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 10px;
+    border: none;
+    border-right: 1px solid #1f2937;
+}
+QHeaderView::section:last {
+    border-right: none;
+}</string>
+         </property>
+         <property name="alternatingRowColors">
+          <bool>true</bool>
+         </property>
+         <property name="selectionMode">
+          <enum>QAbstractItemView::SingleSelection</enum>
+         </property>
+         <property name="selectionBehavior">
+          <enum>QAbstractItemView::SelectRows</enum>
+         </property>
+         <attribute name="horizontalHeaderStretchLastSection">
+          <bool>true</bool>
+         </attribute>
+         <attribute name="verticalHeaderVisible">
+          <bool>false</bool>
+         </attribute>
+         <column>
+          <property name="text">
+           <string>Nom</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Identifiant</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Rôle</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Statut</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Logs</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Actions</string>
+          </property>
+         </column>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

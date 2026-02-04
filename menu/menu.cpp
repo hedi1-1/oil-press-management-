@@ -2,6 +2,7 @@
 #include "ui_menu.h"
 #include "../production/production.h"
 #include "../machine/machine.h"
+#include "../userstaff/userstaff.h"
 #include <QMessageBox>
 
 menu::menu(QWidget *parent)
@@ -9,6 +10,7 @@ menu::menu(QWidget *parent)
     , ui(new Ui::menu)
     , productionWindow(nullptr)
     , machineWindow(nullptr)
+    , userstaffWindow(nullptr)
 {
     ui->setupUi(this);
     
@@ -30,6 +32,9 @@ menu::~menu()
     if (machineWindow) {
         delete machineWindow;
     }
+    if (userstaffWindow) {
+        delete userstaffWindow;
+    }
 }
 
 void menu::onClientManagementClicked()
@@ -40,8 +45,15 @@ void menu::onClientManagementClicked()
 
 void menu::onUserStaffManagementClicked()
 {
-    QMessageBox::information(this, "Module non disponible", 
-                            "Le module 'Gestion des utilisateurs et du personnel' sera disponible prochainement.");
+    // Create and show the user & staff management window
+    if (!userstaffWindow) {
+        userstaffWindow = new userstaff();
+        // Connect the back signal to show this menu again
+        connect(userstaffWindow, &userstaff::backToMenu, this, &menu::show);
+    }
+    
+    userstaffWindow->show();
+    this->hide(); // Hide the menu window
 }
 
 void menu::onStockManagementClicked()

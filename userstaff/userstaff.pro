@@ -10,25 +10,13 @@ CONFIG += c++17
 
 SOURCES += \
     main.cpp \
-    menu.cpp \
-    ../production/production.cpp \
-    ../machine/machine.cpp \
-    ../userstaff/userstaff.cpp
+    userstaff.cpp
 
 HEADERS += \
-    menu.h \
-    ../production/production.h \
-    ../machine/machine.h \
-    ../userstaff/userstaff.h
+    userstaff.h
 
 FORMS += \
-    menu.ui \
-    ../production/production.ui \
-    ../machine/machine.ui \
-    ../userstaff/userstaff.ui
-
-RESOURCES += \
-    ../production/resources.qrc
+    userstaff.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
