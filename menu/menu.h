@@ -6,6 +6,7 @@
 // Forward declarations
 class Production;
 class machine;
+class userstaff;
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -33,5 +34,6 @@ private:
     Ui::menu *ui;
     Production *productionWindow;
     machine *machineWindow;
+    userstaff *userstaffWindow;
 };
 #endif // MENU_H
