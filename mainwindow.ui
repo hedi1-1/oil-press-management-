@@ -1,0 +1,1376 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1441</width>
+    <height>616</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Gestion des Clients - Olive Livery</string>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>1200</width>
+    <height>550</height>
+   </size>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">/* ═══════════════════════════════════════════════════════════════
+   GESTION CLIENTS - PROFESSIONAL DASHBOARD THEME
+   Version 2.0 - Modern Industrial Design (Style from Production)
+═══════════════════════════════════════════════════════════════ */
+
+QMainWindow {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, 
+                stop:0 #f8f9fa, stop:0.5 #e9ecef, stop:1 #f8f9fa);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   HEADER SECTION
+───────────────────────────────────────────────────────────────── */
+#headerWidget {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, 
+                stop:0 #1B4332, stop:0.5 #2D5A45, stop:1 #1B4332);
+    border-bottom: 4px solid #C9A227;
+}
+
+#label_titre_principal {
+    color: white;
+    font-size: 36px;
+    font-weight: 800;
+    font-family: 'Segoe UI', 'Arial Black', sans-serif;
+    letter-spacing: 2px;
+}
+
+#label_titre_sous {
+    color: #C9A227;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    letter-spacing: 6px;
+}
+
+#label_en_ligne {
+    color: #4ADE80;
+    font-size: 14px;
+    font-weight: bold;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    padding: 8px 16px;
+    background-color: rgba(74, 222, 128, 0.15);
+    border-radius: 20px;
+    border: 1px solid rgba(74, 222, 128, 0.3);
+}
+
+#pushButton_retour {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    min-width: 100px;
+}
+
+#pushButton_retour:hover {
+    background-color: rgba(255, 255, 255, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+#pushButton_retour:pressed {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   TAB WIDGET - MODERN DESIGN
+───────────────────────────────────────────────────────────────── */
+QTabWidget::pane {
+    border: none;
+    background-color: transparent;
+    border-radius: 12px;
+    margin-top: 5px;
+}
+
+QTabBar {
+    background: transparent;
+}
+
+QTabBar::tab {
+    background-color: white;
+    color: #666;
+    padding: 12px 24px;
+    margin-right: 4px;
+    border: none;
+    border-radius: 8px 8px 0 0;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    min-width: 120px;
+}
+
+QTabBar::tab:selected {
+    background-color: #1B4332;
+    color: white;
+    font-weight: 700;
+}
+
+QTabBar::tab:hover:!selected {
+    background-color: #f0f0f0;
+    color: #1B4332;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   GROUP BOX - CARD STYLE (Statistics Cards Style)
+───────────────────────────────────────────────────────────────── */
+QGroupBox {
+    font-size: 14px;
+    font-weight: 700;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #1B4332;
+    background-color: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    margin-top: 20px;
+    padding: 20px 15px 15px 15px;
+}
+
+QGroupBox:hover {
+    border: 1px solid #1B4332;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    left: 20px;
+    top: 0px;
+    padding: 8px 16px;
+    background-color: #1B4332;
+    color: white;
+    border-radius: 8px;
+    font-size: 13px;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   INPUT FIELDS - MODERN STYLE
+───────────────────────────────────────────────────────────────── */
+QLineEdit, QSpinBox, QDoubleSpinBox, QDateEdit, QComboBox {
+    padding: 10px 14px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    background-color: #fafafa;
+    color: #333;
+    font-size: 14px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    min-height: 20px;
+    selection-background-color: #1B4332;
+}
+
+QLineEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus, QDateEdit:focus, QComboBox:focus {
+    border: 2px solid #1B4332;
+    background-color: white;
+}
+
+QLineEdit:hover, QSpinBox:hover, QDoubleSpinBox:hover, QDateEdit:hover, QComboBox:hover {
+    border: 2px solid #4ADE80;
+}
+
+QComboBox::drop-down {
+    border: none;
+    padding-right: 15px;
+    width: 30px;
+}
+
+QComboBox QAbstractItemView {
+    border: 2px solid #1B4332;
+    border-radius: 8px;
+    background-color: white;
+    selection-background-color: #1B4332;
+    selection-color: white;
+    padding: 5px;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   TEXT EDIT - MODERN STYLE
+───────────────────────────────────────────────────────────────── */
+QTextEdit, QTextBrowser {
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    background-color: #fafafa;
+    color: #333;
+    font-size: 14px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    padding: 12px;
+}
+
+QTextEdit:focus, QTextBrowser:focus {
+    border: 2px solid #1B4332;
+    background-color: white;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   BUTTONS - PROFESSIONAL STYLE (Module Card Button Style)
+───────────────────────────────────────────────────────────────── */
+QPushButton {
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    min-width: 120px;
+    border: none;
+}
+
+/* Primary Buttons */
+#pushButton_ajouter, 
+#pushButton_modifier, 
+#pushButton_consulter, 
+#pushButton_rechercher,
+#pushButton_trier,
+#pushButton_stat,
+#pushButton_rapport,
+#btnAjouter,
+#btnModifier {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                stop:0 #234E3E, stop:1 #1B4332);
+    color: white;
+    border: none;
+}
+
+#pushButton_ajouter:hover, 
+#pushButton_modifier:hover, 
+#pushButton_consulter:hover, 
+#pushButton_rechercher:hover,
+#pushButton_trier:hover,
+#pushButton_stat:hover,
+#pushButton_rapport:hover,
+#btnAjouter:hover,
+#btnModifier:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                stop:0 #2D5A45, stop:1 #234E3E);
+}
+
+#pushButton_ajouter:pressed, 
+#pushButton_modifier:pressed, 
+#pushButton_consulter:pressed, 
+#pushButton_rechercher:pressed,
+#pushButton_trier:pressed,
+#pushButton_stat:pressed,
+#pushButton_rapport:pressed,
+#btnAjouter:pressed,
+#btnModifier:pressed {
+    background: #0F2A1F;
+}
+
+/* Danger Button */
+#pushButton_supprimer,
+#btnSupprimer {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                stop:0 #EF4444, stop:1 #DC2626);
+    color: white;
+}
+
+#pushButton_supprimer:hover,
+#btnSupprimer:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                stop:0 #F87171, stop:1 #EF4444);
+}
+
+#pushButton_supprimer:pressed,
+#btnSupprimer:pressed {
+    background: #B91C1C;
+}
+
+/* Export Buttons */
+#pushButton_pdf, #pushButton_exportRapport {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                stop:0 #E53935, stop:1 #C62828);
+    color: white;
+}
+
+#pushButton_pdf:hover, #pushButton_exportRapport:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                stop:0 #EF5350, stop:1 #E53935);
+}
+
+#pushButton_excel {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                stop:0 #2E7D32, stop:1 #1B5E20);
+    color: white;
+}
+
+#pushButton_excel:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                stop:0 #43A047, stop:1 #2E7D32);
+}
+
+#pushButton_word {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                stop:0 #1976D2, stop:1 #1565C0);
+    color: white;
+}
+
+#pushButton_word:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                stop:0 #1E88E5, stop:1 #1976D2);
+}
+
+#pushButton_txt {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                stop:0 #455A64, stop:1 #37474F);
+    color: white;
+}
+
+#pushButton_txt:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                stop:0 #546E7A, stop:1 #455A64);
+}
+
+/* Clear/Reset Button */
+#pushButton_clear {
+    background-color: #6B7280;
+    color: white;
+}
+
+#pushButton_clear:hover {
+    background-color: #4B5563;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   PROGRESS BAR - MODERN ANIMATED STYLE
+───────────────────────────────────────────────────────────────── */
+QProgressBar {
+    border: none;
+    border-radius: 10px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 13px;
+    background-color: #e5e7eb;
+    min-height: 24px;
+    color: white;
+}
+
+QProgressBar::chunk {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, 
+                stop:0 #1B4332, stop:0.5 #234E3E, stop:1 #1B4332);
+    border-radius: 10px;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   TABLE WIDGET - PROFESSIONAL STYLE
+───────────────────────────────────────────────────────────────── */
+QTableWidget {
+    border: none;
+    border-radius: 8px;
+    background-color: white;
+    gridline-color: #f0f0f0;
+    font-size: 13px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+QTableWidget::item {
+    padding: 12px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+QTableWidget::item:selected {
+    background-color: rgba(27, 67, 50, 0.1);
+    color: #1B4332;
+}
+
+QTableWidget::item:hover {
+    background-color: rgba(27, 67, 50, 0.05);
+}
+
+QHeaderView::section {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                stop:0 #1B4332, stop:1 #163829);
+    color: white;
+    padding: 14px 12px;
+    border: none;
+    font-weight: 700;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   LABELS - TYPOGRAPHY
+───────────────────────────────────────────────────────────────── */
+QLabel {
+    color: #333;
+    font-size: 14px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   CHECKBOX - MODERN STYLE
+───────────────────────────────────────────────────────────────── */
+QCheckBox {
+    font-size: 14px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #374151;
+    spacing: 12px;
+    padding: 8px;
+}
+
+QCheckBox::indicator {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+}
+
+QCheckBox::indicator:unchecked {
+    background-color: #fafafa;
+    border: 2px solid #d1d5db;
+}
+
+QCheckBox::indicator:unchecked:hover {
+    border: 2px solid #1B4332;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #1B4332;
+    border: 2px solid #1B4332;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   SCROLLBAR - MINIMAL STYLE
+───────────────────────────────────────────────────────────────── */
+QScrollBar:vertical {
+    border: none;
+    background: #f0f0f0;
+    width: 10px;
+    border-radius: 5px;
+    margin: 0;
+}
+
+QScrollBar::handle:vertical {
+    background: #c0c0c0;
+    border-radius: 5px;
+    min-height: 30px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: #1B4332;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0;
+}
+
+QScrollBar:horizontal {
+    border: none;
+    background: #f0f0f0;
+    height: 10px;
+    border-radius: 5px;
+}
+
+QScrollBar::handle:horizontal {
+    background: #c0c0c0;
+    border-radius: 5px;
+    min-width: 30px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background: #1B4332;
+}
+   </string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <!-- BANDE SUPERIEURE -->
+    <item>
+     <widget class="QWidget" name="headerWidget">
+      <property name="minimumHeight">
+       <number>65</number>
+      </property>
+      <property name="maximumHeight">
+       <number>65</number>
+      </property>
+      <property name="styleSheet">
+       <string></string>
+      </property>
+      <layout class="QHBoxLayout" name="horizontalLayout_header">
+       <property name="spacing">
+        <number>20</number>
+       </property>
+       <property name="leftMargin">
+        <number>25</number>
+       </property>
+       <property name="topMargin">
+        <number>10</number>
+       </property>
+       <property name="rightMargin">
+        <number>25</number>
+       </property>
+       <property name="bottomMargin">
+        <number>10</number>
+       </property>
+       <item>
+        <widget class="QPushButton" name="pushButton_retour">
+         <property name="maximumWidth">
+          <number>150</number>
+         </property>
+         <property name="text">
+          <string>← Retour au menu</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout_title">
+         <property name="spacing">
+          <number>2</number>
+         </property>
+         <item>
+          <widget class="QLabel" name="label_titre_principal">
+           <property name="text">
+            <string>GESTION DES CLIENTS</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignLeft|Qt::AlignVCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_titre_sous">
+           <property name="text">
+            <string>ACCOMPAGNEMENT CLIENTS</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignLeft|Qt::AlignVCenter</set>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer_left">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QWidget" name="dateTimeWidget" native="true">
+         <property name="minimumSize">
+          <size>
+           <width>220</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>220</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">#dateTimeWidget {
+    background-color: #2C5F4F;
+    border-radius: 8px;
+    padding: 6px 12px;
+}
+
+#calendarIconLabel {
+    background-color: white;
+    border-radius: 4px;
+    padding: 4px 6px;
+    font-size: 14px;
+    font-weight: 800;
+    color: #0056b3;
+    min-width: 24px;
+    max-width: 24px;
+    min-height: 24px;
+    max-height: 24px;
+}
+
+#dateTimeLabel {
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: 'Segoe UI', Arial, sans-serif;
+}</string>
+         </property>
+         <layout class="QHBoxLayout" name="dateTimeLayout">
+          <property name="spacing">
+           <number>8</number>
+          </property>
+          <property name="leftMargin">
+           <number>8</number>
+          </property>
+          <property name="topMargin">
+           <number>6</number>
+          </property>
+          <property name="rightMargin">
+           <number>8</number>
+          </property>
+          <property name="bottomMargin">
+           <number>6</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="calendarIconLabel">
+            <property name="text">
+             <string>05</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="dateTimeLabel">
+            <property name="text">
+             <string>05 Février 2026  •  13:14</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_en_ligne">
+         <property name="text">
+          <string>● EN LIGNE</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <!-- FIN BANDE SUPERIEURE -->
+    <item>
+     <widget class="QTabWidget" name="tabClient">
+      <property name="currentIndex">
+       <number>2</number>
+      </property>
+      <widget class="QWidget" name="tab_gestionClient">
+       <attribute name="title">
+        <string>Gestion Client</string>
+       </attribute>
+       <layout class="QHBoxLayout" name="horizontalLayout_tab1">
+        <item>
+         <widget class="QGroupBox" name="groupBox_formulaire">
+          <property name="title">
+           <string>Informations Client</string>
+          </property>
+          <layout class="QFormLayout" name="formLayout">
+           <item row="0" column="0">
+            <widget class="QLabel" name="label_id">
+             <property name="text">
+              <string>ID Client:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLineEdit" name="lineEdit_id">
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="label_nom">
+             <property name="text">
+              <string>Nom:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QLineEdit" name="lineEdit_nom"/>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="label_prenom">
+             <property name="text">
+              <string>Prénom:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QLineEdit" name="lineEdit_prenom"/>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="label_tel">
+             <property name="text">
+              <string>Téléphone:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QLineEdit" name="lineEdit_tel"/>
+           </item>
+           <item row="4" column="0">
+            <widget class="QLabel" name="label_adresse">
+             <property name="text">
+              <string>Adresse:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="1">
+            <widget class="QLineEdit" name="lineEdit_adresse"/>
+           </item>
+           <item row="5" column="0">
+            <widget class="QLabel" name="label_email">
+             <property name="text">
+              <string>Email:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="1">
+            <widget class="QLineEdit" name="lineEdit_email"/>
+           </item>
+           <item row="6" column="0">
+            <widget class="QLabel" name="label_type">
+             <property name="text">
+              <string>Type Client:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="1">
+            <widget class="QComboBox" name="comboBox_type">
+             <item>
+              <property name="text">
+               <string>Particulier</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Société</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="7" column="0">
+            <widget class="QLabel" name="label_total">
+             <property name="text">
+              <string>Total Olives (kg):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="7" column="1">
+            <widget class="QLineEdit" name="lineEdit_total"/>
+           </item>
+           <item row="8" column="0">
+            <widget class="QLabel" name="label_date">
+             <property name="text">
+              <string>Date Création:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="8" column="1">
+            <widget class="QDateEdit" name="dateEdit_creation">
+             <property name="calendarPopup">
+              <bool>true</bool>
+             </property>
+             <property name="date">
+              <date>
+               <year>2026</year>
+               <month>2</month>
+               <day>1</day>
+              </date>
+             </property>
+            </widget>
+           </item>
+           <item row="9" column="0">
+            <widget class="QLabel" name="label_statut_label">
+             <property name="text">
+              <string>Statut:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="9" column="1">
+            <widget class="QLabel" name="label_statut">
+             <property name="text">
+              <string>-</string>
+             </property>
+            </widget>
+           </item>
+           <item row="10" column="0" colspan="2">
+            <widget class="QWidget" name="widget_actionButtons" native="true">
+             <layout class="QHBoxLayout" name="horizontalLayout_actionButtons">
+              <property name="spacing">
+               <number>10</number>
+              </property>
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>10</number>
+              </property>
+              <item>
+               <widget class="QPushButton" name="btnAjouter">
+                <property name="text">
+                 <string>Ajouter</string>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>45</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="btnModifier">
+                <property name="text">
+                 <string>Modifier</string>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>45</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="btnSupprimer">
+                <property name="text">
+                 <string>Supprimer</string>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>45</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="11" column="0" colspan="2">
+            <widget class="QGroupBox" name="groupBox_boutons">
+             <property name="title">
+              <string></string>
+             </property>
+             <layout class="QGridLayout" name="gridLayout_boutons">
+              <item row="0" column="0">
+               <widget class="QPushButton" name="pushButton_ajouter">
+                <property name="text">
+                 <string>Ajouter</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QPushButton" name="pushButton_modifier">
+                <property name="text">
+                 <string>Modifier</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QPushButton" name="pushButton_supprimer">
+                <property name="text">
+                 <string>Supprimer</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QPushButton" name="pushButton_consulter">
+                <property name="text">
+                 <string>Consulter</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0" colspan="2">
+               <widget class="QPushButton" name="pushButton_clear">
+                <property name="text">
+                 <string>Vider</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupBox_tableau">
+          <property name="title">
+           <string>Liste des Clients</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_tableau">
+           <item>
+            <widget class="QTableWidget" name="tableView_client">
+             <property name="alternatingRowColors">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab_rechercheTri">
+       <attribute name="title">
+        <string>Recherche &amp; Tri</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_tab2">
+        <item>
+         <widget class="QGroupBox" name="groupBox_recherche">
+          <property name="title">
+           <string>Recherche Client</string>
+          </property>
+          <layout class="QHBoxLayout" name="horizontalLayout_recherche">
+           <item>
+            <widget class="QLabel" name="label_critere">
+             <property name="text">
+              <string>Critère:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="comboBox_critere">
+             <item>
+              <property name="text">
+               <string>nom</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>prenom</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>telephone</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>email</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>type_client</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_valeur">
+             <property name="text">
+              <string>Valeur:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="lineEdit_recherche"/>
+           </item>
+           <item>
+            <widget class="QPushButton" name="pushButton_rechercher">
+             <property name="text">
+              <string>Rechercher</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupBox_tri">
+          <property name="title">
+           <string>Tri</string>
+          </property>
+          <layout class="QHBoxLayout" name="horizontalLayout_tri">
+           <item>
+            <widget class="QLabel" name="label_trier">
+             <property name="text">
+              <string>Trier par:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="comboBox_tri">
+             <item>
+              <property name="text">
+               <string>nom</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>prenom</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>type_client</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>total_olives_livrees</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>date_creation</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="pushButton_trier">
+             <property name="text">
+              <string>Trier</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_tri">
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupBox_export">
+          <property name="title">
+           <string>Exporter</string>
+          </property>
+          <layout class="QHBoxLayout" name="horizontalLayout_export">
+           <item>
+            <widget class="QPushButton" name="pushButton_pdf">
+             <property name="text">
+              <string>Export PDF</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="pushButton_excel">
+             <property name="text">
+              <string>Export Excel</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="pushButton_word">
+             <property name="text">
+              <string>Export Word</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="pushButton_txt">
+             <property name="text">
+              <string>Export TXT</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_export">
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupBox_resultats">
+          <property name="title">
+           <string>Résultats</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_resultats">
+           <item>
+            <widget class="QTableWidget" name="tableView_resultats">
+             <property name="alternatingRowColors">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <spacer name="verticalSpacer_tab2">
+          <property name="orientation">
+           <enum>Qt::Orientation::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab_statistiques">
+       <attribute name="title">
+        <string>Statistiques</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_tab3">
+        <item>
+         <widget class="QGroupBox" name="groupBox_statistiques">
+          <property name="title">
+           <string>Générer Statistiques</string>
+          </property>
+          <layout class="QHBoxLayout" name="horizontalLayout_stat">
+           <item>
+            <widget class="QLabel" name="label_stat_type">
+             <property name="text">
+              <string>Type de Statistique:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="comboBox_stat">
+             <item>
+              <property name="text">
+               <string>Nombre par type_client</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Total olives par type_client</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Clients par date_creation</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Statut fidélité</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Importance (par quantité)</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="pushButton_stat">
+             <property name="text">
+              <string>Générer</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_stat">
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupBox_graph">
+          <property name="title">
+           <string>Graphiques</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_graph">
+           <item>
+            <widget class="QLabel" name="label_chart_placeholder">
+             <property name="text">
+              <string>Graphique sera affiché ici</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignmentFlag::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <spacer name="verticalSpacer_tab3">
+          <property name="orientation">
+           <enum>Qt::Orientation::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab_fideliteRapport">
+       <attribute name="title">
+        <string>Fidélité &amp; Rapport</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_tab4">
+        <item>
+         <widget class="QGroupBox" name="groupBox_classification">
+          <property name="title">
+           <string>Classification Automatique</string>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_classification">
+           <item row="0" column="0">
+            <widget class="QLabel" name="label_score_title">
+             <property name="text">
+              <string>Score Fidélité:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLabel" name="label_score_value">
+             <property name="text">
+              <string>-</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignmentFlag::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="label_statut_titre">
+             <property name="text">
+              <string>Statut Fidélité:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QLabel" name="label_statut_value">
+             <property name="text">
+              <string>-</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignmentFlag::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="label_importance_titre">
+             <property name="text">
+              <string>Importance:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QLabel" name="label_importance_value">
+             <property name="text">
+              <string>-</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignmentFlag::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupBox_rapport">
+          <property name="title">
+           <string>Rapport Client</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_rapport">
+           <item>
+            <widget class="QTextEdit" name="textEdit_rapport">
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_rapport_boutons">
+             <item>
+              <widget class="QPushButton" name="pushButton_rapport">
+               <property name="text">
+                <string>Générer Rapport</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="pushButton_exportRapport">
+               <property name="text">
+                <string>Export PDF</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer_rapport">
+               <property name="orientation">
+                <enum>Qt::Orientation::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <spacer name="verticalSpacer_tab4">
+          <property name="orientation">
+           <enum>Qt::Orientation::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
