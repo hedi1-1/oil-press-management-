@@ -3,6 +3,8 @@
 #include "../production/production.h"
 #include "../machine/machine.h"
 #include "../userstaff/userstaff.h"
+#include "../gestionclients/gestionclients.h"
+#include "../stock/stock.h"
 #include <QMessageBox>
 
 menu::menu(QWidget *parent)
@@ -11,6 +13,8 @@ menu::menu(QWidget *parent)
     , productionWindow(nullptr)
     , machineWindow(nullptr)
     , userstaffWindow(nullptr)
+    , gestionClientsWindow(nullptr)
+    , stockWindow(nullptr)
 {
     ui->setupUi(this);
     
@@ -35,12 +39,25 @@ menu::~menu()
     if (userstaffWindow) {
         delete userstaffWindow;
     }
+    if (gestionClientsWindow) {
+        delete gestionClientsWindow;
+    }
+    if (stockWindow) {
+        delete stockWindow;
+    }
 }
 
 void menu::onClientManagementClicked()
 {
-    QMessageBox::information(this, "Module non disponible", 
-                            "Le module 'Gestion des clients' sera disponible prochainement.");
+    // Create and show the client management window
+    if (!gestionClientsWindow) {
+        gestionClientsWindow = new GestionClients();
+        // Connect the back signal to show this menu again
+        connect(gestionClientsWindow, &GestionClients::backToMenu, this, &menu::show);
+    }
+    
+    gestionClientsWindow->show();
+    this->hide(); // Hide the menu window
 }
 
 void menu::onUserStaffManagementClicked()
@@ -58,8 +75,15 @@ void menu::onUserStaffManagementClicked()
 
 void menu::onStockManagementClicked()
 {
-    QMessageBox::information(this, "Module non disponible", 
-                            "Le module 'Gestion du stock' sera disponible prochainement.");
+    // Create and show the stock management window
+    if (!stockWindow) {
+        stockWindow = new Stock();
+        // Connect the back signal to show this menu again
+        connect(stockWindow, &Stock::backToMenu, this, &menu::show);
+    }
+    
+    stockWindow->show();
+    this->hide(); // Hide the menu window
 }
 
 void menu::onProductionManagementClicked()
