@@ -7,6 +7,8 @@
 class Production;
 class machine;
 class userstaff;
+class GestionClients;
+class Stock;
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -35,5 +37,7 @@ private:
     Production *productionWindow;
     machine *machineWindow;
     userstaff *userstaffWindow;
+    GestionClients *gestionClientsWindow;
+    Stock *stockWindow;
 };
 #endif // MENU_H
