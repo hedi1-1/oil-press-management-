@@ -1,0 +1,25 @@
+# Build directories
+build/
+
+# Qt generated files
+*.pro.user
+*.autosave
+
+# Compiled Object files
+*.o
+*.obj
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Qt MOC files
+moc_*.cpp
+moc_*.h
+ui_*.h
+qrc_*.cpp
+
+# Debug and Release folders
+debug/
+release/
