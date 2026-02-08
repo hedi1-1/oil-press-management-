@@ -12,26 +12,26 @@ SOURCES += \
     main.cpp \
     menu.cpp \
     ../production/production.cpp \
-    ../machine/machine.cpp \
     ../userstaff/userstaff.cpp \
     ../gestionclients/gestionclients.cpp \
-    ../stock/stock.cpp
+    ../stock/stock.cpp \
+    ../machine/machine.cpp
 
 HEADERS += \
     menu.h \
     ../production/production.h \
-    ../machine/machine.h \
     ../userstaff/userstaff.h \
     ../gestionclients/gestionclients.h \
-    ../stock/stock.h
+    ../stock/stock.h \
+    ../machine/machine.h
 
 FORMS += \
     menu.ui \
     ../production/production.ui \
-    ../machine/machine.ui \
     ../userstaff/userstaff.ui \
     ../gestionclients/gestionclients.ui \
-    ../stock/stock.ui
+    ../stock/stock.ui \
+    ../machine/machine.ui
 
 RESOURCES += \
     ../production/resources.qrc

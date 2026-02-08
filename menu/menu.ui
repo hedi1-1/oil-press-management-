@@ -130,8 +130,8 @@ QPushButton#btnClientManagement,
 QPushButton#btnUserStaffManagement,
 QPushButton#btnStockManagement,
 QPushButton#btnProductionManagement,
-QPushButton#btnMachineAlertManagement,
-QPushButton#btnFinanceManagement {
+QPushButton#btnFinanceManagement,
+QPushButton#btnMachineAlertManagement {
     background-color: white;
     color: #333;
     border: 2px solid #e0e0e0;
@@ -149,8 +149,8 @@ QPushButton#btnClientManagement:hover,
 QPushButton#btnUserStaffManagement:hover,
 QPushButton#btnStockManagement:hover,
 QPushButton#btnProductionManagement:hover,
-QPushButton#btnMachineAlertManagement:hover,
-QPushButton#btnFinanceManagement:hover {
+QPushButton#btnFinanceManagement:hover,
+QPushButton#btnMachineAlertManagement:hover {
     background-color: #f8fff8;
     border: 2px solid #1B4332;
     color: #1B4332;
@@ -160,17 +160,14 @@ QPushButton#btnClientManagement:pressed,
 QPushButton#btnUserStaffManagement:pressed,
 QPushButton#btnStockManagement:pressed,
 QPushButton#btnProductionManagement:pressed,
-QPushButton#btnMachineAlertManagement:pressed,
-QPushButton#btnFinanceManagement:pressed {
+QPushButton#btnFinanceManagement:pressed,
+QPushButton#btnMachineAlertManagement:pressed {
     background-color: #1B4332;
     color: white;
 }
 
 /* Special styling for active modules */
-QPushButton#btnProductionManagement {
-    border-left: 5px solid #4ADE80;
-}
-
+QPushButton#btnProductionManagement,
 QPushButton#btnMachineAlertManagement {
     border-left: 5px solid #4ADE80;
 }
@@ -184,27 +181,26 @@ QPushButton#btnFinanceManagement {
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   FOOTER SECTION
+   FOOTER SECTION - MODERN PREMIUM DESIGN
 ───────────────────────────────────────────────────────────────── */
 #footerWidget {
-    background-color: #f8f9fa;
-    border-top: 1px solid #e0e0e0;
+    background-color: #1B4332;
+    border-top: 4px solid #D4A017;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
 }
 
 #lblFooter {
-    color: #6c757d;
-    font-size: 12px;
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 13px;
+    font-weight: 400;
     font-family: 'Segoe UI', Arial, sans-serif;
+    letter-spacing: 0.5px;
 }
 
 #lblVersion {
-    color: white;
-    font-size: 11px;
-    font-weight: 600;
-    font-family: 'Segoe UI', Arial, sans-serif;
-    padding: 6px 14px;
-    background-color: #1B4332;
-    border-radius: 12px;
+    color: transparent;
+    font-size: 0px;
 }
 
 /* ─────────────────────────────────────────────────────────────────
@@ -752,22 +748,22 @@ et contrôle qualité</string>
           </widget>
          </item>
          <item row="1" column="1">
-          <widget class="QPushButton" name="btnMachineAlertManagement">
-           <property name="text">
-            <string>⚙️  Machines &amp; Alertes
-
-Surveillance des équipements
-et maintenance préventive</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="2">
           <widget class="QPushButton" name="btnFinanceManagement">
            <property name="text">
             <string>💰  Gestion Financière
 
 Comptabilité, revenus
 et analyses financières</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="2">
+          <widget class="QPushButton" name="btnMachineAlertManagement">
+           <property name="text">
+            <string>🏭  Machines et Alertes
+
+Gestion des machines,
+alertes et maintenance</string>
            </property>
           </widget>
          </item>
@@ -794,55 +790,38 @@ et analyses financières</string>
       <property name="minimumSize">
        <size>
         <width>0</width>
-        <height>40</height>
+        <height>50</height>
        </size>
       </property>
       <property name="maximumSize">
        <size>
         <width>16777215</width>
-        <height>40</height>
+        <height>50</height>
        </size>
       </property>
       <layout class="QHBoxLayout" name="footerLayout">
        <property name="spacing">
-        <number>20</number>
+        <number>0</number>
        </property>
        <property name="leftMargin">
-        <number>35</number>
+        <number>0</number>
        </property>
        <property name="topMargin">
-        <number>8</number>
+        <number>0</number>
        </property>
        <property name="rightMargin">
-        <number>35</number>
+        <number>0</number>
        </property>
        <property name="bottomMargin">
-        <number>8</number>
+        <number>0</number>
        </property>
        <item>
         <widget class="QLabel" name="lblFooter">
          <property name="text">
-          <string>© 2026 PressIQ - Smart Oil Press Management System | Développé pour la gestion moderne des huileries</string>
+          <string>PressIQ - Smart Oil Systems • Version 1.0.2 • © 2026 PressIQ. Tous droits réservés.</string>
          </property>
-        </widget>
-       </item>
-       <item>
-        <spacer name="footerSpacer">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item>
-        <widget class="QLabel" name="lblVersion">
-         <property name="text">
-          <string>v2.0.0</string>
+         <property name="alignment">
+          <set>Qt::AlignmentFlag::AlignCenter</set>
          </property>
         </widget>
        </item>
