@@ -881,50 +881,6 @@ QScrollBar::handle:horizontal:hover {
              </layout>
             </widget>
            </item>
-           <item row="11" column="0" colspan="2">
-            <widget class="QGroupBox" name="groupBox_boutons">
-             <property name="title">
-              <string></string>
-             </property>
-             <layout class="QGridLayout" name="gridLayout_boutons">
-              <item row="0" column="0">
-               <widget class="QPushButton" name="pushButton_ajouter">
-                <property name="text">
-                 <string>Ajouter</string>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="1">
-               <widget class="QPushButton" name="pushButton_modifier">
-                <property name="text">
-                 <string>Modifier</string>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="0">
-               <widget class="QPushButton" name="pushButton_supprimer">
-                <property name="text">
-                 <string>Supprimer</string>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="1">
-               <widget class="QPushButton" name="pushButton_consulter">
-                <property name="text">
-                 <string>Consulter</string>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="0" colspan="2">
-               <widget class="QPushButton" name="pushButton_clear">
-                <property name="text">
-                 <string>Vider</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </widget>
-           </item>
           </layout>
          </widget>
         </item>

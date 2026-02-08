@@ -44,12 +44,12 @@ void Stock::updateDateTime()
     QStringList moisFr = {"", "janvier", "février", "mars", "avril", "mai", "juin",
                           "juillet", "août", "septembre", "octobre", "novembre", "décembre"};
     
-    QString dateStr = QString("%1 %2 %3")
-                          .arg(currentDate.day())
+    QString dateStr = QString("📅 %1 %2 %3")
+                          .arg(currentDate.day(), 2, 10, QChar('0'))
                           .arg(moisFr[currentDate.month()])
                           .arg(currentDate.year());
     
-    QString timeStr = currentTime.toString("HH:mm:ss");
+    QString timeStr = currentTime.toString("🕐 HH:mm:ss");
     
     if (ui->lblDateTime) {
         ui->lblDateTime->setText(dateStr + " | " + timeStr);

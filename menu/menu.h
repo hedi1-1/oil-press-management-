@@ -2,6 +2,7 @@
 #define MENU_H
 
 #include <QMainWindow>
+#include <QTimer>
 
 // Forward declarations
 class Production;
@@ -31,6 +32,7 @@ private slots:
     void onProductionManagementClicked();
     void onMachineAlertManagementClicked();
     void onFinanceManagementClicked();
+    void updateDateTime();
 
 private:
     Ui::menu *ui;
@@ -39,5 +41,6 @@ private:
     userstaff *userstaffWindow;
     GestionClients *gestionClientsWindow;
     Stock *stockWindow;
+    QTimer *dateTimeTimer;
 };
 #endif // MENU_H

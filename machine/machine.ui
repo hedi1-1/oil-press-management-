@@ -50,8 +50,24 @@ QMainWindow {
 #lblOnlineStatus {
     color: #4CAF50;
     font-size: 13px;
-    font-weight: bold;
+    font-weight: 600;
     font-family: 'Segoe UI', Arial, sans-serif;
+    background-color: #2C5F4F;
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: 1px solid #3D7A60;
+    margin-left: 12px;
+}
+
+#lblDateTime {
+    color: #E8E8E8;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background-color: #2C5F4F;
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: 1px solid #3D7A60;
 }
 
 /* Back Button */
@@ -77,9 +93,9 @@ QMainWindow {
 
 /* Tab Widget Styling */
 QTabWidget::pane {
-    border: 1px solid #ddd;
+    border: 3px solid #2D5F47;
     background-color: white;
-    border-radius: 0px;
+    border-radius: 5px;
     margin-top: -1px;
 }
 
@@ -101,7 +117,7 @@ QTabBar::tab:selected {
     background-color: white;
     color: #1B4332;
     font-weight: bold;
-    border-bottom: 3px solid #1B4332;
+    border-bottom: 3px solid #2D5F47;
 }
 
 QTabBar::tab:hover:!selected {
@@ -115,7 +131,7 @@ QGroupBox {
     font-family: 'Segoe UI', Arial, sans-serif;
     color: white;
     background-color: white;
-    border: 1px solid #ddd;
+    border: 2px solid #2D5F47;
     border-radius: 5px;
     margin-top: 12px;
     padding-top: 10px;
@@ -200,7 +216,7 @@ QLabel {
 /* ToolBar */
 QToolBar {
     background-color: #f8f9fa;
-    border: 1px solid #ddd;
+    border: 2px solid #2D5F47;
     border-radius: 4px;
     spacing: 5px;
     padding: 5px;
@@ -222,16 +238,17 @@ QToolButton:hover {
 
 /* Frame Summary */
 #frameSummary {
-    background-color: #f8f9fa;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    background-color: white;
+    border: 2px solid #2D5F47;
+    border-radius: 5px;
     padding: 10px;
 }
 
 #frameSummary QLabel {
     font-weight: bold;
-    padding: 5px 10px;
+    padding: 8px 12px;
     border-radius: 4px;
+    border: 1px solid #ddd;
 }
 
 #lblMachinesNormales {
@@ -322,7 +339,7 @@ QToolButton:hover {
           <string/>
          </property>
          <property name="pixmap">
-          <pixmap resource="../smartoil/resources.qrc">:/logo.png</pixmap>
+          <pixmap resource="resources.qrc">:/assets/logo.png</pixmap>
          </property>
          <property name="scaledContents">
           <bool>true</bool>
@@ -342,11 +359,85 @@ QToolButton:hover {
           </widget>
          </item>
          <item>
-          <widget class="QLabel" name="lblAppSubtitle">
-           <property name="text">
-            <string>SURVEILLANCE &amp; ALERTES</string>
-           </property>
-          </widget>
+          <layout class="QHBoxLayout" name="subtitleLayout">
+           <item>
+            <widget class="QLabel" name="lblAppSubtitle">
+             <property name="text">
+              <string>SURVEILLANCE &amp; ALERTES</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="subtitleSpacer">
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>200</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QPushButton" name="btnGestionStock">
+             <property name="minimumSize">
+              <size>
+               <width>118</width>
+               <height>30</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>200</width>
+               <height>30</height>
+              </size>
+             </property>
+             <property name="styleSheet">
+              <string>QPushButton { background-color: transparent; color: #C9A227; font-weight: 600; border: none; font-size: 12px; font-family: 'Segoe UI', Arial, sans-serif; } QPushButton:hover { text-decoration: underline; } QPushButton:pressed { opacity: 0.7; }</string>
+             </property>
+             <property name="text">
+              <string>📦 Gestion De Stock</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="buttonsSpacer">
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QPushButton" name="btnGestionProduction">
+             <property name="minimumSize">
+              <size>
+               <width>118</width>
+               <height>30</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>220</width>
+               <height>30</height>
+              </size>
+             </property>
+             <property name="styleSheet">
+              <string>QPushButton { background-color: transparent; color: #C9A227; font-weight: 600; border: none; font-size: 12px; font-family: 'Segoe UI', Arial, sans-serif; } QPushButton:hover { text-decoration: underline; } QPushButton:pressed { opacity: 0.7; }</string>
+             </property>
+             <property name="text">
+              <string>🏭 Gestion De Production</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
         </layout>
        </item>
@@ -364,7 +455,29 @@ QToolButton:hover {
         </spacer>
        </item>
        <item>
+        <widget class="QLabel" name="lblDateTime">
+         <property name="maximumSize">
+          <size>
+           <width>350</width>
+           <height>35</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>📅 04 Février 2026 • 14:30:45</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QLabel" name="lblOnlineStatus">
+         <property name="maximumSize">
+          <size>
+           <width>120</width>
+           <height>35</height>
+          </size>
+         </property>
          <property name="text">
           <string>● EN LIGNE</string>
          </property>
@@ -379,7 +492,7 @@ QToolButton:hover {
     <item>
      <widget class="QTabWidget" name="tabWidgetMachineManagement">
       <property name="currentIndex">
-       <number>0</number>
+       <number>4</number>
       </property>
       <widget class="QWidget" name="tabParcMachines">
        <attribute name="title">
@@ -1315,17 +1428,20 @@ QToolButton:hover {
            <string>Options de visualisation</string>
           </property>
           <layout class="QHBoxLayout" name="layoutOptionsStats">
+           <property name="spacing">
+            <number>8</number>
+           </property>
            <property name="leftMargin">
             <number>10</number>
            </property>
            <property name="topMargin">
-            <number>15</number>
+            <number>5</number>
            </property>
            <property name="rightMargin">
             <number>10</number>
            </property>
            <property name="bottomMargin">
-            <number>10</number>
+            <number>5</number>
            </property>
            <item>
             <widget class="QLabel" name="lblTypeStats">
@@ -1767,7 +1883,7 @@ QToolButton:hover {
   </widget>
  </widget>
  <resources>
-  <include location="../smartoil/resources.qrc"/>
+  <include location="resources.qrc"/>
  </resources>
  <connections/>
 </ui>

@@ -6,6 +6,9 @@
 #include "../gestionclients/gestionclients.h"
 #include "../stock/stock.h"
 #include <QMessageBox>
+#include <QDateTime>
+#include <QTimer>
+#include <QLocale>
 
 menu::menu(QWidget *parent)
     : QMainWindow(parent)
@@ -25,6 +28,12 @@ menu::menu(QWidget *parent)
     connect(ui->btnProductionManagement, &QPushButton::clicked, this, &menu::onProductionManagementClicked);
     connect(ui->btnMachineAlertManagement, &QPushButton::clicked, this, &menu::onMachineAlertManagementClicked);
     connect(ui->btnFinanceManagement, &QPushButton::clicked, this, &menu::onFinanceManagementClicked);
+    
+    // Setup timer for automatic date/time update
+    dateTimeTimer = new QTimer(this);
+    connect(dateTimeTimer, &QTimer::timeout, this, &menu::updateDateTime);
+    updateDateTime(); // Initial update
+    dateTimeTimer->start(1000); // Update every second
 }
 
 menu::~menu()
@@ -101,7 +110,7 @@ void menu::onProductionManagementClicked()
 
 void menu::onMachineAlertManagementClicked()
 {
-    // Create and show the machine management window
+    // Create and show the machine & alerts management window
     if (!machineWindow) {
         machineWindow = new machine();
         // Connect the back signal to show this menu again
@@ -116,4 +125,18 @@ void menu::onFinanceManagementClicked()
 {
     QMessageBox::information(this, "Module non disponible", 
                             "Le module 'Gestion financière' sera disponible prochainement.");
+}
+
+void menu::updateDateTime()
+{
+    QDateTime currentDateTime = QDateTime::currentDateTime();
+    QLocale frenchLocale(QLocale::French);
+    
+    QString dateText = frenchLocale.toString(currentDateTime.date(), "dd MMMM yyyy");
+    QString timeText = currentDateTime.toString("HH:mm:ss");
+    
+    QString dateTimeText = QString("📅 %1 | 🕐 %2")
+                          .arg(dateText)
+                          .arg(timeText);
+    ui->lblDateTime->setText(dateTimeText);
 }
