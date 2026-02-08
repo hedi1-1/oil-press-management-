@@ -10,6 +10,7 @@ class machine;
 class userstaff;
 class GestionClients;
 class Stock;
+class Finance;
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -41,6 +42,7 @@ private:
     userstaff *userstaffWindow;
     GestionClients *gestionClientsWindow;
     Stock *stockWindow;
+    Finance *financeWindow;
     QTimer *dateTimeTimer;
 };
 #endif // MENU_H

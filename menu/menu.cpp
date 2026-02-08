@@ -5,6 +5,7 @@
 #include "../userstaff/userstaff.h"
 #include "../gestionclients/gestionclients.h"
 #include "../stock/stock.h"
+#include "../finance/finance.h"
 #include <QMessageBox>
 #include <QDateTime>
 #include <QTimer>
@@ -18,6 +19,7 @@ menu::menu(QWidget *parent)
     , userstaffWindow(nullptr)
     , gestionClientsWindow(nullptr)
     , stockWindow(nullptr)
+    , financeWindow(nullptr)
 {
     ui->setupUi(this);
     
@@ -53,6 +55,9 @@ menu::~menu()
     }
     if (stockWindow) {
         delete stockWindow;
+    }
+    if (financeWindow) {
+        delete financeWindow;
     }
 }
 
@@ -123,8 +128,14 @@ void menu::onMachineAlertManagementClicked()
 
 void menu::onFinanceManagementClicked()
 {
-    QMessageBox::information(this, "Module non disponible", 
-                            "Le module 'Gestion financière' sera disponible prochainement.");
+    if (!financeWindow) {
+        financeWindow = new Finance();
+        // Connect the back signal to show this menu again
+        connect(financeWindow, &Finance::backToMenu, this, &menu::show);
+    }
+    
+    financeWindow->show();
+    this->hide(); // Hide the menu window
 }
 
 void menu::updateDateTime()

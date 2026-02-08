@@ -15,7 +15,8 @@ SOURCES += \
     ../userstaff/userstaff.cpp \
     ../gestionclients/gestionclients.cpp \
     ../stock/stock.cpp \
-    ../machine/machine.cpp
+    ../machine/machine.cpp \
+    ../finance/finance.cpp
 
 HEADERS += \
     menu.h \
@@ -23,7 +24,8 @@ HEADERS += \
     ../userstaff/userstaff.h \
     ../gestionclients/gestionclients.h \
     ../stock/stock.h \
-    ../machine/machine.h
+    ../machine/machine.h \
+    ../finance/finance.h
 
 FORMS += \
     menu.ui \
@@ -31,7 +33,8 @@ FORMS += \
     ../userstaff/userstaff.ui \
     ../gestionclients/gestionclients.ui \
     ../stock/stock.ui \
-    ../machine/machine.ui
+    ../machine/machine.ui \
+    ../finance/finance.ui
 
 RESOURCES += \
     ../production/resources.qrc
