@@ -60,9 +60,17 @@ private slots:
     void onBackButtonClicked();
     void updateDateTime();
     void onNavigationTabClicked(int index);
+    void onAjouterButtonClicked();
+    
+    // Auto-connected slots (Qt naming convention)
+    void on_btnEnregistrerParc_clicked();
+    void on_btnAnnulerParc_clicked();
 
 private:
     void setupNavigationBar();
+    void afficherFormulaireParc();
+    void masquerFormulaireParc();
+    void reinitialiserFormulaireParc();
 
     Ui::machine *ui;
     QTimer *dateTimeTimer;

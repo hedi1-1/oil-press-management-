@@ -2,6 +2,7 @@
 #include "ui_machine.h"
 #include <QDateTime>
 #include <QVBoxLayout>
+#include <QDebug>
 
 // ============================================================================
 // NavigationBar Implementation
@@ -182,13 +183,23 @@ machine::machine(QWidget *parent)
     dateTimeTimer->start(1000); // Update every second
     updateDateTime(); // Initial update
     
-    // Add toolbar actions
-    ui->toolBarMachines->addAction("➕ Ajouter");
-    ui->toolBarMachines->addAction("✏️ Modifier");
-    ui->toolBarMachines->addAction("🗑️ Supprimer");
-    ui->toolBarMachines->addSeparator();
-    ui->toolBarMachines->addAction("🔄 Actualiser");
-    ui->toolBarMachines->addAction("📤 Exporter");
+    // Add toolbar actions to the central toolbar
+    QAction *actionAjouter = ui->toolBarActions->addAction("➕ Ajouter");
+    QAction *actionModifier = ui->toolBarActions->addAction("✏️ Modifier");
+    QAction *actionSupprimer = ui->toolBarActions->addAction("🗑️ Supprimer");
+    ui->toolBarActions->addSeparator();
+    QAction *actionActualiser = ui->toolBarActions->addAction("🔄 Actualiser");
+    QAction *actionExporter = ui->toolBarActions->addAction("📤 Exporter");
+    
+    // Connect toolbar actions
+    connect(actionAjouter, &QAction::triggered, this, &machine::onAjouterButtonClicked);
+    
+    // Form buttons are auto-connected via Qt's naming convention:
+    // on_btnEnregistrerParc_clicked() and on_btnAnnulerParc_clicked()
+    
+    // Initialize form as hidden
+    ui->widgetFormulaireParcMachines->setVisible(false);
+    qDebug() << "[DEBUG] Initialisation: formulaire masque";
 }
 
 machine::~machine()
@@ -247,7 +258,6 @@ void machine::setupNavigationBar()
     navigationBar->addTab("🏭", "Parc machines");
     navigationBar->addTab("➕", "Ajouter / Modifier");
     navigationBar->addTab("ℹ️", "Détails machine");
-    navigationBar->addTab("⚠️", "Alertes");
     navigationBar->addTab("📊", "Statistiques");
     navigationBar->addTab("🔧", "Maintenance");
     navigationBar->addTab("📜", "Historique");
@@ -272,4 +282,71 @@ void machine::onNavigationTabClicked(int index)
 {
     // Update the tab widget to show the corresponding tab
     ui->tabWidgetMachineManagement->setCurrentIndex(index);
+}
+
+void machine::onAjouterButtonClicked()
+{
+    qDebug() << "[DEBUG] Bouton Ajouter cliqué";
+    afficherFormulaireParc();
+}
+
+// Auto-connected slot for Annuler button
+void machine::on_btnAnnulerParc_clicked()
+{
+    qDebug() << "[DEBUG] *** BOUTON ANNULER CLIQUE ***";
+    masquerFormulaireParc();
+    reinitialiserFormulaireParc();
+}
+
+// Auto-connected slot for Enregistrer button
+void machine::on_btnEnregistrerParc_clicked()
+{
+    qDebug() << "[DEBUG] *** BOUTON ENREGISTRER CLIQUE ***";
+    // TODO: Implement save logic here
+    // Example: save data to database
+    
+    // Hide the form and reset fields
+    masquerFormulaireParc();
+    reinitialiserFormulaireParc();
+}
+
+void machine::afficherFormulaireParc()
+{
+    qDebug() << "[DEBUG] Affichage du formulaire";
+    // Reset form fields
+    reinitialiserFormulaireParc();
+    
+    // Hide table and summary
+    ui->tableMachines->setVisible(false);
+    ui->frameSummary->setVisible(false);
+    
+    // Show form
+    ui->widgetFormulaireParcMachines->setVisible(true);
+    qDebug() << "[DEBUG] Formulaire visible:" << ui->widgetFormulaireParcMachines->isVisible();
+}
+
+void machine::masquerFormulaireParc()
+{
+    qDebug() << "[DEBUG] Masquage du formulaire";
+    // Hide form
+    ui->widgetFormulaireParcMachines->setVisible(false);
+    
+    // Show table and summary
+    ui->tableMachines->setVisible(true);
+    ui->frameSummary->setVisible(true);
+    qDebug() << "[DEBUG] Formulaire visible:" << ui->widgetFormulaireParcMachines->isVisible();
+}
+
+void machine::reinitialiserFormulaireParc()
+{
+    // Reset all form fields to default values
+    ui->nom_machine_parc->clear();
+    ui->type_machine_parc->setCurrentIndex(0); // "Presse"
+    ui->etat_marche_parc->setCurrentIndex(0); // "ON"
+    ui->temperature_actuelle_parc->setValue(0.00);
+    ui->niveau_charge_parc->setValue(0);
+    ui->etat_fonctionnement_parc->setCurrentIndex(0); // "Normal"
+    ui->type_alerte_parc->setCurrentIndex(0); // "Aucune"
+    ui->niveau_criticite_parc->setCurrentIndex(0); // "Faible"
+    ui->date_derniere_maintenance_parc->setDate(QDate(2000, 1, 1));
 }
