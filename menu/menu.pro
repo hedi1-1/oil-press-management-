@@ -11,27 +11,33 @@ CONFIG += c++17
 SOURCES += \
     main.cpp \
     menu.cpp \
+    ../Login/login.cpp \
     ../production/production.cpp \
     ../userstaff/userstaff.cpp \
     ../gestionclients/gestionclients.cpp \
     ../stock/stock.cpp \
-    ../machine/machine.cpp
+    ../machine/machine.cpp \
+    ../finance/finance.cpp
 
 HEADERS += \
     menu.h \
+    ../Login/login.h \
     ../production/production.h \
     ../userstaff/userstaff.h \
     ../gestionclients/gestionclients.h \
     ../stock/stock.h \
-    ../machine/machine.h
+    ../machine/machine.h \
+    ../finance/finance.h
 
 FORMS += \
     menu.ui \
+    ../Login/login.ui \
     ../production/production.ui \
     ../userstaff/userstaff.ui \
     ../gestionclients/gestionclients.ui \
     ../stock/stock.ui \
-    ../machine/machine.ui
+    ../machine/machine.ui \
+    ../finance/finance.ui
 
 RESOURCES += \
     ../production/resources.qrc
