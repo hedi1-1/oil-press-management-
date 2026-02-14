@@ -1,0 +1,22 @@
+# Build output
+machine/build/
+build/
+
+# Qt Creator user files
+.qtcreator/*.pro.user
+.qtcreator/*.pro.user.*
+
+# Compiled objects
+*.o
+*.obj
+*.exe
+*.moc
+*.rcc
+
+# Generated files
+moc_*.cpp
+qrc_*.cpp
+ui_*.h
+Makefile
+Makefile.*
+.qmake.stash
