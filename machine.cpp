@@ -334,7 +334,6 @@ void machine::setupNavigationBar()
     
     // Add tabs to the navigation bar
     navigationBar->addTab("🏭", "Parc machines");
-    navigationBar->addTab("➕", "Ajouter / Modifier");
     navigationBar->addTab("ℹ️", "Détails machine");
     navigationBar->addTab("📊", "Statistiques");
     navigationBar->addTab("🔧", "Maintenance");

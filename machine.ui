@@ -1770,12 +1770,60 @@ QFrame#cardMachine1:hover { border-color: #4CAF50; }</string>
                   </spacer>
                  </item>
                  <item>
-                  <widget class="QLabel" name="lblCard1EtatMarche">
+                  <widget class="QPushButton" name="btnCard1Reinitialiser">
+                   <property name="minimumSize">
+                    <size>
+                     <width>170</width>
+                     <height>34</height>
+                    </size>
+                   </property>
                    <property name="styleSheet">
-                    <string>font-weight: bold; color: white; background-color: #4CAF50; padding: 6px 12px; border-radius: 6px; border: none;</string>
+                    <string>QPushButton { background-color: #1B4D3E; color: white; font-weight: bold; font-size: 11px; border: none; border-radius: 6px; padding: 6px 14px; } QPushButton:hover { background-color: #164033; }</string>
                    </property>
                    <property name="text">
-                    <string>🔵 ON</string>
+                    <string>🔄 Réinitialiser machine</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="btnCard1MiseVeille">
+                   <property name="minimumSize">
+                    <size>
+                     <width>140</width>
+                     <height>34</height>
+                    </size>
+                   </property>
+                   <property name="styleSheet">
+                    <string>QPushButton { background-color: #F39C12; color: white; font-weight: bold; font-size: 11px; border: none; border-radius: 6px; padding: 6px 14px; } QPushButton:hover { background-color: #E08E0B; }</string>
+                   </property>
+                   <property name="text">
+                    <string>💤 Mise en veille</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="btnCard1ArretForce">
+                   <property name="minimumSize">
+                    <size>
+                     <width>130</width>
+                     <height>34</height>
+                    </size>
+                   </property>
+                   <property name="styleSheet">
+                    <string>QPushButton { background-color: #dc3545; color: white; font-weight: bold; font-size: 11px; border: none; border-radius: 6px; padding: 6px 14px; } QPushButton:hover { background-color: #c82333; }</string>
+                   </property>
+                   <property name="text">
+                    <string>⛔ Arrêt forcé</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="lblCard1EtatMarche">
+                   <property name="styleSheet">
+                    <string>font-weight: 700; color: #2E7D32; background-color: #E8F5E9; padding: 5px 14px; border-radius: 12px; border: 2px solid #4CAF50; font-size: 12px; letter-spacing: 1px;</string>
+                   </property>
+                   <property name="text">
+                    <string>● ON</string>
                    </property>
                   </widget>
                  </item>
@@ -1944,6 +1992,7 @@ QFrame#cardMachine1:hover { border-color: #4CAF50; }</string>
                  </item>
                 </layout>
                </item>
+
               </layout>
              </widget>
             </item>
@@ -1983,12 +2032,60 @@ QFrame#cardMachine2:hover { border-color: #4CAF50; }</string>
                   </spacer>
                  </item>
                  <item>
-                  <widget class="QLabel" name="lblCard2EtatMarche">
+                  <widget class="QPushButton" name="btnCard2Reinitialiser">
+                   <property name="minimumSize">
+                    <size>
+                     <width>170</width>
+                     <height>34</height>
+                    </size>
+                   </property>
                    <property name="styleSheet">
-                    <string>font-weight: bold; color: white; background-color: #FFC107; padding: 6px 12px; border-radius: 6px; border: none;</string>
+                    <string>QPushButton { background-color: #1B4D3E; color: white; font-weight: bold; font-size: 11px; border: none; border-radius: 6px; padding: 6px 14px; } QPushButton:hover { background-color: #164033; }</string>
                    </property>
                    <property name="text">
-                    <string>⏸️ VEILLE</string>
+                    <string>🔄 Réinitialiser machine</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="btnCard2MiseVeille">
+                   <property name="minimumSize">
+                    <size>
+                     <width>140</width>
+                     <height>34</height>
+                    </size>
+                   </property>
+                   <property name="styleSheet">
+                    <string>QPushButton { background-color: #F39C12; color: white; font-weight: bold; font-size: 11px; border: none; border-radius: 6px; padding: 6px 14px; } QPushButton:hover { background-color: #E08E0B; }</string>
+                   </property>
+                   <property name="text">
+                    <string>💤 Mise en veille</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="btnCard2ArretForce">
+                   <property name="minimumSize">
+                    <size>
+                     <width>130</width>
+                     <height>34</height>
+                    </size>
+                   </property>
+                   <property name="styleSheet">
+                    <string>QPushButton { background-color: #dc3545; color: white; font-weight: bold; font-size: 11px; border: none; border-radius: 6px; padding: 6px 14px; } QPushButton:hover { background-color: #c82333; }</string>
+                   </property>
+                   <property name="text">
+                    <string>⛔ Arrêt forcé</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="lblCard2EtatMarche">
+                   <property name="styleSheet">
+                    <string>font-weight: 700; color: #E65100; background-color: #FFF3E0; padding: 5px 14px; border-radius: 12px; border: 2px solid #FFA726; font-size: 12px; letter-spacing: 1px;</string>
+                   </property>
+                   <property name="text">
+                    <string>● VEILLE</string>
                    </property>
                   </widget>
                  </item>
@@ -2157,6 +2254,7 @@ QFrame#cardMachine2:hover { border-color: #4CAF50; }</string>
                  </item>
                 </layout>
                </item>
+
               </layout>
              </widget>
             </item>
@@ -2196,12 +2294,60 @@ QFrame#cardMachine3:hover { border-color: #4CAF50; }</string>
                   </spacer>
                  </item>
                  <item>
-                  <widget class="QLabel" name="lblCard3EtatMarche">
+                  <widget class="QPushButton" name="btnCard3Reinitialiser">
+                   <property name="minimumSize">
+                    <size>
+                     <width>170</width>
+                     <height>34</height>
+                    </size>
+                   </property>
                    <property name="styleSheet">
-                    <string>font-weight: bold; color: white; background-color: #dc3545; padding: 6px 12px; border-radius: 6px; border: none;</string>
+                    <string>QPushButton { background-color: #1B4D3E; color: white; font-weight: bold; font-size: 11px; border: none; border-radius: 6px; padding: 6px 14px; } QPushButton:hover { background-color: #164033; }</string>
                    </property>
                    <property name="text">
-                    <string>⭕ OFF</string>
+                    <string>🔄 Réinitialiser machine</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="btnCard3MiseVeille">
+                   <property name="minimumSize">
+                    <size>
+                     <width>140</width>
+                     <height>34</height>
+                    </size>
+                   </property>
+                   <property name="styleSheet">
+                    <string>QPushButton { background-color: #F39C12; color: white; font-weight: bold; font-size: 11px; border: none; border-radius: 6px; padding: 6px 14px; } QPushButton:hover { background-color: #E08E0B; }</string>
+                   </property>
+                   <property name="text">
+                    <string>💤 Mise en veille</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="btnCard3ArretForce">
+                   <property name="minimumSize">
+                    <size>
+                     <width>130</width>
+                     <height>34</height>
+                    </size>
+                   </property>
+                   <property name="styleSheet">
+                    <string>QPushButton { background-color: #dc3545; color: white; font-weight: bold; font-size: 11px; border: none; border-radius: 6px; padding: 6px 14px; } QPushButton:hover { background-color: #c82333; }</string>
+                   </property>
+                   <property name="text">
+                    <string>⛔ Arrêt forcé</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="lblCard3EtatMarche">
+                   <property name="styleSheet">
+                    <string>font-weight: 700; color: #B71C1C; background-color: #FFEBEE; padding: 5px 14px; border-radius: 12px; border: 2px solid #EF5350; font-size: 12px; letter-spacing: 1px;</string>
+                   </property>
+                   <property name="text">
+                    <string>● OFF</string>
                    </property>
                   </widget>
                  </item>
@@ -2370,6 +2516,7 @@ QFrame#cardMachine3:hover { border-color: #4CAF50; }</string>
                  </item>
                 </layout>
                </item>
+
               </layout>
              </widget>
             </item>
@@ -2402,309 +2549,6 @@ QFrame#cardMachine3:hover { border-color: #4CAF50; }</string>
            <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
           </property>
          </widget>
-        </item>
-       </layout>
-      </widget>
-      <widget class="QWidget" name="tabAjouterModifier">
-       <attribute name="title">
-        <string>➕ Ajouter / Modifier</string>
-       </attribute>
-       <layout class="QHBoxLayout" name="layoutAjouterModifier">
-        <property name="leftMargin">
-         <number>20</number>
-        </property>
-        <property name="topMargin">
-         <number>15</number>
-        </property>
-        <property name="rightMargin">
-         <number>20</number>
-        </property>
-        <property name="bottomMargin">
-         <number>15</number>
-        </property>
-        <item>
-         <spacer name="formSpacerLeft">
-          <property name="orientation">
-           <enum>Qt::Orientation::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>100</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item>
-         <widget class="QGroupBox" name="groupFormMachine">
-          <property name="minimumSize">
-           <size>
-            <width>500</width>
-            <height>0</height>
-           </size>
-          </property>
-          <property name="title">
-           <string>Informations de la machine</string>
-          </property>
-          <layout class="QFormLayout" name="formLayoutMachine">
-           <property name="horizontalSpacing">
-            <number>15</number>
-           </property>
-           <property name="verticalSpacing">
-            <number>12</number>
-           </property>
-           <property name="leftMargin">
-            <number>20</number>
-           </property>
-           <property name="topMargin">
-            <number>20</number>
-           </property>
-           <property name="rightMargin">
-            <number>20</number>
-           </property>
-           <property name="bottomMargin">
-            <number>20</number>
-           </property>
-           <item row="0" column="0">
-            <widget class="QLabel" name="lblNomMachine">
-             <property name="text">
-              <string>Nom de la machine:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1">
-            <widget class="QLineEdit" name="nom_machine">
-             <property name="placeholderText">
-              <string>Entrez le nom de la machine</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="0">
-            <widget class="QLabel" name="lblTypeMachine">
-             <property name="text">
-              <string>Type de machine:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="1">
-            <widget class="QComboBox" name="type_machine">
-             <item>
-              <property name="text">
-               <string>Presse</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>Broyeur</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>Malaxeur</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>Chauffeur</string>
-              </property>
-             </item>
-            </widget>
-           </item>
-           <item row="2" column="0">
-            <widget class="QLabel" name="lblEtatMarche">
-             <property name="text">
-              <string>État marche:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="1">
-            <widget class="QComboBox" name="etat_marche">
-             <item>
-              <property name="text">
-               <string>ON</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>OFF</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>VEILLE</string>
-              </property>
-             </item>
-            </widget>
-           </item>
-           <item row="3" column="0">
-            <widget class="QLabel" name="lblTemperature">
-             <property name="text">
-              <string>Température actuelle (°C):</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="1">
-            <widget class="QDoubleSpinBox" name="temperature_actuelle">
-             <property name="maximum">
-              <double>200.000000000000000</double>
-             </property>
-             <property name="singleStep">
-              <double>0.500000000000000</double>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="0">
-            <widget class="QLabel" name="lblNiveauCharge">
-             <property name="text">
-              <string>Niveau de charge (%):</string>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="1">
-            <widget class="QSpinBox" name="niveau_charge">
-             <property name="maximum">
-              <number>100</number>
-             </property>
-            </widget>
-           </item>
-           <item row="5" column="0">
-            <widget class="QLabel" name="lblEtatFonctionnement">
-             <property name="text">
-              <string>État fonctionnement:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="5" column="1">
-            <widget class="QComboBox" name="etat_fonctionnement">
-             <item>
-              <property name="text">
-               <string>Normal</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>Alerte</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>Panne</string>
-              </property>
-             </item>
-            </widget>
-           </item>
-           <item row="6" column="0">
-            <widget class="QLabel" name="lblTypeAlerte">
-             <property name="text">
-              <string>Type d'alerte:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="6" column="1">
-            <widget class="QComboBox" name="type_alerte">
-             <item>
-              <property name="text">
-               <string>Aucune</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>Température</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>Surcharge</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>Panne</string>
-              </property>
-             </item>
-            </widget>
-           </item>
-           <item row="7" column="0">
-            <widget class="QLabel" name="lblNiveauCriticite">
-             <property name="text">
-              <string>Niveau de criticité:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="7" column="1">
-            <widget class="QComboBox" name="niveau_criticite">
-             <item>
-              <property name="text">
-               <string>Faible</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>Moyen</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>Élevé</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>Critique</string>
-              </property>
-             </item>
-            </widget>
-           </item>
-           <item row="8" column="0">
-            <widget class="QLabel" name="lblDateMaintenance">
-             <property name="text">
-              <string>Dernière maintenance:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="8" column="1">
-            <widget class="QDateEdit" name="date_derniere_maintenance">
-             <property name="calendarPopup">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item row="9" column="1">
-            <layout class="QHBoxLayout" name="layoutBtnsForm">
-             <item>
-              <widget class="QPushButton" name="btnEnregistrer">
-               <property name="text">
-                <string>💾 Enregistrer</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="btnAnnuler">
-               <property name="styleSheet">
-                <string>background-color: #6c757d;</string>
-               </property>
-               <property name="text">
-                <string>✗ Annuler</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </item>
-          </layout>
-         </widget>
-        </item>
-        <item>
-         <spacer name="formSpacerRight">
-          <property name="orientation">
-           <enum>Qt::Orientation::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>100</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
         </item>
        </layout>
       </widget>
