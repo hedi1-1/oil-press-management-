@@ -349,23 +349,32 @@ QTableWidget {
     border: none;
     border-radius: 8px;
     background-color: white;
-    gridline-color: #f0f0f0;
+    gridline-color: #e5e7eb;
     font-size: 13px;
     font-family: 'Segoe UI', Arial, sans-serif;
+    color: #1f2937;
+    selection-background-color: #dbeafe;
+    selection-color: #1e40af;
 }
 
 QTableWidget::item {
     padding: 12px;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid #e5e7eb;
+    color: #1f2937;
+    background-color: white;
 }
 
 QTableWidget::item:selected {
-    background-color: rgba(27, 67, 50, 0.1);
-    color: #1B4332;
+    background-color: #dbeafe;
+    color: #1e40af;
 }
 
 QTableWidget::item:hover {
-    background-color: rgba(27, 67, 50, 0.05);
+    background-color: #f0fdf4;
+}
+
+QTableWidget::item:alternate {
+    background-color: #f9fafb;
 }
 
 QHeaderView::section {
@@ -1760,6 +1769,11 @@ Exemple: Olives fraîchement récoltées, maturité optimale, première pression
                 </property>
                 <column>
                  <property name="text">
+                  <string>ID</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
                   <string>Date</string>
                  </property>
                 </column>
@@ -1784,6 +1798,55 @@ Exemple: Olives fraîchement récoltées, maturité optimale, première pression
                  </property>
                 </column>
                </widget>
+              </item>
+              <item>
+               <layout class="QHBoxLayout" name="layoutHistoryButtons">
+                <item>
+                 <spacer name="spacerHistoryLeft">
+                  <property name="orientation">
+                   <enum>Qt::Orientation::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="btnModifyProduction">
+                  <property name="minimumSize">
+                   <size>
+                    <width>150</width>
+                    <height>40</height>
+                   </size>
+                  </property>
+                  <property name="styleSheet">
+                   <string>background-color: #3B82F6; color: white;</string>
+                  </property>
+                  <property name="text">
+                   <string>✏  Modifier</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="btnDeleteProduction">
+                  <property name="minimumSize">
+                   <size>
+                    <width>150</width>
+                    <height>40</height>
+                   </size>
+                  </property>
+                  <property name="styleSheet">
+                   <string>background-color: #EF4444; color: white;</string>
+                  </property>
+                  <property name="text">
+                   <string>🗑  Supprimer</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
               </item>
              </layout>
             </widget>

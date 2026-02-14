@@ -1,4 +1,4 @@
-QT       += core gui
+QT       += core gui sql
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -10,10 +10,14 @@ CONFIG += c++17
 
 SOURCES += \
     main.cpp \
-    production.cpp
+    production.cpp \
+    connection.cpp \
+    productionmodel.cpp
 
 HEADERS += \
-    production.h
+    production.h \
+    connection.h \
+    productionmodel.h
 
 FORMS += \
     production.ui
