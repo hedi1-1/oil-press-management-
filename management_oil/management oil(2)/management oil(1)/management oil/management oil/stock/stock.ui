@@ -1,0 +1,2715 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Stock</class>
+ <widget class="QMainWindow" name="Stock">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1441</width>
+    <height>616</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>1441</width>
+    <height>616</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>PRESSIQ - Stock Management</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">QMainWindow {
+    background-color: #f5f5f5;
+}</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="mainVerticalLayout">
+    <property name="spacing">
+     <number>0</number>
+    </property>
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
+    <item>
+     <widget class="QWidget" name="headerWidget" native="true">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>80</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>80</height>
+       </size>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QWidget#headerWidget {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+        stop:0 #1B4332, stop:0.5 #234E3E, stop:1 #1B4332);
+    border-bottom: 4px solid #C9A227;
+}</string>
+      </property>
+      <layout class="QHBoxLayout" name="headerLayout">
+       <property name="leftMargin">
+        <number>20</number>
+       </property>
+       <property name="topMargin">
+        <number>10</number>
+       </property>
+       <property name="rightMargin">
+        <number>20</number>
+       </property>
+       <property name="bottomMargin">
+        <number>10</number>
+       </property>
+       <item>
+        <widget class="QPushButton" name="btnBackToMenu">
+         <property name="styleSheet">
+          <string notr="true">QPushButton {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    min-width: 100px;
+}
+QPushButton:hover {
+    background-color: rgba(255, 255, 255, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+QPushButton:pressed {
+    background-color: rgba(255, 255, 255, 0.1);
+}</string>
+         </property>
+         <property name="text">
+          <string>← Retour Menu</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="labelLogoImage">
+         <property name="minimumSize">
+          <size>
+           <width>50</width>
+           <height>50</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>50</width>
+           <height>50</height>
+          </size>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="pixmap">
+          <pixmap resource="../production/resources.qrc">:/logo.png</pixmap>
+         </property>
+         <property name="scaledContents">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" name="titleLayout">
+         <property name="spacing">
+          <number>2</number>
+         </property>
+         <item>
+          <widget class="QLabel" name="lblAppTitle">
+           <property name="styleSheet">
+            <string notr="true">color: white; font-size: 36px; font-weight: 800; font-family: 'Segoe UI', 'Arial Black', sans-serif; letter-spacing: 2px;</string>
+           </property>
+           <property name="text">
+            <string>Gestion Des Stock</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="lblAppSubtitle">
+           <property name="styleSheet">
+            <string notr="true">color: #C9A227; font-size: 13px; font-weight: 600; font-family: 'Segoe UI', Arial, sans-serif; letter-spacing: 6px;</string>
+           </property>
+           <property name="text">
+            <string>SYSTÈME DE GESTION</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <spacer name="headerSpacer">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QLabel" name="lblDateTime">
+         <property name="styleSheet">
+          <string notr="true">color: rgba(255, 255, 255, 0.9); font-size: 14px; font-weight: 500; font-family: 'Segoe UI', Arial, sans-serif; padding: 8px 16px; background-color: rgba(0, 0, 0, 0.2); border-radius: 20px;</string>
+         </property>
+         <property name="text">
+          <string>📅 08 février 2026 | 🕐 14:30:45</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="labelStatus">
+         <property name="styleSheet">
+          <string notr="true">color: #4ADE80; font-weight: bold; font-size: 14px; padding: 6px 14px; background-color: rgba(74, 222, 128, 0.15); border-radius: 15px; border: 1px solid rgba(74, 222, 128, 0.3);</string>
+         </property>
+         <property name="text">
+          <string>EN LIGNE</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <widget class="QTabWidget" name="tabWidgetStock">
+      <property name="styleSheet">
+       <string notr="true">QTabWidget::pane {
+    border: none;
+    background-color: transparent;
+    border-radius: 12px;
+    margin-top: 5px;
+}
+QTabBar {
+    background: transparent;
+}
+QTabBar::tab {
+    background-color: white;
+    color: #666;
+    padding: 12px 24px;
+    margin-right: 4px;
+    border: none;
+    border-radius: 8px 8px 0 0;
+    font-size: 13px;
+    font-weight: 600;
+    min-width: 120px;
+}
+QTabBar::tab:selected {
+    background-color: #1B4332;
+    color: white;
+    font-weight: 700;
+}
+QTabBar::tab:hover:!selected {
+    background-color: #f0f0f0;
+    color: #1B4332;
+}</string>
+      </property>
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <widget class="QWidget" name="tabGestionStock">
+       <attribute name="title">
+        <string>📦 Gestion Stock</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_1">
+        <property name="leftMargin">
+         <number>20</number>
+        </property>
+        <property name="topMargin">
+         <number>20</number>
+        </property>
+        <property name="rightMargin">
+         <number>20</number>
+        </property>
+        <property name="bottomMargin">
+         <number>20</number>
+        </property>
+        <item>
+         <widget class="QGroupBox" name="groupInfoStock">
+          <property name="styleSheet">
+           <string notr="true">QGroupBox {
+    font-weight: bold;
+    border: 2px solid #1B4332;
+    border-radius: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    background-color: #fafafa;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px;
+    color: #1B4332;
+}</string>
+          </property>
+          <property name="title">
+           <string>📋 Informations du stock</string>
+          </property>
+          <layout class="QGridLayout" name="gridLayoutInfo">
+           <item row="0" column="0">
+            <widget class="QLabel" name="labelIdStock">
+             <property name="styleSheet">
+              <string notr="true">color: #2c3e50; font-size: 13px; font-weight: 600;</string>
+             </property>
+             <property name="text">
+              <string>ID Stock :</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLineEdit" name="lineEditIdStock">
+             <property name="styleSheet">
+              <string notr="true">QLineEdit {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 6px;
+    background: white;
+    color: #2c3e50;
+    font-size: 13px;
+}
+QLineEdit:focus {
+    border: 2px solid #1B4332;
+}</string>
+             </property>
+             <property name="placeholderText">
+              <string>Saisir l'ID du stock</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="labelTypeHuile">
+             <property name="styleSheet">
+              <string notr="true">color: #2c3e50; font-size: 13px; font-weight: 600;</string>
+             </property>
+             <property name="text">
+              <string>Type d'huile :</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QComboBox" name="comboTypeHuile">
+             <property name="styleSheet">
+              <string notr="true">QComboBox {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 6px;
+    background: white;
+    color: #2c3e50;
+    font-size: 13px;
+}
+QComboBox:focus {
+    border: 2px solid #1B4332;
+}</string>
+             </property>
+             <item>
+              <property name="text">
+               <string>Extra vierge</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Vierge</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Lampante</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="labelQuantite">
+             <property name="styleSheet">
+              <string notr="true">color: #2c3e50; font-size: 13px; font-weight: 600;</string>
+             </property>
+             <property name="text">
+              <string>Quantité actuelle (L) :</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QDoubleSpinBox" name="spinQuantite">
+             <property name="styleSheet">
+              <string notr="true">QDoubleSpinBox {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 6px;
+    background: white;
+    color: #2c3e50;
+    font-size: 13px;
+}
+QDoubleSpinBox:focus {
+    border: 2px solid #1B4332;
+}</string>
+             </property>
+             <property name="suffix">
+              <string> L</string>
+             </property>
+             <property name="decimals">
+              <number>2</number>
+             </property>
+             <property name="maximum">
+              <double>100000.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="labelSeuilAlerte">
+             <property name="styleSheet">
+              <string notr="true">color: #2c3e50; font-size: 13px; font-weight: 600;</string>
+             </property>
+             <property name="text">
+              <string>Seuil d'alerte :</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QSpinBox" name="spinSeuilAlerte">
+             <property name="styleSheet">
+              <string notr="true">QSpinBox {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 6px;
+    background: white;
+    color: #2c3e50;
+    font-size: 13px;
+}
+QSpinBox:focus {
+    border: 2px solid #1B4332;
+}</string>
+             </property>
+             <property name="suffix">
+              <string> L</string>
+             </property>
+             <property name="maximum">
+              <number>10000</number>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="0">
+            <widget class="QLabel" name="labelDateMaj">
+             <property name="styleSheet">
+              <string notr="true">color: #2c3e50; font-size: 13px; font-weight: 600;</string>
+             </property>
+             <property name="text">
+              <string>Date dernière mise à jour :</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="1">
+            <widget class="QDateEdit" name="dateEditMaj">
+             <property name="styleSheet">
+              <string notr="true">QDateEdit {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 6px;
+    background: white;
+    color: #2c3e50;
+    font-size: 13px;
+}
+QDateEdit:focus {
+    border: 2px solid #1B4332;
+}</string>
+             </property>
+             <property name="calendarPopup">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="0">
+            <widget class="QLabel" name="labelEmplacement">
+             <property name="styleSheet">
+              <string notr="true">color: #2c3e50; font-size: 13px; font-weight: 600;</string>
+             </property>
+             <property name="text">
+              <string>Emplacement de stockage :</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="1">
+            <widget class="QLineEdit" name="lineEditEmplacement">
+             <property name="styleSheet">
+              <string notr="true">QLineEdit {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 6px;
+    background: white;
+    color: #2c3e50;
+    font-size: 13px;
+}
+QLineEdit:focus {
+    border: 2px solid #1B4332;
+}</string>
+             </property>
+             <property name="placeholderText">
+              <string>Ex: Entrepôt A, Zone 3</string>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="0">
+            <widget class="QLabel" name="labelEtatStock">
+             <property name="styleSheet">
+              <string notr="true">color: #2c3e50; font-size: 13px; font-weight: 600;</string>
+             </property>
+             <property name="text">
+              <string>État du stock :</string>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="1">
+            <widget class="QComboBox" name="comboEtatStock">
+             <property name="styleSheet">
+              <string notr="true">QComboBox {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 6px;
+    background: white;
+    color: #2c3e50;
+    font-size: 13px;
+}
+QComboBox:focus {
+    border: 2px solid #1B4332;
+}</string>
+             </property>
+             <item>
+              <property name="text">
+               <string>En stock</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Stock faible</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Rupture</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="layoutBtnCRUD">
+          <property name="spacing">
+           <number>10</number>
+          </property>
+          <item>
+           <widget class="QPushButton" name="btnAjouter">
+            <property name="styleSheet">
+             <string notr="true">QPushButton {
+    background-color: #1B4332;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+QPushButton:hover {
+    background-color: #234E3E;
+}
+QPushButton:pressed {
+    background-color: #0F2A1F;
+}</string>
+            </property>
+            <property name="text">
+             <string>➕ Ajouter</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnModifier">
+            <property name="styleSheet">
+             <string notr="true">QPushButton {
+    background-color: #1B4332;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+QPushButton:hover {
+    background-color: #234E3E;
+}
+QPushButton:pressed {
+    background-color: #0F2A1F;
+}</string>
+            </property>
+            <property name="text">
+             <string>✏️ Modifier</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnSupprimer">
+            <property name="styleSheet">
+             <string notr="true">QPushButton {
+    background-color: #c62828;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+QPushButton:hover {
+    background-color: #d32f2f;
+}
+QPushButton:pressed {
+    background-color: #b71c1c;
+}</string>
+            </property>
+            <property name="text">
+             <string>🗑️ Supprimer</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnConsulter">
+            <property name="styleSheet">
+             <string notr="true">QPushButton {
+    background-color: #1B4332;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+QPushButton:hover {
+    background-color: #234E3E;
+}
+QPushButton:pressed {
+    background-color: #0F2A1F;
+}</string>
+            </property>
+            <property name="text">
+             <string>👁️ Consulter</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_1">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupTableStocks">
+          <property name="styleSheet">
+           <string notr="true">QGroupBox {
+    font-weight: bold;
+    border: 2px solid #1B4332;
+    border-radius: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    background-color: #fafafa;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px;
+    color: #1B4332;
+}</string>
+          </property>
+          <property name="title">
+           <string>📦 Liste des stocks</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_table">
+           <item>
+            <widget class="QTableWidget" name="tableStocks">
+             <property name="styleSheet">
+              <string notr="true">QTableWidget {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    gridline-color: #e0e0e0;
+}
+QTableWidget::item:selected {
+    background-color: rgba(27, 67, 50, 0.15);
+    color: black;
+}
+QHeaderView::section {
+    background-color: #1B4332;
+    color: white;
+    padding: 8px;
+    border: none;
+    font-weight: bold;
+}</string>
+             </property>
+             <property name="alternatingRowColors">
+              <bool>true</bool>
+             </property>
+             <property name="selectionBehavior">
+              <enum>QAbstractItemView::SelectRows</enum>
+             </property>
+             <column>
+              <property name="text">
+               <string>ID</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>Type d'huile</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>Quantité (L)</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>Seuil</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>Date MAJ</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>Emplacement</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>État</string>
+              </property>
+             </column>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tabTriRechercheExport">
+       <attribute name="title">
+        <string>🔃 Tri, Recherche &amp; Export</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_combined">
+        <property name="spacing">
+         <number>10</number>
+        </property>
+        <property name="leftMargin">
+         <number>15</number>
+        </property>
+        <property name="topMargin">
+         <number>10</number>
+        </property>
+        <property name="rightMargin">
+         <number>15</number>
+        </property>
+        <property name="bottomMargin">
+         <number>10</number>
+        </property>
+        <item>
+         <widget class="QScrollArea" name="scrollAreaCombined">
+          <property name="widgetResizable">
+           <bool>true</bool>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">QScrollArea {
+    border: none;
+    background-color: transparent;
+}
+QScrollBar:vertical {
+    border: none;
+    background: #f0f0f0;
+    width: 10px;
+    border-radius: 5px;
+}
+QScrollBar::handle:vertical {
+    background: #1B4332;
+    border-radius: 5px;
+    min-height: 30px;
+}
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0px;
+}</string>
+          </property>
+          <widget class="QWidget" name="scrollAreaWidgetContents">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>0</y>
+             <width>800</width>
+             <height>500</height>
+            </rect>
+           </property>
+           <layout class="QVBoxLayout" name="scrollAreaLayout">
+            <property name="spacing">
+             <number>8</number>
+            </property>
+            <property name="leftMargin">
+             <number>5</number>
+            </property>
+            <property name="topMargin">
+             <number>5</number>
+            </property>
+            <property name="rightMargin">
+             <number>5</number>
+            </property>
+            <property name="bottomMargin">
+             <number>5</number>
+            </property>
+            <item>
+         <widget class="QGroupBox" name="groupCriteres">
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>150</height>
+           </size>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">QGroupBox {
+    font-weight: bold;
+    border: 2px solid #1B4332;
+    border-radius: 6px;
+    margin-top: 6px;
+    padding-top: 6px;
+    background-color: #fafafa;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px;
+    color: #1B4332;
+}</string>
+          </property>
+          <property name="title">
+           <string>🔍 Critères de recherche</string>
+          </property>
+          <layout class="QGridLayout" name="gridLayoutRecherche">
+           <item row="0" column="0">
+            <widget class="QLabel" name="labelRechType">
+             <property name="styleSheet">
+              <string notr="true">color: #2c3e50; font-size: 13px; font-weight: 600;</string>
+             </property>
+             <property name="text">
+              <string>Type d'huile :</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QComboBox" name="comboRechercheType">
+             <property name="styleSheet">
+              <string notr="true">QComboBox {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 6px;
+    background: white;
+    color: #2c3e50;
+    font-size: 13px;
+}</string>
+             </property>
+             <item>
+              <property name="text">
+               <string>Tous</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Extra vierge</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Vierge</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Lampante</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="labelRechEtat">
+             <property name="styleSheet">
+              <string notr="true">color: #2c3e50; font-size: 13px; font-weight: 600;</string>
+             </property>
+             <property name="text">
+              <string>État du stock :</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QComboBox" name="comboRechercheEtat">
+             <property name="styleSheet">
+              <string notr="true">QComboBox {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 6px;
+    background: white;
+    color: #2c3e50;
+    font-size: 13px;
+}</string>
+             </property>
+             <item>
+              <property name="text">
+               <string>Tous</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>En stock</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Stock faible</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Rupture</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="2" column="0" colspan="2">
+            <layout class="QHBoxLayout" name="layoutBtnRecherche">
+             <item>
+              <widget class="QPushButton" name="btnRechercher">
+               <property name="styleSheet">
+                <string notr="true">QPushButton {
+    background-color: #1B4332;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+QPushButton:hover {
+    background-color: #234E3E;
+}</string>
+               </property>
+               <property name="text">
+                <string>🔍 Rechercher</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="btnReinitialiser">
+               <property name="styleSheet">
+                <string notr="true">QPushButton {
+    background-color: #757575;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+QPushButton:hover {
+    background-color: #9e9e9e;
+}</string>
+               </property>
+               <property name="text">
+                <string>🔄 Réinitialiser</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer_3">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupResultatsCombined">
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>200</height>
+           </size>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">QGroupBox {
+    font-weight: bold;
+    border: 2px solid #1B4332;
+    border-radius: 6px;
+    margin-top: 6px;
+    padding-top: 6px;
+    background-color: #fafafa;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px;
+    color: #1B4332;
+}</string>
+          </property>
+          <property name="title">
+           <string>📋 Résultats</string>
+          </property>
+          <layout class="QVBoxLayout" name="layoutResultatsCombined">
+           <item>
+            <widget class="QTableWidget" name="tableResultatsCombined">
+             <property name="styleSheet">
+              <string notr="true">QTableWidget {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    gridline-color: #e0e0e0;
+}
+QTableWidget::item:selected {
+    background-color: rgba(27, 67, 50, 0.15);
+    color: black;
+}
+QHeaderView::section {
+    background-color: #1B4332;
+    color: white;
+    padding: 8px;
+    border: none;
+    font-weight: bold;
+}</string>
+             </property>
+             <property name="alternatingRowColors">
+              <bool>true</bool>
+             </property>
+             <property name="selectionBehavior">
+              <enum>QAbstractItemView::SelectRows</enum>
+             </property>
+             <column>
+              <property name="text">
+               <string>ID</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>Type d'huile</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>Quantité (L)</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>Seuil</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>Date MAJ</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>Emplacement</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>État</string>
+              </property>
+             </column>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+             <widget class="QGroupBox" name="groupOptionsTri">
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>80</height>
+           </size>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">QGroupBox {
+    font-weight: bold;
+    border: 2px solid #1B4332;
+    border-radius: 6px;
+    margin-top: 6px;
+    padding-top: 6px;
+    background-color: #fafafa;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px;
+    color: #1B4332;
+}</string>
+          </property>
+          <property name="title">
+           <string>🔃 Options de tri</string>
+          </property>
+          <layout class="QHBoxLayout" name="layoutTri">
+           <item>
+            <widget class="QLabel" name="labelTrierSelon">
+             <property name="styleSheet">
+              <string notr="true">color: #2c3e50; font-size: 13px; font-weight: 600;</string>
+             </property>
+             <property name="text">
+              <string>Trier selon :</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="comboTriCritere">
+             <property name="styleSheet">
+              <string notr="true">QComboBox {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 6px;
+    background: white;
+    color: #2c3e50;
+    font-size: 13px;
+    min-width: 200px;
+}</string>
+             </property>
+             <item>
+              <property name="text">
+               <string>Type d'huile</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Quantité disponible</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>État du stock</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Date dernière mise à jour</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="btnAppliquerTri">
+             <property name="styleSheet">
+              <string notr="true">QPushButton {
+    background-color: #1B4332;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+QPushButton:hover {
+    background-color: #234E3E;
+}</string>
+             </property>
+             <property name="text">
+              <string>✅ Appliquer le tri</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_2">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupExport">
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>70</height>
+           </size>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">QGroupBox {
+    font-weight: bold;
+    border: 2px solid #1B4332;
+    border-radius: 6px;
+    margin-top: 6px;
+    padding-top: 6px;
+    background-color: #fafafa;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px;
+    color: #1B4332;
+}</string>
+          </property>
+          <property name="title">
+           <string>📤 Export</string>
+          </property>
+          <layout class="QHBoxLayout" name="layoutExportOptions">
+           <item>
+            <widget class="QRadioButton" name="radioPDF">
+             <property name="styleSheet">
+              <string notr="true">color: #2c3e50; font-size: 13px; font-weight: 600;</string>
+             </property>
+             <property name="text">
+              <string>📄 PDF</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="radioExcel">
+             <property name="styleSheet">
+              <string notr="true">color: #2c3e50; font-size: 13px; font-weight: 600;</string>
+             </property>
+             <property name="text">
+              <string>📊 Excel</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="radioWord">
+             <property name="styleSheet">
+              <string notr="true">color: #2c3e50; font-size: 13px; font-weight: 600;</string>
+             </property>
+             <property name="text">
+              <string>📝 Word</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="radioTXT">
+             <property name="styleSheet">
+              <string notr="true">color: #2c3e50; font-size: 13px; font-weight: 600;</string>
+             </property>
+             <property name="text">
+              <string>📃 TXT</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="btnExporter">
+             <property name="styleSheet">
+              <string notr="true">QPushButton {
+    background-color: #1B4332;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+QPushButton:hover {
+    background-color: #234E3E;
+}</string>
+             </property>
+             <property name="text">
+              <string>💾 Exporter</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_export">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+      <widget class="QWidget" name="tabStatistiques">
+       <attribute name="title">
+        <string>📊 Statistiques</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_5">
+        <property name="leftMargin">
+         <number>20</number>
+        </property>
+        <property name="topMargin">
+         <number>20</number>
+        </property>
+        <property name="rightMargin">
+         <number>20</number>
+        </property>
+        <property name="bottomMargin">
+         <number>20</number>
+        </property>
+        <item>
+         <widget class="QGroupBox" name="groupResume">
+          <property name="styleSheet">
+           <string notr="true">QGroupBox {
+    font-weight: bold;
+    border: 2px solid #1B4332;
+    border-radius: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    background-color: #fafafa;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px;
+    color: #1B4332;
+}</string>
+          </property>
+          <property name="title">
+           <string>📊 Résumé rapide</string>
+          </property>
+          <layout class="QHBoxLayout" name="layoutResume">
+           <item>
+            <widget class="QLabel" name="labelTotalArticles">
+             <property name="styleSheet">
+              <string notr="true">color: #2c3e50; font-size: 14px; font-weight: bold;</string>
+             </property>
+             <property name="text">
+              <string>Total d'articles : 0</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="labelValeurTotale">
+             <property name="styleSheet">
+              <string notr="true">color: #2c3e50; font-size: 14px; font-weight: bold;</string>
+             </property>
+             <property name="text">
+              <string>Volume total : 0 L</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_5">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupOptionsStats">
+          <property name="styleSheet">
+           <string notr="true">QGroupBox {
+    font-weight: bold;
+    border: 2px solid #1B4332;
+    border-radius: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    background-color: #fafafa;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px;
+    color: #1B4332;
+}</string>
+          </property>
+          <property name="title">
+           <string>⚙️ Options de calcul</string>
+          </property>
+          <layout class="QHBoxLayout" name="layoutOptionsStats">
+           <item>
+            <widget class="QLabel" name="labelStatsPar">
+             <property name="styleSheet">
+              <string notr="true">color: #2c3e50; font-size: 13px; font-weight: 600;</string>
+             </property>
+             <property name="text">
+              <string>Statistiques par :</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="comboStatsPar">
+             <property name="styleSheet">
+              <string notr="true">QComboBox {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 6px;
+    background: white;
+    color: #2c3e50;
+    font-size: 13px;
+    min-width: 150px;
+}</string>
+             </property>
+             <item>
+              <property name="text">
+               <string>Type d'huile</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Quantité</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>État</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Jour</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Mois</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="btnCalculer">
+             <property name="styleSheet">
+              <string notr="true">QPushButton {
+    background-color: #1B4332;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+QPushButton:hover {
+    background-color: #234E3E;
+}</string>
+             </property>
+             <property name="text">
+              <string>📈 Calculer</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_6">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupStats">
+          <property name="styleSheet">
+           <string notr="true">QGroupBox {
+    font-weight: bold;
+    border: 2px solid #1B4332;
+    border-radius: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    background-color: #fafafa;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px;
+    color: #1B4332;
+}</string>
+          </property>
+          <property name="title">
+           <string>📝 Résumé statistique</string>
+          </property>
+          <layout class="QVBoxLayout" name="layoutStats">
+           <item>
+            <widget class="QTextEdit" name="textResumeStats">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>200</height>
+              </size>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">color: #2c3e50; font-size: 13px;</string>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tabHistoriqueEtatTemps">
+       <attribute name="title">
+        <string>📜 Historique État Stock et Temps Réel</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="layoutTabHistoriqueEtatTemps">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QScrollArea" name="scrollAreaHistoriqueEtat">
+          <property name="styleSheet">
+           <string notr="true">QScrollArea { border: none; background: transparent; }
+QScrollBar:vertical {
+    border: none;
+    background: #f0f0f0;
+    width: 10px;
+    border-radius: 5px;
+}
+QScrollBar::handle:vertical {
+    background: #1B4332;
+    border-radius: 5px;
+    min-height: 20px;
+}
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0px;
+}</string>
+          </property>
+          <property name="widgetResizable">
+           <bool>true</bool>
+          </property>
+          <widget class="QWidget" name="scrollContentHistoriqueEtat">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>0</y>
+             <width>800</width>
+             <height>1200</height>
+            </rect>
+           </property>
+           <layout class="QVBoxLayout" name="layoutScrollHistoriqueEtat">
+            <property name="leftMargin">
+             <number>20</number>
+            </property>
+            <property name="topMargin">
+             <number>20</number>
+            </property>
+            <property name="rightMargin">
+             <number>20</number>
+            </property>
+            <property name="bottomMargin">
+             <number>20</number>
+            </property>
+            <property name="spacing">
+             <number>15</number>
+            </property>
+            <item>
+             <widget class="QGroupBox" name="groupTempsReel">
+              <property name="styleSheet">
+               <string notr="true">QGroupBox {
+    font-weight: bold;
+    border: 2px solid #1B4332;
+    border-radius: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    background-color: #fafafa;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px;
+    color: #1B4332;
+}</string>
+              </property>
+              <property name="title">
+               <string>⏱️ Suivi en temps réel</string>
+              </property>
+              <layout class="QVBoxLayout" name="layoutTempsReel">
+               <item>
+                <widget class="QLabel" name="labelQuantiteActuelle">
+                 <property name="styleSheet">
+                  <string notr="true">color: #2c3e50; font-size: 18px;</string>
+                 </property>
+                 <property name="text">
+                  <string>Quantité totale actuelle :</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLCDNumber" name="lcdVolume">
+                 <property name="minimumSize">
+                  <size>
+                   <width>0</width>
+                   <height>100</height>
+                  </size>
+                 </property>
+                 <property name="styleSheet">
+                  <string notr="true">QLCDNumber {
+    border: 2px solid #1B4332;
+    border-radius: 5px;
+    background: #0F2A1F;
+    color: #4ADE80;
+}</string>
+                 </property>
+                 <property name="digitCount">
+                  <number>10</number>
+                 </property>
+                 <property name="segmentStyle">
+                  <enum>QLCDNumber::Flat</enum>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="labelUnite">
+                 <property name="styleSheet">
+                  <string notr="true">color: #2c3e50; font-size: 16px;</string>
+                 </property>
+                 <property name="text">
+                  <string>Litres</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="labelDerniereMaj">
+                 <property name="styleSheet">
+                  <string notr="true">color: #2c3e50; font-size: 12px;</string>
+                 </property>
+                 <property name="text">
+                  <string>Dernière mise à jour : --</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="labelInfoRefresh">
+                 <property name="styleSheet">
+                  <string notr="true">color: #2c3e50; font-style: italic; font-size: 13px;</string>
+                 </property>
+                 <property name="text">
+                  <string>🔄 Mise à jour automatique toutes les 5 secondes</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignCenter</set>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QGroupBox" name="groupEtatGlobal">
+              <property name="styleSheet">
+               <string notr="true">QGroupBox {
+    font-weight: bold;
+    border: 2px solid #1B4332;
+    border-radius: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    background-color: #fafafa;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px;
+    color: #1B4332;
+}</string>
+              </property>
+              <property name="title">
+               <string>🚦 État global du stock</string>
+              </property>
+              <layout class="QVBoxLayout" name="layoutEtatGlobal">
+               <item>
+                <widget class="QLabel" name="labelEtatGlobal">
+                 <property name="styleSheet">
+                  <string notr="true">font-size: 24px; font-weight: bold; color: #1B4332;</string>
+                 </property>
+                 <property name="text">
+                  <string>État : ✅ Normal</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QProgressBar" name="progressStock">
+                 <property name="minimumSize">
+                  <size>
+                   <width>0</width>
+                   <height>30</height>
+                  </size>
+                 </property>
+                 <property name="styleSheet">
+                  <string notr="true">QProgressBar {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    text-align: center;
+}
+QProgressBar::chunk {
+    background-color: #4ADE80;
+    border-radius: 4px;
+}</string>
+                 </property>
+                 <property name="value">
+                  <number>75</number>
+                 </property>
+                 <property name="format">
+                  <string>Niveau global : %p%</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QGroupBox" name="groupProduitsCritiques">
+              <property name="styleSheet">
+               <string notr="true">QGroupBox {
+    font-weight: bold;
+    border: 2px solid #1B4332;
+    border-radius: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    background-color: #fafafa;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px;
+    color: #1B4332;
+}</string>
+              </property>
+              <property name="title">
+               <string>⚠️ Produits critiques</string>
+              </property>
+              <layout class="QVBoxLayout" name="layoutProduitsCritiques">
+               <item>
+                <widget class="QListWidget" name="listProduitsCritiques">
+                 <property name="styleSheet">
+                  <string notr="true">QListWidget::item { padding: 10px; color: #2c3e50; font-size: 13px; }</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QGroupBox" name="groupFiltrePeriode">
+              <property name="styleSheet">
+               <string notr="true">QGroupBox {
+    font-weight: bold;
+    border: 2px solid #1B4332;
+    border-radius: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    background-color: #fafafa;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px;
+    color: #1B4332;
+}</string>
+              </property>
+              <property name="title">
+               <string>📅 Filtre par période</string>
+              </property>
+              <layout class="QHBoxLayout" name="layoutFiltrePeriode">
+               <item>
+                <widget class="QLabel" name="labelDateDebut">
+                 <property name="styleSheet">
+                  <string notr="true">color: #2c3e50; font-size: 13px; font-weight: 600;</string>
+                 </property>
+                 <property name="text">
+                  <string>Date début :</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QDateEdit" name="dateDebut">
+                 <property name="styleSheet">
+                  <string notr="true">QDateEdit {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 6px;
+    background: white;
+    color: #2c3e50;
+    font-size: 13px;
+}</string>
+                 </property>
+                 <property name="calendarPopup">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="labelDateFin">
+                 <property name="styleSheet">
+                  <string notr="true">color: #2c3e50; font-size: 13px; font-weight: 600;</string>
+                 </property>
+                 <property name="text">
+                  <string>Date fin :</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QDateEdit" name="dateFin">
+                 <property name="styleSheet">
+                  <string notr="true">QDateEdit {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 6px;
+    background: white;
+    color: #2c3e50;
+    font-size: 13px;
+}</string>
+                 </property>
+                 <property name="calendarPopup">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="btnAfficherHistorique">
+                 <property name="styleSheet">
+                  <string notr="true">QPushButton {
+    background-color: #1B4332;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+QPushButton:hover {
+    background-color: #234E3E;
+}</string>
+                 </property>
+                 <property name="text">
+                  <string>📋 Afficher</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="horizontalSpacer_7">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QGroupBox" name="groupHistorique">
+              <property name="styleSheet">
+               <string notr="true">QGroupBox {
+    font-weight: bold;
+    border: 2px solid #1B4332;
+    border-radius: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    background-color: #fafafa;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px;
+    color: #1B4332;
+}</string>
+              </property>
+              <property name="title">
+               <string>📜 Historique des mouvements</string>
+              </property>
+              <layout class="QVBoxLayout" name="layoutHistorique">
+               <item>
+                <widget class="QTableWidget" name="tableHistorique">
+                 <property name="styleSheet">
+                  <string notr="true">QTableWidget {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    gridline-color: #e0e0e0;
+}
+QHeaderView::section {
+    background-color: #1B4332;
+    color: white;
+    padding: 8px;
+    border: none;
+    font-weight: bold;
+}</string>
+                 </property>
+                 <property name="alternatingRowColors">
+                  <bool>true</bool>
+                 </property>
+                 <property name="selectionBehavior">
+                  <enum>QAbstractItemView::SelectRows</enum>
+                 </property>
+                 <column>
+                  <property name="text">
+                   <string>Date &amp; Heure</string>
+                  </property>
+                 </column>
+                 <column>
+                  <property name="text">
+                   <string>Type mouvement</string>
+                  </property>
+                 </column>
+                 <column>
+                  <property name="text">
+                   <string>Quantité (L)</string>
+                  </property>
+                 </column>
+                 <column>
+                  <property name="text">
+                   <string>Produit</string>
+                  </property>
+                 </column>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tabAlertesTendancesRapports">
+       <attribute name="title">
+        <string>⚠️ Alertes Tendances et Rapports</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="layoutTabAlertesTendances">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QScrollArea" name="scrollAreaAlertesTendances">
+          <property name="styleSheet">
+           <string notr="true">QScrollArea { border: none; background: transparent; }
+QScrollBar:vertical {
+    border: none;
+    background: #f0f0f0;
+    width: 10px;
+    border-radius: 5px;
+}
+QScrollBar::handle:vertical {
+    background: #1B4332;
+    border-radius: 5px;
+    min-height: 20px;
+}
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0px;
+}</string>
+          </property>
+          <property name="widgetResizable">
+           <bool>true</bool>
+          </property>
+          <widget class="QWidget" name="scrollContentAlertesTendances">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>0</y>
+             <width>800</width>
+             <height>1400</height>
+            </rect>
+           </property>
+           <layout class="QVBoxLayout" name="layoutScrollAlertesTendances">
+            <property name="leftMargin">
+             <number>20</number>
+            </property>
+            <property name="topMargin">
+             <number>20</number>
+            </property>
+            <property name="rightMargin">
+             <number>20</number>
+            </property>
+            <property name="bottomMargin">
+             <number>20</number>
+            </property>
+            <property name="spacing">
+             <number>15</number>
+            </property>
+            <item>
+             <widget class="QGroupBox" name="groupConfigAlertes">
+              <property name="styleSheet">
+               <string notr="true">QGroupBox {
+    font-weight: bold;
+    border: 2px solid #1B4332;
+    border-radius: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    background-color: #fafafa;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px;
+    color: #1B4332;
+}</string>
+              </property>
+              <property name="title">
+               <string>⚙️ Configuration des alertes</string>
+              </property>
+              <layout class="QHBoxLayout" name="layoutConfigAlertes">
+               <item>
+                <widget class="QLabel" name="labelSeuilDefini">
+                 <property name="styleSheet">
+                  <string notr="true">color: #2c3e50; font-size: 13px;</string>
+                 </property>
+                 <property name="text">
+                  <string>Les alertes sont déclenchées automatiquement quand la quantité ≤ seuil d'alerte</string>
+                 </property>
+                 <property name="wordWrap">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="btnVerifierAlertes">
+                 <property name="styleSheet">
+                  <string notr="true">QPushButton {
+    background-color: #ff9800;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+QPushButton:hover {
+    background-color: #ffa726;
+}</string>
+                 </property>
+                 <property name="text">
+                  <string>🔍 Vérifier maintenant</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QGroupBox" name="groupStocksSousSeuil">
+              <property name="styleSheet">
+               <string notr="true">QGroupBox {
+    font-weight: bold;
+    border: 2px solid #1B4332;
+    border-radius: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    background-color: #fafafa;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px;
+    color: #1B4332;
+}</string>
+              </property>
+              <property name="title">
+               <string>⚠️ Stocks sous le seuil d'alerte</string>
+              </property>
+              <layout class="QVBoxLayout" name="layoutStocksSousSeuil">
+               <item>
+                <widget class="QListWidget" name="listStocksSousSeuil">
+                 <property name="styleSheet">
+                  <string notr="true">QListWidget::item { padding: 10px; font-size: 14px; color: #2c3e50; }</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QGroupBox" name="groupOptionsTendances">
+              <property name="styleSheet">
+               <string notr="true">QGroupBox {
+    font-weight: bold;
+    border: 2px solid #1B4332;
+    border-radius: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    background-color: #fafafa;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px;
+    color: #1B4332;
+}</string>
+              </property>
+              <property name="title">
+               <string>📈 Analyse des tendances</string>
+              </property>
+              <layout class="QHBoxLayout" name="layoutOptionsTendances">
+               <item>
+                <widget class="QLabel" name="labelPeriode">
+                 <property name="styleSheet">
+                  <string notr="true">color: #2c3e50; font-size: 13px; font-weight: 600;</string>
+                 </property>
+                 <property name="text">
+                  <string>Période :</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QComboBox" name="comboPeriode">
+                 <property name="styleSheet">
+                  <string notr="true">QComboBox {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 6px;
+    background: white;
+    color: #2c3e50;
+    font-size: 13px;
+    min-width: 180px;
+}</string>
+                 </property>
+                 <item>
+                  <property name="text">
+                   <string>7 derniers jours</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>30 derniers jours</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>3 derniers mois</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>Cette année</string>
+                  </property>
+                 </item>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="btnAnalyserTendances">
+                 <property name="styleSheet">
+                  <string notr="true">QPushButton {
+    background-color: #1B4332;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+QPushButton:hover {
+    background-color: #234E3E;
+}</string>
+                 </property>
+                 <property name="text">
+                  <string>📊 Analyser</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="horizontalSpacer_8">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QGroupBox" name="groupGraphique">
+              <property name="styleSheet">
+               <string notr="true">QGroupBox {
+    font-weight: bold;
+    border: 2px solid #1B4332;
+    border-radius: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    background-color: #fafafa;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px;
+    color: #1B4332;
+}</string>
+              </property>
+              <property name="title">
+               <string>📉 Graphique de tendances</string>
+              </property>
+              <layout class="QVBoxLayout" name="layoutGraphique">
+               <item>
+                <widget class="QLabel" name="labelPlaceholderChart">
+                 <property name="minimumSize">
+                  <size>
+                   <width>0</width>
+                   <height>200</height>
+                  </size>
+                 </property>
+                 <property name="styleSheet">
+                  <string notr="true">background: #f0f0f0; padding: 50px; border-radius: 10px; color: #2c3e50; font-size: 14px;</string>
+                 </property>
+                 <property name="text">
+                  <string>📊 Zone réservée pour QChartView
+(Nécessite Qt Charts)</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignCenter</set>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QGroupBox" name="groupAnalyseAuto">
+              <property name="styleSheet">
+               <string notr="true">QGroupBox {
+    font-weight: bold;
+    border: 2px solid #1B4332;
+    border-radius: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    background-color: #fafafa;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px;
+    color: #1B4332;
+}</string>
+              </property>
+              <property name="title">
+               <string>📝 Analyse automatique</string>
+              </property>
+              <layout class="QVBoxLayout" name="layoutAnalyseAuto">
+               <item>
+                <widget class="QTextEdit" name="textAnalyseTendances">
+                 <property name="styleSheet">
+                  <string notr="true">color: #2c3e50; font-size: 13px;</string>
+                 </property>
+                 <property name="readOnly">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QGroupBox" name="groupSelectionRapport">
+              <property name="styleSheet">
+               <string notr="true">QGroupBox {
+    font-weight: bold;
+    border: 2px solid #1B4332;
+    border-radius: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    background-color: #fafafa;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px;
+    color: #1B4332;
+}</string>
+              </property>
+              <property name="title">
+               <string>📦 Sélectionner un stock pour rapport</string>
+              </property>
+              <layout class="QVBoxLayout" name="layoutSelectionRapport">
+               <item>
+                <widget class="QTableWidget" name="tableRapportSelection">
+                 <property name="maximumSize">
+                  <size>
+                   <width>16777215</width>
+                   <height>200</height>
+                  </size>
+                 </property>
+                 <property name="styleSheet">
+                  <string notr="true">QTableWidget {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    gridline-color: #e0e0e0;
+}
+QHeaderView::section {
+    background-color: #1B4332;
+    color: white;
+    padding: 8px;
+    border: none;
+    font-weight: bold;
+}</string>
+                 </property>
+                 <property name="alternatingRowColors">
+                  <bool>true</bool>
+                 </property>
+                 <property name="selectionBehavior">
+                  <enum>QAbstractItemView::SelectRows</enum>
+                 </property>
+                 <column>
+                  <property name="text">
+                   <string>ID</string>
+                  </property>
+                 </column>
+                 <column>
+                  <property name="text">
+                   <string>Type d'huile</string>
+                  </property>
+                 </column>
+                 <column>
+                  <property name="text">
+                   <string>Quantité (L)</string>
+                  </property>
+                 </column>
+                 <column>
+                  <property name="text">
+                   <string>Seuil</string>
+                  </property>
+                 </column>
+                 <column>
+                  <property name="text">
+                   <string>Date MAJ</string>
+                  </property>
+                 </column>
+                 <column>
+                  <property name="text">
+                   <string>Emplacement</string>
+                  </property>
+                 </column>
+                 <column>
+                  <property name="text">
+                   <string>État</string>
+                  </property>
+                 </column>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="layoutBtnRapport">
+              <item>
+               <widget class="QPushButton" name="btnGenererRapport">
+                <property name="styleSheet">
+                 <string notr="true">QPushButton {
+    background-color: #1B4332;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+QPushButton:hover {
+    background-color: #234E3E;
+}</string>
+                </property>
+                <property name="text">
+                 <string>📄 Générer rapport</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="btnExportRapportPDF">
+                <property name="styleSheet">
+                 <string notr="true">QPushButton {
+    background-color: #1565c0;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+QPushButton:hover {
+    background-color: #1976d2;
+}</string>
+                </property>
+                <property name="text">
+                 <string>📥 Export PDF</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer_9">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <widget class="QGroupBox" name="groupApercuRapport">
+              <property name="styleSheet">
+               <string notr="true">QGroupBox {
+    font-weight: bold;
+    border: 2px solid #1B4332;
+    border-radius: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    background-color: #fafafa;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px;
+    color: #1B4332;
+}</string>
+              </property>
+              <property name="title">
+               <string>📝 Aperçu du rapport</string>
+              </property>
+              <layout class="QVBoxLayout" name="layoutApercuRapport">
+               <item>
+                <widget class="QTextEdit" name="textApercuRapport">
+                 <property name="styleSheet">
+                  <string notr="true">color: #2c3e50; font-size: 13px;</string>
+                 </property>
+                 <property name="readOnly">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tabArduino">
+       <attribute name="title">
+        <string>🔌 Arduino</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_12">
+        <property name="leftMargin">
+         <number>20</number>
+        </property>
+        <property name="topMargin">
+         <number>20</number>
+        </property>
+        <property name="rightMargin">
+         <number>20</number>
+        </property>
+        <property name="bottomMargin">
+         <number>20</number>
+        </property>
+        <item>
+         <widget class="QGroupBox" name="groupConnexion">
+          <property name="styleSheet">
+           <string notr="true">QGroupBox {
+    font-weight: bold;
+    border: 2px solid #1B4332;
+    border-radius: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    background-color: #fafafa;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px;
+    color: #1B4332;
+}</string>
+          </property>
+          <property name="title">
+           <string>🔌 Connexion Arduino</string>
+          </property>
+          <layout class="QHBoxLayout" name="layoutConnexion">
+           <item>
+            <widget class="QLabel" name="labelEtatConnexion">
+             <property name="styleSheet">
+              <string notr="true">font-size: 16px; font-weight: bold; color: #f44336;</string>
+             </property>
+             <property name="text">
+              <string>🔴 Non connecté</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="btnSynchroniser">
+             <property name="styleSheet">
+              <string notr="true">QPushButton {
+    background-color: #2196f3;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+QPushButton:hover {
+    background-color: #42a5f5;
+}</string>
+             </property>
+             <property name="text">
+              <string>🔄 Synchroniser</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_10">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupCapteur">
+          <property name="styleSheet">
+           <string notr="true">QGroupBox {
+    font-weight: bold;
+    border: 2px solid #1B4332;
+    border-radius: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    background-color: #fafafa;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px;
+    color: #1B4332;
+}</string>
+          </property>
+          <property name="title">
+           <string>📡 Données du capteur</string>
+          </property>
+          <layout class="QVBoxLayout" name="layoutCapteur">
+           <item>
+            <widget class="QLabel" name="labelValeurCapteur">
+             <property name="styleSheet">
+              <string notr="true">color: #2c3e50; font-size: 24px; font-weight: bold;</string>
+             </property>
+             <property name="text">
+              <string>Valeur capteur : -- L</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupLogs">
+          <property name="styleSheet">
+           <string notr="true">QGroupBox {
+    font-weight: bold;
+    border: 2px solid #1B4332;
+    border-radius: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    background-color: #fafafa;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px;
+    color: #1B4332;
+}</string>
+          </property>
+          <property name="title">
+           <string>📋 Logs &amp; Anomalies</string>
+          </property>
+          <layout class="QVBoxLayout" name="layoutLogs">
+           <item>
+            <widget class="QTextEdit" name="textLogsArduino">
+             <property name="styleSheet">
+              <string notr="true">font-family: Consolas, monospace; color: #2c3e50;</string>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+    <item>
+     <widget class="QWidget" name="footerWidget" native="true">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>50</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>50</height>
+       </size>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QWidget#footerWidget {
+    background-color: #ffffff;
+    border-top: 1px solid #e0e0e0;
+}</string>
+      </property>
+      <layout class="QHBoxLayout" name="footerLayout">
+       <property name="leftMargin">
+        <number>20</number>
+       </property>
+       <property name="topMargin">
+        <number>10</number>
+       </property>
+       <property name="rightMargin">
+        <number>20</number>
+       </property>
+       <property name="bottomMargin">
+        <number>10</number>
+       </property>
+       <item>
+        <widget class="QLabel" name="labelStatut">
+         <property name="styleSheet">
+          <string notr="true">color: #2c3e50; font-size: 13px;</string>
+         </property>
+         <property name="text">
+          <string>📊 Statut : Système opérationnel</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="footerSpacer">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QLabel" name="labelCopyright">
+         <property name="styleSheet">
+          <string notr="true">color: #666; font-size: 11px;</string>
+         </property>
+         <property name="text">
+          <string>© 2026 PRESSIQ - Tous droits réservés</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources>
+  <include location="../production/resources.qrc"/>
+ </resources>
+ <connections/>
+</ui>
