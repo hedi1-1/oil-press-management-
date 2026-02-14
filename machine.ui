@@ -514,7 +514,7 @@ QToolButton:hover {
     <item>
      <widget class="QTabWidget" name="tabWidgetMachineManagement">
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="tabParcMachines">
        <attribute name="title">
@@ -1279,7 +1279,1122 @@ QToolButton:hover {
          </widget>
         </item>
         <item>
+         <widget class="QScrollArea" name="scrollHistoriqueOnOff">
+          <property name="visible">
+           <bool>false</bool>
+          </property>
+          <property name="styleSheet">
+           <string>QScrollArea { background-color: white; border: 1px solid #ddd; }</string>
+          </property>
+          <property name="widgetResizable">
+           <bool>true</bool>
+          </property>
+          <widget class="QWidget" name="scrollAreaWidgetContents">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>0</y>
+             <width>725</width>
+             <height>627</height>
+            </rect>
+           </property>
+           <layout class="QVBoxLayout" name="layoutHistoriqueList">
+            <property name="spacing">
+             <number>15</number>
+            </property>
+            <property name="leftMargin">
+             <number>20</number>
+            </property>
+            <property name="topMargin">
+             <number>20</number>
+            </property>
+            <property name="rightMargin">
+             <number>20</number>
+            </property>
+            <property name="bottomMargin">
+             <number>20</number>
+            </property>
+            <item>
+             <layout class="QHBoxLayout" name="layoutHistoriqueHeader">
+              <property name="spacing">
+               <number>15</number>
+              </property>
+              <item>
+               <widget class="QLabel" name="lblHistoriqueTitle">
+                <property name="styleSheet">
+                 <string>font-weight: bold; font-size: 16px; color: #1B4D3E;</string>
+                </property>
+                <property name="text">
+                 <string>📜 Historique ON / OFF des machines</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="spacerHistoriqueHeader">
+                <property name="orientation">
+                 <enum>Qt::Orientation::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
+               <widget class="QPushButton" name="btnFermerHistorique">
+                <property name="minimumSize">
+                 <size>
+                  <width>118</width>
+                  <height>40</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>40</width>
+                  <height>40</height>
+                 </size>
+                </property>
+                <property name="styleSheet">
+                 <string>QPushButton { 
+    background-color: #dc3545; 
+    color: white; 
+    border: none; 
+    border-radius: 20px; 
+    font-weight: bold; 
+    font-size: 18px;
+}
+QPushButton:hover { 
+    background-color: #c82333; 
+}
+QPushButton:pressed { 
+    background-color: #bd2130; 
+}</string>
+                </property>
+                <property name="text">
+                 <string>✕</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <widget class="QFrame" name="frameMachine1">
+              <property name="styleSheet">
+               <string>QFrame { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 12px; }</string>
+              </property>
+              <layout class="QHBoxLayout" name="layoutMachine1">
+               <property name="spacing">
+                <number>15</number>
+               </property>
+               <item>
+                <widget class="QLabel" name="lblMachine1Nom">
+                 <property name="minimumSize">
+                  <size>
+                   <width>200</width>
+                   <height>0</height>
+                  </size>
+                 </property>
+                 <property name="styleSheet">
+                  <string>font-weight: bold; font-size: 14px; color: #1B4D3E; border: none;</string>
+                 </property>
+                 <property name="text">
+                  <string>🏭 Presse Hydraulique P-001</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="lblMachine1On">
+                 <property name="styleSheet">
+                  <string>font-weight: bold; color: #155724; background-color: #d4edda; padding: 8px 15px; border-radius: 4px; border: none;</string>
+                 </property>
+                 <property name="text">
+                  <string>⏱️ Temps total ON: 8h 45m</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="lblMachine1Off">
+                 <property name="styleSheet">
+                  <string>font-weight: bold; color: #721c24; background-color: #f8d7da; padding: 8px 15px; border-radius: 4px; border: none;</string>
+                 </property>
+                 <property name="text">
+                  <string>⏱️ Temps total OFF: 3h 15m</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="spacerMachine1">
+                 <property name="orientation">
+                  <enum>Qt::Orientation::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QFrame" name="frameMachine2">
+              <property name="styleSheet">
+               <string>QFrame { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 12px; }</string>
+              </property>
+              <layout class="QHBoxLayout" name="layoutMachine2">
+               <property name="spacing">
+                <number>15</number>
+               </property>
+               <item>
+                <widget class="QLabel" name="lblMachine2Nom">
+                 <property name="minimumSize">
+                  <size>
+                   <width>200</width>
+                   <height>0</height>
+                  </size>
+                 </property>
+                 <property name="styleSheet">
+                  <string>font-weight: bold; font-size: 14px; color: #1B4D3E; border: none;</string>
+                 </property>
+                 <property name="text">
+                  <string>🏭 Broyeur Industriel B-007</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="lblMachine2On">
+                 <property name="styleSheet">
+                  <string>font-weight: bold; color: #155724; background-color: #d4edda; padding: 8px 15px; border-radius: 4px; border: none;</string>
+                 </property>
+                 <property name="text">
+                  <string>⏱️ Temps total ON: 12h 30m</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="lblMachine2Off">
+                 <property name="styleSheet">
+                  <string>font-weight: bold; color: #721c24; background-color: #f8d7da; padding: 8px 15px; border-radius: 4px; border: none;</string>
+                 </property>
+                 <property name="text">
+                  <string>⏱️ Temps total OFF: 1h 05m</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="spacerMachine2">
+                 <property name="orientation">
+                  <enum>Qt::Orientation::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QFrame" name="frameMachine3">
+              <property name="styleSheet">
+               <string>QFrame { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 12px; }</string>
+              </property>
+              <layout class="QHBoxLayout" name="layoutMachine3">
+               <property name="spacing">
+                <number>15</number>
+               </property>
+               <item>
+                <widget class="QLabel" name="lblMachine3Nom">
+                 <property name="minimumSize">
+                  <size>
+                   <width>200</width>
+                   <height>0</height>
+                  </size>
+                 </property>
+                 <property name="styleSheet">
+                  <string>font-weight: bold; font-size: 14px; color: #1B4D3E; border: none;</string>
+                 </property>
+                 <property name="text">
+                  <string>🏭 Malaxeur Rotatif M-103</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="lblMachine3On">
+                 <property name="styleSheet">
+                  <string>font-weight: bold; color: #155724; background-color: #d4edda; padding: 8px 15px; border-radius: 4px; border: none;</string>
+                 </property>
+                 <property name="text">
+                  <string>⏱️ Temps total ON: 6h 20m</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="lblMachine3Off">
+                 <property name="styleSheet">
+                  <string>font-weight: bold; color: #721c24; background-color: #f8d7da; padding: 8px 15px; border-radius: 4px; border: none;</string>
+                 </property>
+                 <property name="text">
+                  <string>⏱️ Temps total OFF: 5h 40m</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="spacerMachine3">
+                 <property name="orientation">
+                  <enum>Qt::Orientation::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QFrame" name="frameMachine4">
+              <property name="styleSheet">
+               <string>QFrame { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 12px; }</string>
+              </property>
+              <layout class="QHBoxLayout" name="layoutMachine4">
+               <property name="spacing">
+                <number>15</number>
+               </property>
+               <item>
+                <widget class="QLabel" name="lblMachine4Nom">
+                 <property name="minimumSize">
+                  <size>
+                   <width>200</width>
+                   <height>0</height>
+                  </size>
+                 </property>
+                 <property name="styleSheet">
+                  <string>font-weight: bold; font-size: 14px; color: #1B4D3E; border: none;</string>
+                 </property>
+                 <property name="text">
+                  <string>🏭 Chauffeur Électrique C-025</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="lblMachine4On">
+                 <property name="styleSheet">
+                  <string>font-weight: bold; color: #155724; background-color: #d4edda; padding: 8px 15px; border-radius: 4px; border: none;</string>
+                 </property>
+                 <property name="text">
+                  <string>⏱️ Temps total ON: 10h 15m</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="lblMachine4Off">
+                 <property name="styleSheet">
+                  <string>font-weight: bold; color: #721c24; background-color: #f8d7da; padding: 8px 15px; border-radius: 4px; border: none;</string>
+                 </property>
+                 <property name="text">
+                  <string>⏱️ Temps total OFF: 2h 30m</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="spacerMachine4">
+                 <property name="orientation">
+                  <enum>Qt::Orientation::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QFrame" name="frameMachine5">
+              <property name="styleSheet">
+               <string>QFrame { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 12px; }</string>
+              </property>
+              <layout class="QHBoxLayout" name="layoutMachine5">
+               <property name="spacing">
+                <number>15</number>
+               </property>
+               <item>
+                <widget class="QLabel" name="lblMachine5Nom">
+                 <property name="minimumSize">
+                  <size>
+                   <width>200</width>
+                   <height>0</height>
+                  </size>
+                 </property>
+                 <property name="styleSheet">
+                  <string>font-weight: bold; font-size: 14px; color: #1B4D3E; border: none;</string>
+                 </property>
+                 <property name="text">
+                  <string>🏭 Presse Mécanique P-042</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="lblMachine5On">
+                 <property name="styleSheet">
+                  <string>font-weight: bold; color: #155724; background-color: #d4edda; padding: 8px 15px; border-radius: 4px; border: none;</string>
+                 </property>
+                 <property name="text">
+                  <string>⏱️ Temps total ON: 4h 50m</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="lblMachine5Off">
+                 <property name="styleSheet">
+                  <string>font-weight: bold; color: #721c24; background-color: #f8d7da; padding: 8px 15px; border-radius: 4px; border: none;</string>
+                 </property>
+                 <property name="text">
+                  <string>⏱️ Temps total OFF: 7h 10m</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="spacerMachine5">
+                 <property name="orientation">
+                  <enum>Qt::Orientation::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <spacer name="verticalSpacerHistorique">
+              <property name="orientation">
+               <enum>Qt::Orientation::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </widget>
+         </widget>
+        </item>
+        <item>
+         <widget class="QScrollArea" name="scrollListeMachines">
+          <property name="styleSheet">
+           <string>QScrollArea { background-color: white; border: none; }</string>
+          </property>
+          <property name="widgetResizable">
+           <bool>true</bool>
+          </property>
+          <widget class="QWidget" name="scrollAreaMachinesContent">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>0</y>
+             <width>1386</width>
+             <height>747</height>
+            </rect>
+           </property>
+           <layout class="QVBoxLayout" name="layoutListeMachines">
+            <property name="spacing">
+             <number>15</number>
+            </property>
+            <property name="leftMargin">
+             <number>5</number>
+            </property>
+            <property name="topMargin">
+             <number>10</number>
+            </property>
+            <property name="rightMargin">
+             <number>5</number>
+            </property>
+            <property name="bottomMargin">
+             <number>10</number>
+            </property>
+            <item>
+             <widget class="QFrame" name="cardMachine1">
+              <property name="styleSheet">
+               <string>QFrame#cardMachine1 { background-color: white; border: 2px solid #2D5F47; border-radius: 12px; padding: 15px; }
+QFrame#cardMachine1:hover { border-color: #4CAF50; }</string>
+              </property>
+              <layout class="QVBoxLayout" name="layoutCardMachine1">
+               <property name="spacing">
+                <number>12</number>
+               </property>
+               <item>
+                <layout class="QHBoxLayout" name="layoutMachine1Header">
+                 <item>
+                  <widget class="QLabel" name="lblCard1Nom">
+                   <property name="styleSheet">
+                    <string>font-weight: bold; font-size: 16px; color: #1B4D3E; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>🏭 Presse Hydraulique P-001</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="spacerCard1Header">
+                   <property name="orientation">
+                    <enum>Qt::Orientation::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>40</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="lblCard1EtatMarche">
+                   <property name="styleSheet">
+                    <string>font-weight: bold; color: white; background-color: #4CAF50; padding: 6px 12px; border-radius: 6px; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>🔵 ON</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+               <item>
+                <widget class="QFrame" name="frameSeparator1">
+                 <property name="maximumSize">
+                  <size>
+                   <width>16777215</width>
+                   <height>1</height>
+                  </size>
+                 </property>
+                 <property name="styleSheet">
+                  <string>background-color: #e0e0e0; border: none;</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <layout class="QGridLayout" name="gridCard1Info">
+                 <property name="horizontalSpacing">
+                  <number>20</number>
+                 </property>
+                 <property name="verticalSpacing">
+                  <number>10</number>
+                 </property>
+                 <item row="0" column="0">
+                  <widget class="QLabel" name="lblCard1TypeLabel">
+                   <property name="styleSheet">
+                    <string>font-weight: 600; color: #555; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>Type :</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="1">
+                  <widget class="QLabel" name="lblCard1Type">
+                   <property name="styleSheet">
+                    <string>color: #1B4D3E; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>Presse</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="2">
+                  <widget class="QLabel" name="lblCard1TempLabel">
+                   <property name="styleSheet">
+                    <string>font-weight: 600; color: #555; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>Température :</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="3">
+                  <widget class="QLabel" name="lblCard1Temp">
+                   <property name="styleSheet">
+                    <string>color: #1B4D3E; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>🌡️ 45.5°C</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="0">
+                  <widget class="QLabel" name="lblCard1EtatFonctLabel">
+                   <property name="styleSheet">
+                    <string>font-weight: 600; color: #555; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>État :</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="1">
+                  <widget class="QLabel" name="lblCard1EtatFonct">
+                   <property name="styleSheet">
+                    <string>font-weight: bold; color: #155724; background-color: #d4edda; padding: 4px 10px; border-radius: 4px; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>✓ Normal</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="2">
+                  <widget class="QLabel" name="lblCard1ChargeLabel">
+                   <property name="styleSheet">
+                    <string>font-weight: 600; color: #555; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>Charge :</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="3">
+                  <widget class="QLabel" name="lblCard1Charge">
+                   <property name="styleSheet">
+                    <string>color: #1B4D3E; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>⚡ 78%</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="2" column="0">
+                  <widget class="QLabel" name="lblCard1AlerteLabel">
+                   <property name="styleSheet">
+                    <string>font-weight: 600; color: #555; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>Alerte :</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="2" column="1">
+                  <widget class="QLabel" name="lblCard1Alerte">
+                   <property name="styleSheet">
+                    <string>color: #1B4D3E; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>Aucune</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="2" column="2">
+                  <widget class="QLabel" name="lblCard1CriticiteLabel">
+                   <property name="styleSheet">
+                    <string>font-weight: 600; color: #555; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>Criticité :</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="2" column="3">
+                  <widget class="QLabel" name="lblCard1Criticite">
+                   <property name="styleSheet">
+                    <string>color: #1B4D3E; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>Faible</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="3" column="0">
+                  <widget class="QLabel" name="lblCard1MaintenanceLabel">
+                   <property name="styleSheet">
+                    <string>font-weight: 600; color: #555; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>Dernière maintenance :</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="3" column="1" colspan="3">
+                  <widget class="QLabel" name="lblCard1Maintenance">
+                   <property name="styleSheet">
+                    <string>color: #1B4D3E; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>📅 15 Janvier 2026</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QFrame" name="cardMachine2">
+              <property name="styleSheet">
+               <string>QFrame#cardMachine2 { background-color: white; border: 2px solid #2D5F47; border-radius: 12px; padding: 15px; }
+QFrame#cardMachine2:hover { border-color: #4CAF50; }</string>
+              </property>
+              <layout class="QVBoxLayout" name="layoutCardMachine2">
+               <property name="spacing">
+                <number>12</number>
+               </property>
+               <item>
+                <layout class="QHBoxLayout" name="layoutMachine2Header">
+                 <item>
+                  <widget class="QLabel" name="lblCard2Nom">
+                   <property name="styleSheet">
+                    <string>font-weight: bold; font-size: 16px; color: #1B4D3E; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>🏭 Broyeur Industriel B-007</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="spacerCard2Header">
+                   <property name="orientation">
+                    <enum>Qt::Orientation::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>40</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="lblCard2EtatMarche">
+                   <property name="styleSheet">
+                    <string>font-weight: bold; color: white; background-color: #FFC107; padding: 6px 12px; border-radius: 6px; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>⏸️ VEILLE</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+               <item>
+                <widget class="QFrame" name="frameSeparator2">
+                 <property name="maximumSize">
+                  <size>
+                   <width>16777215</width>
+                   <height>1</height>
+                  </size>
+                 </property>
+                 <property name="styleSheet">
+                  <string>background-color: #e0e0e0; border: none;</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <layout class="QGridLayout" name="gridCard2Info">
+                 <property name="horizontalSpacing">
+                  <number>20</number>
+                 </property>
+                 <property name="verticalSpacing">
+                  <number>10</number>
+                 </property>
+                 <item row="0" column="0">
+                  <widget class="QLabel" name="lblCard2TypeLabel">
+                   <property name="styleSheet">
+                    <string>font-weight: 600; color: #555; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>Type :</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="1">
+                  <widget class="QLabel" name="lblCard2Type">
+                   <property name="styleSheet">
+                    <string>color: #1B4D3E; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>Broyeur</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="2">
+                  <widget class="QLabel" name="lblCard2TempLabel">
+                   <property name="styleSheet">
+                    <string>font-weight: 600; color: #555; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>Température :</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="3">
+                  <widget class="QLabel" name="lblCard2Temp">
+                   <property name="styleSheet">
+                    <string>color: #1B4D3E; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>🌡️ 32.8°C</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="0">
+                  <widget class="QLabel" name="lblCard2EtatFonctLabel">
+                   <property name="styleSheet">
+                    <string>font-weight: 600; color: #555; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>État :</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="1">
+                  <widget class="QLabel" name="lblCard2EtatFonct">
+                   <property name="styleSheet">
+                    <string>font-weight: bold; color: #856404; background-color: #fff3cd; padding: 4px 10px; border-radius: 4px; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>⚠ Alerte</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="2">
+                  <widget class="QLabel" name="lblCard2ChargeLabel">
+                   <property name="styleSheet">
+                    <string>font-weight: 600; color: #555; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>Charge :</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="3">
+                  <widget class="QLabel" name="lblCard2Charge">
+                   <property name="styleSheet">
+                    <string>color: #1B4D3E; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>⚡ 45%</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="2" column="0">
+                  <widget class="QLabel" name="lblCard2AlerteLabel">
+                   <property name="styleSheet">
+                    <string>font-weight: 600; color: #555; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>Alerte :</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="2" column="1">
+                  <widget class="QLabel" name="lblCard2Alerte">
+                   <property name="styleSheet">
+                    <string>color: #F39C12; font-weight: bold; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>⚠ Maintenance</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="2" column="2">
+                  <widget class="QLabel" name="lblCard2CriticiteLabel">
+                   <property name="styleSheet">
+                    <string>font-weight: 600; color: #555; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>Criticité :</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="2" column="3">
+                  <widget class="QLabel" name="lblCard2Criticite">
+                   <property name="styleSheet">
+                    <string>color: #F39C12; font-weight: bold; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>Moyen</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="3" column="0">
+                  <widget class="QLabel" name="lblCard2MaintenanceLabel">
+                   <property name="styleSheet">
+                    <string>font-weight: 600; color: #555; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>Dernière maintenance :</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="3" column="1" colspan="3">
+                  <widget class="QLabel" name="lblCard2Maintenance">
+                   <property name="styleSheet">
+                    <string>color: #1B4D3E; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>📅 10 Décembre 2025</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QFrame" name="cardMachine3">
+              <property name="styleSheet">
+               <string>QFrame#cardMachine3 { background-color: white; border: 2px solid #2D5F47; border-radius: 12px; padding: 15px; }
+QFrame#cardMachine3:hover { border-color: #4CAF50; }</string>
+              </property>
+              <layout class="QVBoxLayout" name="layoutCardMachine3">
+               <property name="spacing">
+                <number>12</number>
+               </property>
+               <item>
+                <layout class="QHBoxLayout" name="layoutMachine3Header">
+                 <item>
+                  <widget class="QLabel" name="lblCard3Nom">
+                   <property name="styleSheet">
+                    <string>font-weight: bold; font-size: 16px; color: #1B4D3E; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>🏭 Malaxeur Rotatif M-103</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="spacerCard3Header">
+                   <property name="orientation">
+                    <enum>Qt::Orientation::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>40</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="lblCard3EtatMarche">
+                   <property name="styleSheet">
+                    <string>font-weight: bold; color: white; background-color: #dc3545; padding: 6px 12px; border-radius: 6px; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>⭕ OFF</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+               <item>
+                <widget class="QFrame" name="frameSeparator3">
+                 <property name="maximumSize">
+                  <size>
+                   <width>16777215</width>
+                   <height>1</height>
+                  </size>
+                 </property>
+                 <property name="styleSheet">
+                  <string>background-color: #e0e0e0; border: none;</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <layout class="QGridLayout" name="gridCard3Info">
+                 <property name="horizontalSpacing">
+                  <number>20</number>
+                 </property>
+                 <property name="verticalSpacing">
+                  <number>10</number>
+                 </property>
+                 <item row="0" column="0">
+                  <widget class="QLabel" name="lblCard3TypeLabel">
+                   <property name="styleSheet">
+                    <string>font-weight: 600; color: #555; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>Type :</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="1">
+                  <widget class="QLabel" name="lblCard3Type">
+                   <property name="styleSheet">
+                    <string>color: #1B4D3E; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>Malaxeur</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="2">
+                  <widget class="QLabel" name="lblCard3TempLabel">
+                   <property name="styleSheet">
+                    <string>font-weight: 600; color: #555; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>Température :</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="3">
+                  <widget class="QLabel" name="lblCard3Temp">
+                   <property name="styleSheet">
+                    <string>color: #1B4D3E; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>🌡️ 88.2°C</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="0">
+                  <widget class="QLabel" name="lblCard3EtatFonctLabel">
+                   <property name="styleSheet">
+                    <string>font-weight: 600; color: #555; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>État :</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="1">
+                  <widget class="QLabel" name="lblCard3EtatFonct">
+                   <property name="styleSheet">
+                    <string>font-weight: bold; color: #721c24; background-color: #f8d7da; padding: 4px 10px; border-radius: 4px; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>✗ Panne</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="2">
+                  <widget class="QLabel" name="lblCard3ChargeLabel">
+                   <property name="styleSheet">
+                    <string>font-weight: 600; color: #555; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>Charge :</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="3">
+                  <widget class="QLabel" name="lblCard3Charge">
+                   <property name="styleSheet">
+                    <string>color: #1B4D3E; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>⚡ 0%</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="2" column="0">
+                  <widget class="QLabel" name="lblCard3AlerteLabel">
+                   <property name="styleSheet">
+                    <string>font-weight: 600; color: #555; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>Alerte :</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="2" column="1">
+                  <widget class="QLabel" name="lblCard3Alerte">
+                   <property name="styleSheet">
+                    <string>color: #dc3545; font-weight: bold; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>🔴 Température</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="2" column="2">
+                  <widget class="QLabel" name="lblCard3CriticiteLabel">
+                   <property name="styleSheet">
+                    <string>font-weight: 600; color: #555; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>Criticité :</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="2" column="3">
+                  <widget class="QLabel" name="lblCard3Criticite">
+                   <property name="styleSheet">
+                    <string>color: #dc3545; font-weight: bold; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>Élevé</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="3" column="0">
+                  <widget class="QLabel" name="lblCard3MaintenanceLabel">
+                   <property name="styleSheet">
+                    <string>font-weight: 600; color: #555; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>Dernière maintenance :</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="3" column="1" colspan="3">
+                  <widget class="QLabel" name="lblCard3Maintenance">
+                   <property name="styleSheet">
+                    <string>color: #1B4D3E; border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>📅 05 Février 2026</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <spacer name="verticalSpacerListeMachines">
+              <property name="orientation">
+               <enum>Qt::Orientation::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </widget>
+         </widget>
+        </item>
+        <item>
          <widget class="QTableView" name="tableMachines">
+          <property name="visible">
+           <bool>false</bool>
+          </property>
           <property name="alternatingRowColors">
            <bool>true</bool>
           </property>
@@ -1287,6 +2402,309 @@ QToolButton:hover {
            <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
           </property>
          </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tabAjouterModifier">
+       <attribute name="title">
+        <string>➕ Ajouter / Modifier</string>
+       </attribute>
+       <layout class="QHBoxLayout" name="layoutAjouterModifier">
+        <property name="leftMargin">
+         <number>20</number>
+        </property>
+        <property name="topMargin">
+         <number>15</number>
+        </property>
+        <property name="rightMargin">
+         <number>20</number>
+        </property>
+        <property name="bottomMargin">
+         <number>15</number>
+        </property>
+        <item>
+         <spacer name="formSpacerLeft">
+          <property name="orientation">
+           <enum>Qt::Orientation::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>100</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupFormMachine">
+          <property name="minimumSize">
+           <size>
+            <width>500</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="title">
+           <string>Informations de la machine</string>
+          </property>
+          <layout class="QFormLayout" name="formLayoutMachine">
+           <property name="horizontalSpacing">
+            <number>15</number>
+           </property>
+           <property name="verticalSpacing">
+            <number>12</number>
+           </property>
+           <property name="leftMargin">
+            <number>20</number>
+           </property>
+           <property name="topMargin">
+            <number>20</number>
+           </property>
+           <property name="rightMargin">
+            <number>20</number>
+           </property>
+           <property name="bottomMargin">
+            <number>20</number>
+           </property>
+           <item row="0" column="0">
+            <widget class="QLabel" name="lblNomMachine">
+             <property name="text">
+              <string>Nom de la machine:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLineEdit" name="nom_machine">
+             <property name="placeholderText">
+              <string>Entrez le nom de la machine</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="lblTypeMachine">
+             <property name="text">
+              <string>Type de machine:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QComboBox" name="type_machine">
+             <item>
+              <property name="text">
+               <string>Presse</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Broyeur</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Malaxeur</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Chauffeur</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="lblEtatMarche">
+             <property name="text">
+              <string>État marche:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QComboBox" name="etat_marche">
+             <item>
+              <property name="text">
+               <string>ON</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>OFF</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>VEILLE</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="lblTemperature">
+             <property name="text">
+              <string>Température actuelle (°C):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QDoubleSpinBox" name="temperature_actuelle">
+             <property name="maximum">
+              <double>200.000000000000000</double>
+             </property>
+             <property name="singleStep">
+              <double>0.500000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="0">
+            <widget class="QLabel" name="lblNiveauCharge">
+             <property name="text">
+              <string>Niveau de charge (%):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="1">
+            <widget class="QSpinBox" name="niveau_charge">
+             <property name="maximum">
+              <number>100</number>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="0">
+            <widget class="QLabel" name="lblEtatFonctionnement">
+             <property name="text">
+              <string>État fonctionnement:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="1">
+            <widget class="QComboBox" name="etat_fonctionnement">
+             <item>
+              <property name="text">
+               <string>Normal</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Alerte</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Panne</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="6" column="0">
+            <widget class="QLabel" name="lblTypeAlerte">
+             <property name="text">
+              <string>Type d'alerte:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="1">
+            <widget class="QComboBox" name="type_alerte">
+             <item>
+              <property name="text">
+               <string>Aucune</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Température</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Surcharge</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Panne</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="7" column="0">
+            <widget class="QLabel" name="lblNiveauCriticite">
+             <property name="text">
+              <string>Niveau de criticité:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="7" column="1">
+            <widget class="QComboBox" name="niveau_criticite">
+             <item>
+              <property name="text">
+               <string>Faible</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Moyen</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Élevé</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Critique</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="8" column="0">
+            <widget class="QLabel" name="lblDateMaintenance">
+             <property name="text">
+              <string>Dernière maintenance:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="8" column="1">
+            <widget class="QDateEdit" name="date_derniere_maintenance">
+             <property name="calendarPopup">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="9" column="1">
+            <layout class="QHBoxLayout" name="layoutBtnsForm">
+             <item>
+              <widget class="QPushButton" name="btnEnregistrer">
+               <property name="text">
+                <string>💾 Enregistrer</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="btnAnnuler">
+               <property name="styleSheet">
+                <string>background-color: #6c757d;</string>
+               </property>
+               <property name="text">
+                <string>✗ Annuler</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <spacer name="formSpacerRight">
+          <property name="orientation">
+           <enum>Qt::Orientation::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>100</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
         </item>
        </layout>
       </widget>
@@ -1632,28 +3050,6 @@ QToolButton:hover {
           </property>
          </widget>
         </item>
-       </layout>
-      </widget>
-      <widget class="QWidget" name="tabMaintenance">
-       <attribute name="title">
-        <string>🔧 Maintenance</string>
-       </attribute>
-       <layout class="QVBoxLayout" name="layoutMaintenance">
-        <property name="spacing">
-         <number>10</number>
-        </property>
-        <property name="leftMargin">
-         <number>15</number>
-        </property>
-        <property name="topMargin">
-         <number>10</number>
-        </property>
-        <property name="rightMargin">
-         <number>15</number>
-        </property>
-        <property name="bottomMargin">
-         <number>10</number>
-        </property>
         <item>
          <widget class="QGroupBox" name="groupMaintenancePredictive">
           <property name="title">

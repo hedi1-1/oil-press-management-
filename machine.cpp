@@ -194,6 +194,84 @@ machine::machine(QWidget *parent)
     // Connect toolbar actions
     connect(actionAjouter, &QAction::triggered, this, &machine::onAjouterButtonClicked);
     
+    connect(actionModifier, &QAction::triggered, this, [this]() {
+        // Hide form and lists, show summary
+        ui->widgetFormulaireParcMachines->setVisible(false);
+        ui->scrollHistoriqueOnOff->setVisible(false);
+        ui->scrollListeMachines->setVisible(true);
+        ui->btnHistoriqueToggle->setChecked(false);
+        // TODO: Implement modify logic
+    });
+    
+    connect(actionSupprimer, &QAction::triggered, this, [this]() {
+        // Hide form and lists, show summary
+        ui->widgetFormulaireParcMachines->setVisible(false);
+        ui->scrollHistoriqueOnOff->setVisible(false);
+        ui->scrollListeMachines->setVisible(true);
+        ui->btnHistoriqueToggle->setChecked(false);
+        // TODO: Implement delete logic
+    });
+    
+    connect(actionActualiser, &QAction::triggered, this, [this]() {
+        // Hide form and lists, show summary
+        ui->widgetFormulaireParcMachines->setVisible(false);
+        ui->scrollHistoriqueOnOff->setVisible(false);
+        ui->scrollListeMachines->setVisible(true);
+        ui->btnHistoriqueToggle->setChecked(false);
+        // TODO: Implement refresh logic
+    });
+    
+    connect(actionExporter, &QAction::triggered, this, [this]() {
+        // Hide form and lists, show summary
+        ui->widgetFormulaireParcMachines->setVisible(false);
+        ui->scrollHistoriqueOnOff->setVisible(false);
+        ui->scrollListeMachines->setVisible(true);
+        ui->btnHistoriqueToggle->setChecked(false);
+        // TODO: Implement export logic
+    });
+    
+    // Connect Historique ON/OFF toggle button
+    connect(ui->btnHistoriqueToggle, &QPushButton::toggled, this, [this](bool checked) {
+        // Hide form if visible
+        ui->widgetFormulaireParcMachines->setVisible(false);
+        
+        if (checked) {
+            ui->scrollHistoriqueOnOff->setVisible(true);
+            ui->scrollListeMachines->setVisible(false);
+        } else {
+            ui->scrollHistoriqueOnOff->setVisible(false);
+            ui->scrollListeMachines->setVisible(true);
+        }
+        ui->tableMachines->setVisible(false);
+    });
+    
+    // Connect close button for Historique ON/OFF
+    connect(ui->btnFermerHistorique, &QPushButton::clicked, this, [this]() {
+        ui->btnHistoriqueToggle->setChecked(false);
+        ui->scrollHistoriqueOnOff->setVisible(false);
+        ui->scrollListeMachines->setVisible(true);
+        ui->tableMachines->setVisible(false);
+    });
+    
+    // Connect search and filter buttons
+    connect(ui->btnRechercher, &QPushButton::clicked, this, [this]() {
+        // Hide form if visible and show list
+        ui->widgetFormulaireParcMachines->setVisible(false);
+        ui->scrollHistoriqueOnOff->setVisible(false);
+        ui->scrollListeMachines->setVisible(true);
+        ui->btnHistoriqueToggle->setChecked(false);
+        // TODO: Implement search logic
+    });
+    
+    connect(ui->btnFiltrer, &QPushButton::clicked, this, [this]() {
+        // Hide form if visible and show list
+        ui->widgetFormulaireParcMachines->setVisible(false);
+        ui->scrollHistoriqueOnOff->setVisible(false);
+        ui->scrollListeMachines->setVisible(true);
+        ui->btnHistoriqueToggle->setChecked(false);
+        // TODO: Implement filter logic
+    });
+    
     // Form buttons are auto-connected via Qt's naming convention:
     // on_btnEnregistrerParc_clicked() and on_btnAnnulerParc_clicked()
     
@@ -280,6 +358,20 @@ void machine::setupNavigationBar()
 
 void machine::onNavigationTabClicked(int index)
 {
+    // When changing tabs, hide form and reset view
+    if (index == 0) {
+        // Parc machines tab: show list by default
+        ui->widgetFormulaireParcMachines->setVisible(false);
+        ui->scrollHistoriqueOnOff->setVisible(false);
+        ui->scrollListeMachines->setVisible(true);
+        ui->btnHistoriqueToggle->setChecked(false);
+    } else {
+        // Other tabs: hide all parc machines specific views
+        ui->widgetFormulaireParcMachines->setVisible(false);
+        ui->scrollHistoriqueOnOff->setVisible(false);
+        ui->scrollListeMachines->setVisible(false);
+    }
+    
     // Update the tab widget to show the corresponding tab
     ui->tabWidgetMachineManagement->setCurrentIndex(index);
 }
@@ -316,9 +408,14 @@ void machine::afficherFormulaireParc()
     // Reset form fields
     reinitialiserFormulaireParc();
     
-    // Hide table and summary
+    // Hide lists and summary
+    ui->scrollListeMachines->setVisible(false);
+    ui->scrollHistoriqueOnOff->setVisible(false);
     ui->tableMachines->setVisible(false);
     ui->frameSummary->setVisible(false);
+    
+    // Uncheck historique toggle button if checked
+    ui->btnHistoriqueToggle->setChecked(false);
     
     // Show form
     ui->widgetFormulaireParcMachines->setVisible(true);
@@ -331,8 +428,10 @@ void machine::masquerFormulaireParc()
     // Hide form
     ui->widgetFormulaireParcMachines->setVisible(false);
     
-    // Show table and summary
-    ui->tableMachines->setVisible(true);
+    // Show machine list and summary
+    ui->scrollListeMachines->setVisible(true);
+    ui->scrollHistoriqueOnOff->setVisible(false);
+    ui->tableMachines->setVisible(false);
     ui->frameSummary->setVisible(true);
     qDebug() << "[DEBUG] Formulaire visible:" << ui->widgetFormulaireParcMachines->isVisible();
 }
