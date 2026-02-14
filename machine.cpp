@@ -232,8 +232,10 @@ machine::machine(QWidget *parent)
     
     // Connect Historique ON/OFF toggle button
     connect(ui->btnHistoriqueToggle, &QPushButton::toggled, this, [this](bool checked) {
-        // Hide form if visible
-        ui->widgetFormulaireParcMachines->setVisible(false);
+        // Only toggle views if the form is NOT visible
+        if (ui->widgetFormulaireParcMachines->isVisible()) {
+            return;
+        }
         
         if (checked) {
             ui->scrollHistoriqueOnOff->setVisible(true);
@@ -334,9 +336,8 @@ void machine::setupNavigationBar()
     
     // Add tabs to the navigation bar
     navigationBar->addTab("🏭", "Parc machines");
-    navigationBar->addTab("ℹ️", "Détails machine");
     navigationBar->addTab("📊", "Statistiques");
-    navigationBar->addTab("�", "Historique");
+    navigationBar->addTab("🤖", "Décision IA");
 
     // Insert the navigation bar at the top of the central widget
     QVBoxLayout *mainLayout = qobject_cast<QVBoxLayout *>(ui->centralwidget->layout());
@@ -405,17 +406,19 @@ void machine::afficherFormulaireParc()
     // Reset form fields
     reinitialiserFormulaireParc();
     
-    // Hide lists and summary
-    ui->scrollListeMachines->setVisible(false);
-    ui->scrollHistoriqueOnOff->setVisible(false);
-    ui->tableMachines->setVisible(false);
-    ui->frameSummary->setVisible(false);
+    // Show form first (so the toggle guard works)
+    ui->widgetFormulaireParcMachines->setVisible(true);
     
     // Uncheck historique toggle button if checked
     ui->btnHistoriqueToggle->setChecked(false);
     
-    // Show form
-    ui->widgetFormulaireParcMachines->setVisible(true);
+    // Hide everything else
+    ui->scrollListeMachines->setVisible(false);
+    ui->scrollHistoriqueOnOff->setVisible(false);
+    ui->tableMachines->setVisible(false);
+    ui->frameSummary->setVisible(false);
+    ui->groupRecherche->setVisible(false);
+    
     qDebug() << "[DEBUG] Formulaire visible:" << ui->widgetFormulaireParcMachines->isVisible();
 }
 
@@ -425,11 +428,12 @@ void machine::masquerFormulaireParc()
     // Hide form
     ui->widgetFormulaireParcMachines->setVisible(false);
     
-    // Show machine list and summary
+    // Show machine list, summary, and search section
     ui->scrollListeMachines->setVisible(true);
     ui->scrollHistoriqueOnOff->setVisible(false);
     ui->tableMachines->setVisible(false);
     ui->frameSummary->setVisible(true);
+    ui->groupRecherche->setVisible(true);
     qDebug() << "[DEBUG] Formulaire visible:" << ui->widgetFormulaireParcMachines->isVisible();
 }
 
