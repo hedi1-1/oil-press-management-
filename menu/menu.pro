@@ -1,4 +1,4 @@
-QT       += core gui
+QT       += core gui sql
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -13,6 +13,8 @@ SOURCES += \
     menu.cpp \
     ../Login/login.cpp \
     ../production/production.cpp \
+    ../production/connection.cpp \
+    ../production/productionmodel.cpp \
     ../userstaff/userstaff.cpp \
     ../gestionclients/gestionclients.cpp \
     ../stock/stock.cpp \
@@ -23,6 +25,8 @@ HEADERS += \
     menu.h \
     ../Login/login.h \
     ../production/production.h \
+    ../production/connection.h \
+    ../production/productionmodel.h \
     ../userstaff/userstaff.h \
     ../gestionclients/gestionclients.h \
     ../stock/stock.h \

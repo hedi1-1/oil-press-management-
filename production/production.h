@@ -3,9 +3,9 @@
 
 #include <QMainWindow>
 #include <QMessageBox>
-#include <QSqlQueryModel>
-#include <QSqlTableModel>
-#include <QSqlQuery>
+#include <QtSql/QSqlQueryModel>
+#include <QtSql/QSqlTableModel>
+#include <QtSql/QSqlQuery>
 #include <QTableWidgetItem>
 #include <QHeaderView>
 #include "connection.h"
@@ -50,6 +50,7 @@ private slots:
 
 private:
     Ui::Production *ui;
+    Connection conn;
     ProductionModel currentProduction;
     int currentProductionId;
 };

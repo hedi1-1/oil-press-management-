@@ -4,10 +4,10 @@
 #include <QString>
 #include <QDate>
 #include <QTime>
-#include <QSqlQuery>
-#include <QSqlQueryModel>
-#include <QSqlTableModel>
-#include <QSqlError>
+#include <QtSql/QSqlQuery>
+#include <QtSql/QSqlQueryModel>
+#include <QtSql/QSqlTableModel>
+#include <QtSql/QSqlError>
 #include <QDebug>
 
 class ProductionModel

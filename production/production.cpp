@@ -9,6 +9,11 @@ Production::Production(QWidget *parent)
 {
     ui->setupUi(this);
     
+    // Establish database connection
+    if (!conn.createconnect()) {
+        showErrorNotification("Impossible de se connecter à la base de données Oracle");
+    }
+    
     // Connect back button
     connect(ui->btnBackToMenu, &QPushButton::clicked, this, &Production::onBackButtonClicked);
     
@@ -31,6 +36,7 @@ Production::Production(QWidget *parent)
 
 Production::~Production()
 {
+    conn.closeconnect();
     delete ui;
 }
 
