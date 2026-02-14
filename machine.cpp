@@ -336,9 +336,7 @@ void machine::setupNavigationBar()
     navigationBar->addTab("🏭", "Parc machines");
     navigationBar->addTab("ℹ️", "Détails machine");
     navigationBar->addTab("📊", "Statistiques");
-    navigationBar->addTab("🔧", "Maintenance");
-    navigationBar->addTab("📜", "Historique");
-    navigationBar->addTab("🤖", "Décision IA");
+    navigationBar->addTab("�", "Historique");
 
     // Insert the navigation bar at the top of the central widget
     QVBoxLayout *mainLayout = qobject_cast<QVBoxLayout *>(ui->centralwidget->layout());
