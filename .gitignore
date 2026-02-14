@@ -1,6 +1,7 @@
 # Build output
 machine/build/
 build/
+.qtc_clangd/
 
 # Qt Creator user files
 .qtcreator/*.pro.user
