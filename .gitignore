@@ -1,0 +1,19 @@
+# Build output
+build/
+debug/
+release/
+
+# Qt generated
+moc_*.cpp
+moc_*.h
+ui_*.h
+qrc_*.cpp
+*.o
+*.obj
+*.exe
+*.pro.user
+*.pro.user.*
+
+# IDE
+.qtc_clangd/
+.qmake.stash
