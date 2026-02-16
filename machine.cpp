@@ -171,6 +171,22 @@ machine::machine(QWidget *parent)
 {
     ui->setupUi(this);
     
+    // Fix grid column stretches and spacing to reduce gap between left/right blocks
+    QGridLayout* grids[] = { ui->gridCard1Info, ui->gridCard2Info, ui->gridCard3Info };
+    for (auto grid : grids) {
+        // Labels: no stretch, values: moderate stretch
+        grid->setColumnStretch(0, 0);
+        grid->setColumnStretch(1, 0);
+        grid->setColumnStretch(2, 0);
+        grid->setColumnStretch(3, 0);
+        // Set fixed minimum widths to keep blocks compact and close together
+        grid->setColumnMinimumWidth(0, 160);  // Label gauche
+        grid->setColumnMinimumWidth(1, 200);  // Valeur gauche
+        grid->setColumnMinimumWidth(2, 120);  // Label droite
+        grid->setColumnMinimumWidth(3, 120);  // Valeur droite
+        grid->setHorizontalSpacing(15);
+    }
+    
     // Setup navigation bar
     setupNavigationBar();
     
@@ -232,10 +248,8 @@ machine::machine(QWidget *parent)
     
     // Connect Historique ON/OFF toggle button
     connect(ui->btnHistoriqueToggle, &QPushButton::toggled, this, [this](bool checked) {
-        // Only toggle views if the form is NOT visible
-        if (ui->widgetFormulaireParcMachines->isVisible()) {
-            return;
-        }
+        // Hide form if visible
+        ui->widgetFormulaireParcMachines->setVisible(false);
         
         if (checked) {
             ui->scrollHistoriqueOnOff->setVisible(true);
@@ -406,19 +420,17 @@ void machine::afficherFormulaireParc()
     // Reset form fields
     reinitialiserFormulaireParc();
     
-    // Show form first (so the toggle guard works)
-    ui->widgetFormulaireParcMachines->setVisible(true);
-    
-    // Uncheck historique toggle button if checked
-    ui->btnHistoriqueToggle->setChecked(false);
-    
-    // Hide everything else
+    // Hide lists and summary
     ui->scrollListeMachines->setVisible(false);
     ui->scrollHistoriqueOnOff->setVisible(false);
     ui->tableMachines->setVisible(false);
     ui->frameSummary->setVisible(false);
-    ui->groupRecherche->setVisible(false);
     
+    // Uncheck historique toggle button if checked
+    ui->btnHistoriqueToggle->setChecked(false);
+    
+    // Show form
+    ui->widgetFormulaireParcMachines->setVisible(true);
     qDebug() << "[DEBUG] Formulaire visible:" << ui->widgetFormulaireParcMachines->isVisible();
 }
 
@@ -428,12 +440,11 @@ void machine::masquerFormulaireParc()
     // Hide form
     ui->widgetFormulaireParcMachines->setVisible(false);
     
-    // Show machine list, summary, and search section
+    // Show machine list and summary
     ui->scrollListeMachines->setVisible(true);
     ui->scrollHistoriqueOnOff->setVisible(false);
     ui->tableMachines->setVisible(false);
     ui->frameSummary->setVisible(true);
-    ui->groupRecherche->setVisible(true);
     qDebug() << "[DEBUG] Formulaire visible:" << ui->widgetFormulaireParcMachines->isVisible();
 }
 

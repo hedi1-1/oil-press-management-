@@ -1992,6 +1992,73 @@ QFrame#cardMachine1:hover { border-color: #4CAF50; }</string>
                  </item>
                 </layout>
                </item>
+               <item>
+                <layout class="QHBoxLayout" name="layoutCard1Actions">
+                 <item>
+                  <spacer name="spacerCard1ActionsLeft">
+                   <property name="orientation">
+                    <enum>Qt::Orientation::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>40</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="btnCard1Modifier">
+                   <property name="minimumSize">
+                    <size>
+                     <width>32</width>
+                     <height>32</height>
+                    </size>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>32</width>
+                     <height>32</height>
+                    </size>
+                   </property>
+                   <property name="toolTip">
+                    <string>Modifier cette machine</string>
+                   </property>
+                   <property name="styleSheet">
+                    <string>QPushButton { background: transparent; font-size: 18px; border: none; padding: 0px; } QPushButton:hover { background-color: #e0e0e0; border-radius: 16px; }</string>
+                   </property>
+                   <property name="text">
+                    <string>✏️</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="btnCard1Supprimer">
+                   <property name="minimumSize">
+                    <size>
+                     <width>32</width>
+                     <height>32</height>
+                    </size>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>32</width>
+                     <height>32</height>
+                    </size>
+                   </property>
+                   <property name="toolTip">
+                    <string>Supprimer cette machine</string>
+                   </property>
+                   <property name="styleSheet">
+                    <string>QPushButton { background: transparent; font-size: 18px; border: none; padding: 0px; } QPushButton:hover { background-color: #ffebee; border-radius: 16px; }</string>
+                   </property>
+                   <property name="text">
+                    <string>🗑️</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
 
               </layout>
              </widget>
@@ -2254,6 +2321,73 @@ QFrame#cardMachine2:hover { border-color: #4CAF50; }</string>
                  </item>
                 </layout>
                </item>
+               <item>
+                <layout class="QHBoxLayout" name="layoutCard2Actions">
+                 <item>
+                  <spacer name="spacerCard2ActionsLeft">
+                   <property name="orientation">
+                    <enum>Qt::Orientation::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>40</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="btnCard2Modifier">
+                   <property name="minimumSize">
+                    <size>
+                     <width>32</width>
+                     <height>32</height>
+                    </size>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>32</width>
+                     <height>32</height>
+                    </size>
+                   </property>
+                   <property name="toolTip">
+                    <string>Modifier cette machine</string>
+                   </property>
+                   <property name="styleSheet">
+                    <string>QPushButton { background: transparent; font-size: 18px; border: none; padding: 0px; } QPushButton:hover { background-color: #e0e0e0; border-radius: 16px; }</string>
+                   </property>
+                   <property name="text">
+                    <string>✏️</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="btnCard2Supprimer">
+                   <property name="minimumSize">
+                    <size>
+                     <width>32</width>
+                     <height>32</height>
+                    </size>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>32</width>
+                     <height>32</height>
+                    </size>
+                   </property>
+                   <property name="toolTip">
+                    <string>Supprimer cette machine</string>
+                   </property>
+                   <property name="styleSheet">
+                    <string>QPushButton { background: transparent; font-size: 18px; border: none; padding: 0px; } QPushButton:hover { background-color: #ffebee; border-radius: 16px; }</string>
+                   </property>
+                   <property name="text">
+                    <string>🗑️</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
 
               </layout>
              </widget>
@@ -2511,6 +2645,73 @@ QFrame#cardMachine3:hover { border-color: #4CAF50; }</string>
                    </property>
                    <property name="text">
                     <string>📅 05 Février 2026</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+               <item>
+                <layout class="QHBoxLayout" name="layoutCard3Actions">
+                 <item>
+                  <spacer name="spacerCard3ActionsLeft">
+                   <property name="orientation">
+                    <enum>Qt::Orientation::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>40</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="btnCard3Modifier">
+                   <property name="minimumSize">
+                    <size>
+                     <width>32</width>
+                     <height>32</height>
+                    </size>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>32</width>
+                     <height>32</height>
+                    </size>
+                   </property>
+                   <property name="toolTip">
+                    <string>Modifier cette machine</string>
+                   </property>
+                   <property name="styleSheet">
+                    <string>QPushButton { background: transparent; font-size: 18px; border: none; padding: 0px; } QPushButton:hover { background-color: #e0e0e0; border-radius: 16px; }</string>
+                   </property>
+                   <property name="text">
+                    <string>✏️</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="btnCard3Supprimer">
+                   <property name="minimumSize">
+                    <size>
+                     <width>32</width>
+                     <height>32</height>
+                    </size>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>32</width>
+                     <height>32</height>
+                    </size>
+                   </property>
+                   <property name="toolTip">
+                    <string>Supprimer cette machine</string>
+                   </property>
+                   <property name="styleSheet">
+                    <string>QPushButton { background: transparent; font-size: 18px; border: none; padding: 0px; } QPushButton:hover { background-color: #ffebee; border-radius: 16px; }</string>
+                   </property>
+                   <property name="text">
+                    <string>🗑️</string>
                    </property>
                   </widget>
                  </item>
