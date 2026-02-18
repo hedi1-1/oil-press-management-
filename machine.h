@@ -7,6 +7,9 @@
 #include <QHBoxLayout>
 #include <QPushButton>
 #include <QVector>
+#include <QLabel>
+#include <QCheckBox>
+#include <QStandardItemModel>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -44,6 +47,14 @@ private:
     const QString ACTIVE_COLOR = "#1A3C2F";
 };
 
+// Todo item for maintenance list
+struct TodoItem {
+    QString machineName;
+    QString fabricant;
+    QString priority; // "Urgent" or "Normal"
+    bool done;
+};
+
 // Machine Main Window Class
 class machine : public QMainWindow
 {
@@ -71,9 +82,23 @@ private:
     void afficherFormulaireParc();
     void masquerFormulaireParc();
     void reinitialiserFormulaireParc();
+    void masquerContenuRecherche();
+    void restaurerContenuRecherche();
+    void setupTodoList();
+    void refreshTodoList();
+    void addTodoItem(const QString &machineName, const QString &fabricant, const QString &priority);
+    void onTodoCheckToggled(int index, bool checked);
+    void showAddTodoDialog();
+    QWidget* createTodoItemWidget(int index);
 
     Ui::machine *ui;
     QTimer *dateTimeTimer;
     NavigationBar *navigationBar;
+    QLabel *lblTitreAjout;
+    QPushButton *btnRetourFormulaire;
+    QString groupRechercheOriginalStyle;
+    QVector<TodoItem> m_todoItems;
+    QStandardItemModel *machineTableModel;
+    void setupMachineTable();
 };
 #endif // MACHINE_H

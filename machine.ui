@@ -603,17 +603,177 @@ QToolButton:hover {
             </widget>
            </item>
            <item>
-            <spacer name="summarySpacer">
-             <property name="orientation">
-              <enum>Qt::Orientation::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
+            <widget class="QFrame" name="frameTodoList">
+             <property name="minimumSize">
               <size>
-               <width>40</width>
-               <height>20</height>
+               <width>420</width>
+               <height>0</height>
               </size>
              </property>
-            </spacer>
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+               <horstretch>2</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="styleSheet">
+              <string>QFrame#frameTodoList { background-color: #FAFAFA; border: 1px solid #E0E0E0; border-radius: 10px; }</string>
+             </property>
+             <property name="frameShape">
+              <enum>QFrame::Shape::StyledPanel</enum>
+             </property>
+             <layout class="QVBoxLayout" name="layoutTodoList">
+              <property name="spacing">
+               <number>8</number>
+              </property>
+              <property name="leftMargin">
+               <number>14</number>
+              </property>
+              <property name="topMargin">
+               <number>10</number>
+              </property>
+              <property name="rightMargin">
+               <number>14</number>
+              </property>
+              <property name="bottomMargin">
+               <number>10</number>
+              </property>
+              <item>
+               <layout class="QHBoxLayout" name="layoutTodoHeader">
+                <item>
+                 <widget class="QLabel" name="lblTodoTitle">
+                  <property name="text">
+                   <string>🔧 Machines à réparer</string>
+                  </property>
+                  <property name="styleSheet">
+                   <string>font-size: 14px; font-weight: bold; color: #1A3C2F; background: transparent; border: none; padding: 2px 0px;</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <spacer name="todoHeaderSpacer">
+                  <property name="orientation">
+                   <enum>Qt::Orientation::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>10</width>
+                    <height>10</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="btnSummaryActualiser">
+                  <property name="minimumSize">
+                   <size>
+                    <width>30</width>
+                    <height>30</height>
+                   </size>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>30</width>
+                    <height>30</height>
+                   </size>
+                  </property>
+                  <property name="toolTip">
+                   <string>Actualiser</string>
+                  </property>
+                  <property name="styleSheet">
+                   <string>QPushButton { background: transparent; font-size: 16px; border: none; padding: 0px; } QPushButton:hover { background-color: rgba(30,144,255,80); border-radius: 6px; }</string>
+                  </property>
+                  <property name="cursor">
+                   <cursorShape>PointingHandCursor</cursorShape>
+                  </property>
+                  <property name="text">
+                   <string>🔄</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="btnSummaryActionneurs">
+                  <property name="minimumSize">
+                   <size>
+                    <width>30</width>
+                    <height>30</height>
+                   </size>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>30</width>
+                    <height>30</height>
+                   </size>
+                  </property>
+                  <property name="toolTip">
+                   <string>Actionneurs</string>
+                  </property>
+                  <property name="styleSheet">
+                   <string>QPushButton { background: transparent; font-size: 16px; border: none; padding: 0px; } QPushButton:hover { background-color: rgba(180,180,180,80); border-radius: 6px; }</string>
+                  </property>
+                  <property name="cursor">
+                   <cursorShape>PointingHandCursor</cursorShape>
+                  </property>
+                  <property name="text">
+                   <string>⚙️</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <widget class="QScrollArea" name="scrollTodoList">
+                <property name="widgetResizable">
+                 <bool>true</bool>
+                </property>
+                <property name="styleSheet">
+                 <string>QScrollArea { border: none; background: transparent; } QScrollBar:vertical { width: 6px; background: transparent; } QScrollBar::handle:vertical { background: #CCC; border-radius: 3px; min-height: 20px; } QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }</string>
+                </property>
+                <widget class="QWidget" name="widgetTodoContent">
+                 <property name="styleSheet">
+                  <string>background: transparent;</string>
+                 </property>
+                 <layout class="QVBoxLayout" name="layoutTodoContent">
+                  <property name="spacing">
+                   <number>6</number>
+                  </property>
+                  <property name="leftMargin">
+                   <number>2</number>
+                  </property>
+                  <property name="topMargin">
+                   <number>2</number>
+                  </property>
+                  <property name="rightMargin">
+                   <number>2</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>2</number>
+                  </property>
+                 </layout>
+                </widget>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="btnAjouterTodo">
+                <property name="text">
+                 <string>+ Ajouter</string>
+                </property>
+                <property name="cursor">
+                 <cursorShape>PointingHandCursor</cursorShape>
+                </property>
+                <property name="styleSheet">
+                 <string>QPushButton { background: transparent; color: #1B4D3E; font-size: 12px; font-weight: bold; border: 1px dashed #1B4D3E; border-radius: 5px; padding: 5px 14px; } QPushButton:hover { background-color: #E8F5E9; }</string>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>120</width>
+                  <height>30</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
            </item>
           </layout>
          </widget>
@@ -639,76 +799,7 @@ QToolButton:hover {
            <property name="bottomMargin">
             <number>15</number>
            </property>
-           <item>
-            <layout class="QHBoxLayout" name="layoutRechercheRapide">
-             <property name="spacing">
-              <number>10</number>
-             </property>
-             <item>
-              <widget class="QLabel" name="lblRechercheRapide">
-               <property name="styleSheet">
-                <string>font-weight: bold; color: #1B4D3E; font-size: 12px;</string>
-               </property>
-               <property name="text">
-                <string>🔍 Recherche rapide:</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QLineEdit" name="recherche_nom_machine">
-               <property name="placeholderText">
-                <string>Rechercher par nom...</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="btnRechercher">
-               <property name="text">
-                <string>🔍 Rechercher</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="btnHistoriqueToggle">
-               <property name="text">
-                <string>📜 Historique ON/OFF</string>
-               </property>
-               <property name="checkable">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <spacer name="rechercheRapideSpacer">
-               <property name="orientation">
-                <enum>Qt::Orientation::Horizontal</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>40</width>
-                 <height>20</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-            </layout>
-           </item>
-           <item>
-            <widget class="QFrame" name="separateur">
-             <property name="maximumSize">
-              <size>
-               <width>16777215</width>
-               <height>1</height>
-              </size>
-             </property>
-             <property name="styleSheet">
-              <string>background-color: #d0d0d0;</string>
-             </property>
-             <property name="frameShape">
-              <enum>QFrame::Shape::HLine</enum>
-             </property>
-            </widget>
-           </item>
+
            <item>
             <layout class="QVBoxLayout" name="layoutFiltresAvances">
              <property name="spacing">
@@ -960,13 +1051,127 @@ QToolButton:hover {
             <number>0</number>
            </property>
            <item>
-            <widget class="QToolBar" name="toolBarActions">
-             <property name="movable">
-              <bool>false</bool>
+            <widget class="QWidget" name="widgetToolBarReplacement" native="true">
+             <property name="styleSheet">
+              <string>QWidget#widgetToolBarReplacement { background-color: #f8f9fa; border: 2px solid #1A3C2F; border-radius: 4px; padding: 5px; }</string>
              </property>
-             <property name="floatable">
-              <bool>false</bool>
-             </property>
+             <layout class="QHBoxLayout" name="layoutToolBarReplacement">
+              <property name="spacing">
+               <number>10</number>
+              </property>
+              <property name="leftMargin">
+               <number>10</number>
+              </property>
+              <property name="topMargin">
+               <number>5</number>
+              </property>
+              <property name="rightMargin">
+               <number>10</number>
+              </property>
+              <property name="bottomMargin">
+               <number>5</number>
+              </property>
+              <item>
+               <widget class="QLabel" name="lblRechercheRapide">
+                <property name="styleSheet">
+                 <string>font-weight: bold; color: #1B4D3E; font-size: 12px;</string>
+                </property>
+                <property name="text">
+                 <string>Recherche:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="recherche_nom_machine">
+                <property name="placeholderText">
+                 <string>Rechercher par nom...</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="btnRechercher">
+                <property name="text">
+                 <string>🔍</string>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>36</width>
+                  <height>36</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>36</width>
+                  <height>36</height>
+                 </size>
+                </property>
+                <property name="toolTip">
+                 <string>Rechercher</string>
+                </property>
+                <property name="styleSheet">
+                 <string>QPushButton { min-width: 0px; padding: 4px; font-size: 16px; }</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="btnAfficherTableau">
+                <property name="text">
+                 <string>📊</string>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>36</width>
+                  <height>36</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>36</width>
+                  <height>36</height>
+                 </size>
+                </property>
+                <property name="toolTip">
+                 <string>Afficher le tableau des machines</string>
+                </property>
+                <property name="styleSheet">
+                 <string>QPushButton { min-width: 0px; padding: 4px; font-size: 16px; }</string>
+                </property>
+                <property name="checkable">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="btnHistoriqueToggle">
+                <property name="text">
+                 <string>📜 Historique ON/OFF</string>
+                </property>
+                <property name="checkable">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="rechercheRapideSpacer">
+                <property name="orientation">
+                 <enum>Qt::Orientation::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
+               <widget class="QPushButton" name="btnExporter">
+                <property name="text">
+                 <string>📤 Exporter</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </widget>
            </item>
            <item>
@@ -1817,16 +2022,6 @@ QFrame#cardMachine1:hover { border-color: #4CAF50; }</string>
                    </property>
                   </widget>
                  </item>
-                 <item>
-                  <widget class="QLabel" name="lblCard1EtatMarche">
-                   <property name="styleSheet">
-                    <string>font-weight: 700; color: #2E7D32; background-color: #E8F5E9; padding: 5px 14px; border-radius: 12px; border: 2px solid #4CAF50; font-size: 12px; letter-spacing: 1px;</string>
-                   </property>
-                   <property name="text">
-                    <string>● ON</string>
-                   </property>
-                  </widget>
-                 </item>
                 </layout>
                </item>
                <item>
@@ -1990,24 +2185,20 @@ QFrame#cardMachine1:hover { border-color: #4CAF50; }</string>
                    </property>
                   </widget>
                  </item>
-                </layout>
-               </item>
-               <item>
-                <layout class="QHBoxLayout" name="layoutCard1Actions">
-                 <item>
-                  <spacer name="spacerCard1ActionsLeft">
-                   <property name="orientation">
-                    <enum>Qt::Orientation::Horizontal</enum>
+                 <item row="0" column="4" rowspan="2">
+                  <widget class="QLabel" name="lblCard1EtatMarche">
+                   <property name="styleSheet">
+                    <string>font-weight: 700; color: #2E7D32; background-color: #E8F5E9; padding: 5px 14px; border-radius: 12px; border: 2px solid #4CAF50; font-size: 12px; letter-spacing: 1px;</string>
                    </property>
-                   <property name="sizeHint" stdset="0">
-                    <size>
-                     <width>40</width>
-                     <height>20</height>
-                    </size>
+                   <property name="text">
+                    <string>● ON</string>
                    </property>
-                  </spacer>
+                   <property name="alignment">
+                    <set>Qt::AlignmentFlag::AlignCenter</set>
+                   </property>
+                  </widget>
                  </item>
-                 <item>
+                 <item row="2" column="4">
                   <widget class="QPushButton" name="btnCard1Modifier">
                    <property name="minimumSize">
                     <size>
@@ -2032,7 +2223,7 @@ QFrame#cardMachine1:hover { border-color: #4CAF50; }</string>
                    </property>
                   </widget>
                  </item>
-                 <item>
+                 <item row="3" column="4">
                   <widget class="QPushButton" name="btnCard1Supprimer">
                    <property name="minimumSize">
                     <size>
@@ -2143,16 +2334,6 @@ QFrame#cardMachine2:hover { border-color: #4CAF50; }</string>
                    </property>
                    <property name="text">
                     <string>⛔ Arrêt forcé</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QLabel" name="lblCard2EtatMarche">
-                   <property name="styleSheet">
-                    <string>font-weight: 700; color: #E65100; background-color: #FFF3E0; padding: 5px 14px; border-radius: 12px; border: 2px solid #FFA726; font-size: 12px; letter-spacing: 1px;</string>
-                   </property>
-                   <property name="text">
-                    <string>● VEILLE</string>
                    </property>
                   </widget>
                  </item>
@@ -2319,24 +2500,20 @@ QFrame#cardMachine2:hover { border-color: #4CAF50; }</string>
                    </property>
                   </widget>
                  </item>
-                </layout>
-               </item>
-               <item>
-                <layout class="QHBoxLayout" name="layoutCard2Actions">
-                 <item>
-                  <spacer name="spacerCard2ActionsLeft">
-                   <property name="orientation">
-                    <enum>Qt::Orientation::Horizontal</enum>
+                 <item row="0" column="4" rowspan="2">
+                  <widget class="QLabel" name="lblCard2EtatMarche">
+                   <property name="styleSheet">
+                    <string>font-weight: 700; color: #E65100; background-color: #FFF3E0; padding: 5px 14px; border-radius: 12px; border: 2px solid #FFA726; font-size: 12px; letter-spacing: 1px;</string>
                    </property>
-                   <property name="sizeHint" stdset="0">
-                    <size>
-                     <width>40</width>
-                     <height>20</height>
-                    </size>
+                   <property name="text">
+                    <string>● VEILLE</string>
                    </property>
-                  </spacer>
+                   <property name="alignment">
+                    <set>Qt::AlignmentFlag::AlignCenter</set>
+                   </property>
+                  </widget>
                  </item>
-                 <item>
+                 <item row="2" column="4">
                   <widget class="QPushButton" name="btnCard2Modifier">
                    <property name="minimumSize">
                     <size>
@@ -2361,7 +2538,7 @@ QFrame#cardMachine2:hover { border-color: #4CAF50; }</string>
                    </property>
                   </widget>
                  </item>
-                 <item>
+                 <item row="3" column="4">
                   <widget class="QPushButton" name="btnCard2Supprimer">
                    <property name="minimumSize">
                     <size>
@@ -2472,16 +2649,6 @@ QFrame#cardMachine3:hover { border-color: #4CAF50; }</string>
                    </property>
                    <property name="text">
                     <string>⛔ Arrêt forcé</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QLabel" name="lblCard3EtatMarche">
-                   <property name="styleSheet">
-                    <string>font-weight: 700; color: #B71C1C; background-color: #FFEBEE; padding: 5px 14px; border-radius: 12px; border: 2px solid #EF5350; font-size: 12px; letter-spacing: 1px;</string>
-                   </property>
-                   <property name="text">
-                    <string>● OFF</string>
                    </property>
                   </widget>
                  </item>
@@ -2648,24 +2815,20 @@ QFrame#cardMachine3:hover { border-color: #4CAF50; }</string>
                    </property>
                   </widget>
                  </item>
-                </layout>
-               </item>
-               <item>
-                <layout class="QHBoxLayout" name="layoutCard3Actions">
-                 <item>
-                  <spacer name="spacerCard3ActionsLeft">
-                   <property name="orientation">
-                    <enum>Qt::Orientation::Horizontal</enum>
+                 <item row="0" column="4" rowspan="2">
+                  <widget class="QLabel" name="lblCard3EtatMarche">
+                   <property name="styleSheet">
+                    <string>font-weight: 700; color: #B71C1C; background-color: #FFEBEE; padding: 5px 14px; border-radius: 12px; border: 2px solid #EF5350; font-size: 12px; letter-spacing: 1px;</string>
                    </property>
-                   <property name="sizeHint" stdset="0">
-                    <size>
-                     <width>40</width>
-                     <height>20</height>
-                    </size>
+                   <property name="text">
+                    <string>● OFF</string>
                    </property>
-                  </spacer>
+                   <property name="alignment">
+                    <set>Qt::AlignmentFlag::AlignCenter</set>
+                   </property>
+                  </widget>
                  </item>
-                 <item>
+                 <item row="2" column="4">
                   <widget class="QPushButton" name="btnCard3Modifier">
                    <property name="minimumSize">
                     <size>
@@ -2690,7 +2853,7 @@ QFrame#cardMachine3:hover { border-color: #4CAF50; }</string>
                    </property>
                   </widget>
                  </item>
-                 <item>
+                 <item row="3" column="4">
                   <widget class="QPushButton" name="btnCard3Supprimer">
                    <property name="minimumSize">
                     <size>
