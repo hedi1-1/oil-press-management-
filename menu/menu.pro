@@ -18,6 +18,7 @@ SOURCES += \
     ../userstaff/userstaff.cpp \
     ../gestionclients/gestionclients.cpp \
     ../stock/stock.cpp \
+    ../stock/connexion.cpp \
     ../machine/machine.cpp \
     ../finance/finance.cpp
 
@@ -30,12 +31,12 @@ HEADERS += \
     ../userstaff/userstaff.h \
     ../gestionclients/gestionclients.h \
     ../stock/stock.h \
+    ../stock/connexion.h \
     ../machine/machine.h \
     ../finance/finance.h
 
 FORMS += \
     menu.ui \
-    ../Login/login.ui \
     ../production/production.ui \
     ../userstaff/userstaff.ui \
     ../gestionclients/gestionclients.ui \
@@ -44,7 +45,8 @@ FORMS += \
     ../finance/finance.ui
 
 RESOURCES += \
-    ../production/resources.qrc
+    ../production/resources.qrc \
+    ../Login/login_resources.qrc
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

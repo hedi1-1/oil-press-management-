@@ -1004,27 +1004,19 @@ void Finance::initializeUI()
     titleLayout->addWidget(lblMainTitle);
     titleLayout->addWidget(lblSubtitle);
 
-    // Logo ou ic├┤ne
+    // Logo
     QLabel *lblIcon = new QLabel();
-    QPixmap logoPixmap;
-    
-    // Essayer diff├⌐rents chemins possibles
-    if (!logoPixmap.load(":/images/resources/pressiq_logo.png")) {
-        if (!logoPixmap.load("resources/pressiq_logo.png")) {
-            logoPixmap.load("./resources/pressiq_logo.png");
-        }
-    }
+    QPixmap logoPixmap(":/logo.png");
     
     if (!logoPixmap.isNull()) {
-        logoPixmap = logoPixmap.scaledToWidth(120, Qt::SmoothTransformation);
+        logoPixmap = logoPixmap.scaled(50, 50, Qt::KeepAspectRatio, Qt::SmoothTransformation);
         lblIcon->setPixmap(logoPixmap);
     } else {
-        // Fallback : afficher un texte simple
         lblIcon->setText("PressIQ");
         lblIcon->setStyleSheet("font-size: 12pt; font-weight: bold; color: #27ae60;");
     }
     lblIcon->setAlignment(Qt::AlignCenter);
-    lblIcon->setMaximumWidth(150);
+    lblIcon->setMaximumWidth(60);
 
     // Status online
     QVBoxLayout *statusLayout = new QVBoxLayout();

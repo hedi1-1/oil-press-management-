@@ -2,28 +2,107 @@
 #define LOGIN_H
 
 #include <QMainWindow>
-
-QT_BEGIN_NAMESPACE
-namespace Ui {
-class Login;
-}
-QT_END_NAMESPACE
+#include <QPixmap>
+#include <QPropertyAnimation>
+#include <QSequentialAnimationGroup>
+#include <QParallelAnimationGroup>
+#include <QGraphicsOpacityEffect>
+#include <QLabel>
+#include <QLineEdit>
+#include <QPushButton>
+#include <QCheckBox>
+#include <QFrame>
+#include <QTimer>
+#include <QWidget>
 
 class Login : public QMainWindow
 {
     Q_OBJECT
+    Q_PROPERTY(double cardOpacity READ cardOpacity WRITE setCardOpacity)
+    Q_PROPERTY(int cardYOffset READ cardYOffset WRITE setCardYOffset)
 
 public:
     Login(QWidget *parent = nullptr);
     ~Login();
 
+    double cardOpacity() const { return m_cardOpacity; }
+    void setCardOpacity(double v);
+    int cardYOffset() const { return m_cardYOffset; }
+    void setCardYOffset(int v);
+
 signals:
     void goToMenu();
 
+protected:
+    void resizeEvent(QResizeEvent *event) override;
+    void showEvent(QShowEvent *event) override;
+    bool eventFilter(QObject *watched, QEvent *event) override;
+
 private slots:
-    void onSuivantClicked();
+    void onLoginClicked();
+    void validateFields();
+    void togglePasswordVisibility();
 
 private:
-    Ui::Login *ui;
+    void buildUi();
+    void applyBackground();
+    void playEntranceAnimation();
+    void playShakeAnimation();
+    void playSuccessAnimation();
+    void showError(const QString &msg);
+    void hideError();
+    void setLoadingState(bool loading);
+
+    // Background
+    QWidget *bgWidget;
+    QWidget *overlayWidget;
+    QPixmap bgPixmap;
+
+    // Main card
+    QFrame *cardFrame;
+    QGraphicsOpacityEffect *cardEffect;
+
+    // Brand
+    QLabel *brandIcon;
+    QLabel *brandTitle;
+    QLabel *brandSubtitle;
+
+    // Inputs
+    QLineEdit *usernameEdit;
+    QLineEdit *passwordEdit;
+    QLabel *userIconLabel;
+    QLabel *lockIconLabel;
+    QPushButton *eyeToggle;
+
+    // Button
+    QPushButton *loginBtn;
+    QLabel *spinnerLabel;
+
+    // Extras
+    QCheckBox *rememberCheck;
+    QPushButton *forgotBtn;
+    QLabel *errorLabel;
+    QGraphicsOpacityEffect *errorEffect;
+
+    // Footer
+    QLabel *footerLabel;
+
+    // Left panel
+    QWidget *leftPanel;
+    QLabel *welcomeLabel;
+    QLabel *appNameLabel;
+    QLabel *taglineLabel;
+    QLabel *feat1;
+    QLabel *feat2;
+    QLabel *feat3;
+    QGraphicsOpacityEffect *leftEffect;
+
+    // Animation state
+    double m_cardOpacity;
+    int m_cardYOffset;
+    bool m_isLoading;
+    bool m_passwordVisible;
+    bool m_entrancePlayed;
 };
+
 #endif // LOGIN_H

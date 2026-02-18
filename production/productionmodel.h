@@ -5,6 +5,7 @@
 #include <QDate>
 #include <QTime>
 #include <QtSql/QSqlQuery>
+#include <QtSql/QSqlDatabase>
 #include <QtSql/QSqlQueryModel>
 #include <QtSql/QSqlTableModel>
 #include <QtSql/QSqlError>

@@ -8,14 +8,14 @@ bool Connection::createconnect()
 {
     bool test = false;
     
-    // Utiliser QODBC avec le driver Oracle
-    db = QSqlDatabase::addDatabase("QODBC");
+    // Utiliser QODBC avec le driver Oracle - Base ZITOUNA
+    db = QSqlDatabase::addDatabase("QODBC", "production_conn");
     
-    // Connexion via ODBC - Driver "Oracle in XE" détecté sur ce système
+    // Connexion via ODBC - Base de données ZITOUNA
     QString connectionString = "Driver={Oracle in XE};"
                                "DBQ=127.0.0.1:1521/XE;"
-                               "UID=hr;"
-                               "PWD=hr;";
+                               "UID=zitouna;"
+                               "PWD=zitouna;";
     
     db.setDatabaseName(connectionString);
     

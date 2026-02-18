@@ -15,8 +15,8 @@ SOURCES += \
 HEADERS += \
     login.h
 
-FORMS += \
-    login.ui
+RESOURCES += \
+    login_resources.qrc
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

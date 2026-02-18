@@ -133,7 +133,7 @@ bool ProductionModel::addProduction()
     cleanTypePressage = cleanTypePressage.trimmed();
     if (cleanTypePressage.isEmpty()) cleanTypePressage = "Standard";
     
-    QSqlQuery query;
+    QSqlQuery query(QSqlDatabase::database("production_conn"));
     // Simplified INSERT for ODBC compatibility
     query.prepare("INSERT INTO PRODUCTION ("
                   "DATEPRODUCTION, QUANTITEOLIVESKG, TYPEPRESSAGE, "
@@ -159,7 +159,7 @@ bool ProductionModel::addProduction()
     
     if (query.exec()) {
         // Get the generated ID
-        QSqlQuery idQuery;
+        QSqlQuery idQuery(QSqlDatabase::database("production_conn"));
         idQuery.exec("SELECT SEQ_PRODUCTION.CURRVAL FROM DUAL");
         if (idQuery.next()) {
             m_idProduction = idQuery.value(0).toInt();
@@ -191,7 +191,7 @@ bool ProductionModel::updateProduction()
     cleanTypePressage = cleanTypePressage.trimmed();
     if (cleanTypePressage.isEmpty()) cleanTypePressage = "Standard";
     
-    QSqlQuery query;
+    QSqlQuery query(QSqlDatabase::database("production_conn"));
     query.prepare("UPDATE PRODUCTION SET "
                   "QUANTITEOLIVESKG = :quantiteOlivesKg, "
                   "TYPEPRESSAGE = :typePressage, "
@@ -230,7 +230,7 @@ bool ProductionModel::updateProduction()
 
 bool ProductionModel::deleteProduction(int idProduction)
 {
-    QSqlQuery query;
+    QSqlQuery query(QSqlDatabase::database("production_conn"));
     query.prepare("DELETE FROM PRODUCTION WHERE IDPRODUCTION = :idProduction");
     query.bindValue(":idProduction", idProduction);
     
@@ -275,7 +275,8 @@ QSqlQueryModel* ProductionModel::getAllProductions()
                     "RENDEMENT AS \"Rendement (%)\", "
                     "QUALITE AS \"Qualité\", "
                     "CONFORMENORMES AS \"Conforme\" "
-                    "FROM PRODUCTION ORDER BY IDPRODUCTION DESC");
+                    "FROM PRODUCTION ORDER BY IDPRODUCTION DESC",
+                    QSqlDatabase::database("production_conn"));
     
     if (model->lastError().isValid()) {
         qDebug() << "Error fetching all productions:" << model->lastError().text();
@@ -292,7 +293,7 @@ QSqlQueryModel* ProductionModel::searchProductions(const QString& keyword)
 {
     QSqlQueryModel* model = new QSqlQueryModel();
     
-    QSqlQuery query;
+    QSqlQuery query(QSqlDatabase::database("production_conn"));
     query.prepare("SELECT "
                   "IDPRODUCTION AS \"ID\", "
                   "ID_CLIENT AS \"Client\", "
@@ -335,7 +336,7 @@ QSqlQueryModel* ProductionModel::searchProductions(const QString& keyword)
 
 QSqlTableModel* ProductionModel::getTableModel(QObject* parent)
 {
-    QSqlTableModel* model = new QSqlTableModel(parent);
+    QSqlTableModel* model = new QSqlTableModel(parent, QSqlDatabase::database("production_conn"));
     model->setTable("PRODUCTION");
     model->setEditStrategy(QSqlTableModel::OnManualSubmit);
     

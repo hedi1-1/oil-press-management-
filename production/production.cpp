@@ -300,7 +300,7 @@ void Production::onGenerateReportClicked()
 
 void Production::loadProductionHistory()
 {
-    QSqlQuery query;
+    QSqlQuery query(QSqlDatabase::database("production_conn"));
     query.exec("SELECT IDPRODUCTION, DATEPRODUCTION, QUANTITEOLIVESKG, HUILEPRODUITEL, RENDEMENT, STATUT "
                "FROM PRODUCTION ORDER BY IDPRODUCTION DESC");
     

@@ -339,7 +339,7 @@ QToolButton:hover {
           <string/>
          </property>
          <property name="pixmap">
-          <pixmap resource="resources.qrc">:/assets/logo.png</pixmap>
+          <pixmap resource="../production/resources.qrc">:/logo.png</pixmap>
          </property>
          <property name="scaledContents">
           <bool>true</bool>
@@ -1883,7 +1883,7 @@ QToolButton:hover {
   </widget>
  </widget>
  <resources>
-  <include location="resources.qrc"/>
+  <include location="../production/resources.qrc"/>
  </resources>
  <connections/>
 </ui>
