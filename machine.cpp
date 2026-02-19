@@ -13,6 +13,7 @@
 #include <QStandardItemModel>
 #include <QHeaderView>
 
+
 // ============================================================================
 // NavigationBar Implementation
 // ============================================================================
@@ -343,6 +344,9 @@ machine::machine(QWidget *parent)
     // Connect actionneurs button to show formulaire
     connect(ui->btnSummaryActionneurs, &QPushButton::clicked, this, &machine::afficherFormulaireParc);
 
+    // Connect the new "Ajouter" toolbar button to show formulaire
+    connect(ui->btnAjouterMachine, &QPushButton::clicked, this, &machine::afficherFormulaireParc);
+
     // Initialize form as hidden
     ui->widgetFormulaireParcMachines->setVisible(false);
     qDebug() << "[DEBUG] Initialisation: formulaire masque";
@@ -565,8 +569,10 @@ void machine::setupMachineTable()
     ui->tableMachines->setSelectionMode(QAbstractItemView::SingleSelection);
     ui->tableMachines->setSortingEnabled(true);
     ui->tableMachines->verticalHeader()->setVisible(false);
-    ui->tableMachines->horizontalHeader()->setStretchLastSection(true);
-    ui->tableMachines->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    // Désactive le stretch automatique pour permettre le scroll horizontal
+    ui->tableMachines->horizontalHeader()->setStretchLastSection(false);
+    ui->tableMachines->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
+    ui->tableMachines->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     ui->tableMachines->setShowGrid(true);
 
     // Set row height
