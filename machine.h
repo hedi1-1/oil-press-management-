@@ -70,10 +70,10 @@ private slots:
   void updateDateTime();
   void onNavigationTabClicked(int index);
   void on_pushButton_enregistrer_machine_clicked();
-  void on_btnReinitialiser_clicked();
-  void on_tableMachines_doubleClicked(const QModelIndex &index);
-  void on_btnSupprimerMachine_clicked();
-  void on_btnModifierMachine_clicked();
+  void on_btnReinitialiser_machine_clicked();
+  void on_tableMachines_machine_doubleClicked(const QModelIndex &index);
+  void on_btnSupprimerMachine_machine_clicked();
+  void on_btnModifierMachine_machine_clicked();
 
 private:
   void setupNavigationBar();

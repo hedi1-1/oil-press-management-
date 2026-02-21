@@ -337,14 +337,14 @@ QToolButton:hover {
                 <number>5</number>
               </property>
               <item>
-                <widget class="QPushButton" name="btnBackToMenu">
+                <widget class="QPushButton" name="btnBackToMenu_machine">
                   <property name="text">
                     <string>← Retour</string>
                   </property>
                 </widget>
               </item>
               <item>
-                <widget class="QLabel" name="lblLogo">
+                <widget class="QLabel" name="lblLogo_machine">
                   <property name="minimumSize">
                     <size>
                       <width>120</width>
@@ -374,7 +374,7 @@ QToolButton:hover {
                     <number>2</number>
                   </property>
                   <item>
-                    <widget class="QLabel" name="lblAppTitle">
+                    <widget class="QLabel" name="lblAppTitle_machine">
                       <property name="text">
                         <string>GESTION DES MACHINES</string>
                       </property>
@@ -403,7 +403,7 @@ QToolButton:hover {
                         </spacer>
                       </item>
                       <item>
-                        <widget class="QPushButton" name="btnGestionStock">
+                        <widget class="QPushButton" name="btnGestionStock_machine">
                           <property name="minimumSize">
                             <size>
                               <width>118</width>
@@ -438,7 +438,7 @@ QToolButton:hover {
                         </spacer>
                       </item>
                       <item>
-                        <widget class="QPushButton" name="btnGestionProduction">
+                        <widget class="QPushButton" name="btnGestionProduction_machine">
                           <property name="minimumSize">
                             <size>
                               <width>118</width>
@@ -477,7 +477,7 @@ QToolButton:hover {
                 </spacer>
               </item>
               <item>
-                <widget class="QLabel" name="lblDateTime">
+                <widget class="QLabel" name="lblDateTime_machine">
                   <property name="maximumSize">
                     <size>
                       <width>350</width>
@@ -493,7 +493,7 @@ QToolButton:hover {
                 </widget>
               </item>
               <item>
-                <widget class="QLabel" name="lblOnlineStatus">
+                <widget class="QLabel" name="lblOnlineStatus_machine">
                   <property name="maximumSize">
                     <size>
                       <width>130</width>
@@ -557,7 +557,7 @@ QToolButton:hover {
                         <number>12</number>
                       </property>
                       <item>
-                        <widget class="QLabel" name="lblMachinesNormales">
+                        <widget class="QLabel" name="lblMachinesNormales_machine">
                           <property name="minimumSize">
                             <size>
                               <width>0</width>
@@ -573,7 +573,7 @@ QToolButton:hover {
                         </widget>
                       </item>
                       <item>
-                        <widget class="QLabel" name="lblMachinesAlerte">
+                        <widget class="QLabel" name="lblMachinesAlerte_machine">
                           <property name="minimumSize">
                             <size>
                               <width>0</width>
@@ -589,7 +589,7 @@ QToolButton:hover {
                         </widget>
                       </item>
                       <item>
-                        <widget class="QLabel" name="lblMachinesPanne">
+                        <widget class="QLabel" name="lblMachinesPanne_machine">
                           <property name="minimumSize">
                             <size>
                               <width>0</width>
@@ -608,7 +608,7 @@ QToolButton:hover {
                         </widget>
                       </item>
                       <item>
-                        <widget class="QFrame" name="frameTodoList">
+                        <widget class="QFrame" name="frameTodoList_machine">
                           <property name="sizePolicy">
                             <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
                               <horstretch>2</horstretch>
@@ -669,7 +669,7 @@ QToolButton:hover {
                                   </spacer>
                                 </item>
                                 <item>
-                                  <widget class="QPushButton" name="btnSummaryActualiser">
+                                  <widget class="QPushButton" name="btnSummaryActualiser_machine">
                                     <property name="minimumSize">
                                       <size>
                                         <width>90</width>
@@ -699,7 +699,7 @@ QToolButton:hover {
                               </layout>
                             </item>
                             <item>
-                              <widget class="QScrollArea" name="scrollTodoList">
+                              <widget class="QScrollArea" name="scrollTodoList_machine">
                                 <property name="styleSheet">
                                   <string>QScrollArea { border: none; background: transparent; } QScrollBar:vertical { width: 6px; background: transparent; } QScrollBar::handle:vertical { background: #CCC; border-radius: 3px; min-height: 20px; } QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }</string>
                                 </property>
@@ -739,7 +739,7 @@ QToolButton:hover {
                               </widget>
                             </item>
                             <item>
-                              <widget class="QPushButton" name="btnAjouterTodo">
+                              <widget class="QPushButton" name="btnAjouterTodo_machine">
                                 <property name="maximumSize">
                                   <size>
                                     <width>120</width>
@@ -764,7 +764,7 @@ QToolButton:hover {
                   </widget>
                 </item>
                 <item>
-                  <widget class="QGroupBox" name="groupRecherche">
+                  <widget class="QGroupBox" name="groupRecherche_machine">
                     <property name="title">
                       <string>Recherche et tri</string>
                     </property>
@@ -834,7 +834,7 @@ QToolButton:hover {
                                 </widget>
                               </item>
                               <item>
-                                <widget class="QComboBox" name="filtre_etat_marche">
+                                <widget class="QComboBox" name="filtre_etat_marche_machine">
                                   <item>
                                     <property name="text">
                                       <string>-- État marche --</string>
@@ -1108,7 +1108,7 @@ QToolButton:hover {
                               </widget>
                             </item>
                             <item>
-                              <widget class="QPushButton" name="btnAfficherTableau">
+                              <widget class="QPushButton" name="btnAfficherTableau_machine">
                                 <property name="minimumSize">
                                   <size>
                                     <width>8</width>
@@ -1146,7 +1146,7 @@ QToolButton:hover {
                               </widget>
                             </item>
                              <item>
-                               <widget class="QPushButton" name="btnModifierMachine">
+                               <widget class="QPushButton" name="btnModifierMachine_machine">
                                  <property name="enabled">
                                    <bool>false</bool>
                                  </property>
@@ -1174,7 +1174,7 @@ QToolButton:hover {
                                </widget>
                              </item>
                              <item>
-                               <widget class="QPushButton" name="btnSupprimerMachine">
+                               <widget class="QPushButton" name="btnSupprimerMachine_machine">
                                  <property name="enabled">
                                    <bool>false</bool>
                                  </property>
@@ -1202,7 +1202,7 @@ QToolButton:hover {
                                </widget>
                              </item>
                             <item>
-                              <widget class="QPushButton" name="btnHistoriqueToggle">
+                              <widget class="QPushButton" name="btnHistoriqueToggle_machine">
                                 <property name="text">
                                   <string> Historique ON/OFF</string>
                                 </property>
@@ -1235,7 +1235,7 @@ QToolButton:hover {
                               </spacer>
                             </item>
                              <item>
-                               <widget class="QPushButton" name="btnActualiser">
+                               <widget class="QPushButton" name="btnActualiser_machine">
                                  <property name="minimumSize">
                                    <size>
                                      <width>40</width>
@@ -1273,7 +1273,7 @@ QPushButton#btnActualiser:pressed {
                                </widget>
                              </item>
                             <item>
-                              <widget class="QPushButton" name="btnExporter">
+                              <widget class="QPushButton" name="btnExporter_machine">
                                 <property name="text">
                                   <string> Exporter</string>
                                 </property>
@@ -1296,7 +1296,7 @@ QPushButton#btnActualiser:pressed {
                   </widget>
                 </item>
                 <item>
-                  <widget class="QScrollArea" name="scrollHistoriqueOnOff">
+                  <widget class="QScrollArea" name="scrollHistoriqueOnOff_machine">
                     <property name="visible">
                       <bool>false</bool>
                     </property>
@@ -2711,7 +2711,7 @@ QFrame#cardMachine3:hover { border-color: #4CAF50; }</string>
                   </widget>
                 </item>
                 <item>
-                  <widget class="QTableView" name="tableMachines">
+                  <widget class="QTableView" name="tableMachines_machine">
                     <property name="visible">
                       <bool>false</bool>
                     </property>
@@ -3071,7 +3071,7 @@ QFrame#cardMachine3:hover { border-color: #4CAF50; }</string>
                                     </widget>
                                   </item>
                                   <item>
-                                    <widget class="QPushButton" name="btnReinitialiser">
+                                    <widget class="QPushButton" name="btnReinitialiser_machine">
                                       <property name="minimumSize">
                                         <size>
                                           <width>118</width>
@@ -3192,7 +3192,7 @@ QFrame#cardMachine3:hover { border-color: #4CAF50; }</string>
                         </widget>
                       </item>
                       <item>
-                        <widget class="QComboBox" name="type_statistique">
+                        <widget class="QComboBox" name="type_statistique_machine">
                           <item>
                             <property name="text">
                               <string>État fonctionnement</string>
@@ -3218,7 +3218,7 @@ QFrame#cardMachine3:hover { border-color: #4CAF50; }</string>
                         </widget>
                       </item>
                       <item>
-                        <widget class="QComboBox" name="type_graphique">
+                        <widget class="QComboBox" name="type_graphique_machine">
                           <item>
                             <property name="text">
                               <string>BarChart</string>
@@ -3237,7 +3237,7 @@ QFrame#cardMachine3:hover { border-color: #4CAF50; }</string>
                         </widget>
                       </item>
                       <item>
-                        <widget class="QPushButton" name="btnGenererStats">
+                        <widget class="QPushButton" name="btnGenererStats_machine">
                           <property name="text">
                             <string>📊 Générer</string>
                           </property>
@@ -3260,7 +3260,7 @@ QFrame#cardMachine3:hover { border-color: #4CAF50; }</string>
                   </widget>
                 </item>
                 <item>
-                  <widget class="QWidget" name="zoneGraphique" native="true">
+                  <widget class="QWidget" name="zoneGraphique_machine" native="true">
                     <property name="minimumSize">
                       <size>
                         <width>0</width>
@@ -3282,7 +3282,7 @@ QFrame#cardMachine3:hover { border-color: #4CAF50; }</string>
                         <number>15</number>
                       </property>
                       <item>
-                        <widget class="QTableView" name="tableMaintenance">
+                        <widget class="QTableView" name="tableMaintenance_machine">
                           <property name="alternatingRowColors">
                             <bool>true</bool>
                           </property>
@@ -3310,7 +3310,7 @@ QFrame#cardMachine3:hover { border-color: #4CAF50; }</string>
                       </spacer>
                     </item>
                     <item>
-                      <widget class="QPushButton" name="btnEnregistrerMaintenance">
+                      <widget class="QPushButton" name="btnEnregistrerMaintenance_machine">
                         <property name="minimumSize">
                           <size>
                             <width>118</width>
@@ -3323,7 +3323,7 @@ QFrame#cardMachine3:hover { border-color: #4CAF50; }</string>
                       </widget>
                     </item>
                     <item>
-                      <widget class="QPushButton" name="btnPlanifierMaintenance">
+                      <widget class="QPushButton" name="btnPlanifierMaintenance_machine">
                         <property name="minimumSize">
                           <size>
                             <width>118</width>
@@ -3397,7 +3397,7 @@ QFrame#cardMachine3:hover { border-color: #4CAF50; }</string>
                         <number>20</number>
                       </property>
                       <item>
-                        <widget class="QLabel" name="lblRecommandationIA">
+                        <widget class="QLabel" name="lblRecommandationIA_machine">
                           <property name="styleSheet">
                             <string>font-size: 16px; padding: 20px; background-color: #e8f4fd; border: 1px solid #bee5eb; border-radius: 6px;</string>
                           </property>
@@ -3422,7 +3422,7 @@ QFrame#cardMachine3:hover { border-color: #4CAF50; }</string>
                             </widget>
                           </item>
                           <item>
-                            <widget class="QProgressBar" name="progressConfianceIA">
+                            <widget class="QProgressBar" name="progressConfianceIA_machine">
                               <property name="value">
                                 <number>0</number>
                               </property>
@@ -3449,7 +3449,7 @@ QFrame#cardMachine3:hover { border-color: #4CAF50; }</string>
                             </spacer>
                           </item>
                           <item>
-                            <widget class="QPushButton" name="btnAppliquerDecision">
+                            <widget class="QPushButton" name="btnAppliquerDecision_machine">
                               <property name="minimumSize">
                                 <size>
                                   <width>118</width>
@@ -3462,7 +3462,7 @@ QFrame#cardMachine3:hover { border-color: #4CAF50; }</string>
                             </widget>
                           </item>
                           <item>
-                            <widget class="QPushButton" name="btnIgnorerDecision">
+                            <widget class="QPushButton" name="btnIgnorerDecision_machine">
                               <property name="minimumSize">
                                 <size>
                                   <width>118</width>

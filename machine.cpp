@@ -172,8 +172,8 @@ machine::machine(QWidget *parent)
   ui->setupUi(this);
 
   // Disable toolbar buttons initially
-  ui->btnModifierMachine->setEnabled(false);
-  ui->btnSupprimerMachine->setEnabled(false);
+  ui->btnModifierMachine_machine->setEnabled(false);
+  ui->btnSupprimerMachine_machine->setEnabled(false);
 
   // Fix grid column stretches and spacing to reduce gap between left/right
   // blocks
@@ -199,7 +199,7 @@ machine::machine(QWidget *parent)
   setupNavigationBar();
 
   // Connect back button
-  connect(ui->btnBackToMenu, &QPushButton::clicked, this,
+  connect(ui->btnBackToMenu_machine, &QPushButton::clicked, this,
           &machine::onBackButtonClicked);
 
   // Setup date/time timer
@@ -215,83 +215,82 @@ machine::machine(QWidget *parent)
   chargerMachines();
 
   // Style the whole window
-  connect(ui->btnExporter, &QPushButton::clicked, this, [this]() {
+  connect(ui->btnExporter_machine, &QPushButton::clicked, this, [this]() {
     // Hide form and lists, show summary
-    ui->scrollHistoriqueOnOff->setVisible(false);
+    ui->scrollHistoriqueOnOff_machine->setVisible(false);
     ui->scrollListeMachines->setVisible(true);
-    ui->btnHistoriqueToggle->setChecked(false);
+    ui->btnHistoriqueToggle_machine->setChecked(false);
     // TODO: Implement export logic
   });
 
   // Connect Afficher Tableau toggle button
-  connect(ui->btnAfficherTableau, &QPushButton::toggled, this,
+  connect(ui->btnAfficherTableau_machine, &QPushButton::toggled, this,
           [this](bool checked) {
-            ui->scrollHistoriqueOnOff->setVisible(false);
-            ui->btnHistoriqueToggle->blockSignals(true);
-            ui->btnHistoriqueToggle->setChecked(false);
-            ui->btnHistoriqueToggle->blockSignals(false);
+            ui->scrollHistoriqueOnOff_machine->setVisible(false);
+            ui->btnHistoriqueToggle_machine->blockSignals(true);
+            ui->btnHistoriqueToggle_machine->setChecked(false);
+            ui->btnHistoriqueToggle_machine->blockSignals(false);
 
             if (checked) {
-              ui->tableMachines->setVisible(true);
+              ui->tableMachines_machine->setVisible(true);
               ui->scrollListeMachines->setVisible(false);
             } else {
-              ui->tableMachines->setVisible(false);
+              ui->tableMachines_machine->setVisible(false);
               ui->scrollListeMachines->setVisible(true);
             }
           });
 
   // Connect Historique ON/OFF toggle button
-  connect(ui->btnHistoriqueToggle, &QPushButton::toggled, this,
+  connect(ui->btnHistoriqueToggle_machine, &QPushButton::toggled, this,
           [this](bool checked) {
-            ui->btnAfficherTableau->blockSignals(true);
-            ui->btnAfficherTableau->setChecked(false);
-            ui->btnAfficherTableau->blockSignals(false);
+            ui->btnAfficherTableau_machine->blockSignals(true);
+            ui->btnAfficherTableau_machine->setChecked(false);
+            ui->btnAfficherTableau_machine->blockSignals(false);
 
             if (checked) {
-              ui->scrollHistoriqueOnOff->setVisible(true);
+              ui->scrollHistoriqueOnOff_machine->setVisible(true);
               ui->scrollListeMachines->setVisible(false);
             } else {
-              ui->scrollHistoriqueOnOff->setVisible(false);
+              ui->scrollHistoriqueOnOff_machine->setVisible(false);
               ui->scrollListeMachines->setVisible(true);
             }
-            ui->tableMachines->setVisible(false);
+            ui->tableMachines_machine->setVisible(false);
           });
 
   // Connect close button for Historique ON/OFF
   connect(ui->btnFermerHistorique, &QPushButton::clicked, this, [this]() {
-    ui->btnHistoriqueToggle->setChecked(false);
-    ui->scrollHistoriqueOnOff->setVisible(false);
+    ui->btnHistoriqueToggle_machine->setChecked(false);
+    ui->scrollHistoriqueOnOff_machine->setVisible(false);
     ui->scrollListeMachines->setVisible(true);
-    ui->tableMachines->setVisible(false);
+    ui->tableMachines_machine->setVisible(false);
   });
 
   // Connect search and filter buttons
   connect(ui->btnRechercher, &QPushButton::clicked, this, [this]() {
-    ui->scrollHistoriqueOnOff->setVisible(false);
+    ui->scrollHistoriqueOnOff_machine->setVisible(false);
     ui->scrollListeMachines->setVisible(true);
-    ui->btnHistoriqueToggle->setChecked(false);
+    ui->btnHistoriqueToggle_machine->setChecked(false);
     // TODO: Implement search logic
   });
 
-  connect(ui->btnActualiser, &QPushButton::clicked, this,
+  connect(ui->btnActualiser_machine, &QPushButton::clicked, this,
           [this]() { chargerMachines(); });
 
   connect(ui->btnFiltrer, &QPushButton::clicked, this, [this]() {
-    ui->scrollHistoriqueOnOff->setVisible(false);
+    ui->scrollHistoriqueOnOff_machine->setVisible(false);
     ui->scrollListeMachines->setVisible(true);
-    ui->btnHistoriqueToggle->setChecked(false);
+    ui->btnHistoriqueToggle_machine->setChecked(false);
     // TODO: Implement filter logic
   });
 
   // Connect toolbar buttons
-  connect(ui->btnSupprimerMachine, &QPushButton::clicked, this,
-          &machine::on_btnSupprimerMachine_clicked);
-  connect(ui->btnModifierMachine, &QPushButton::clicked, this,
-          &machine::on_btnModifierMachine_clicked);
+  connect(ui->btnSupprimerMachine_machine, &QPushButton::clicked, this,
+          &machine::on_btnSupprimerMachine_machine_clicked);
+  connect(ui->btnModifierMachine_machine, &QPushButton::clicked, this,
+          &machine::on_btnModifierMachine_machine_clicked);
 
-  // Connect table double click
-  connect(ui->tableMachines, &QTableView::doubleClicked, this,
-          &machine::on_tableMachines_doubleClicked);
+  connect(ui->tableMachines_machine, &QTableView::doubleClicked, this,
+          &machine::on_tableMachines_machine_doubleClicked);
 
   // Setup todo list for maintenance
   setupTodoList();
@@ -335,7 +334,7 @@ void machine::updateDateTime() {
       QString("📅 %1 %2 %3 • %4")
           .arg(dateStr, monthStr, QString::number(year), timeStr);
 
-  ui->lblDateTime->setText(dateTimeStr);
+  ui->lblDateTime_machine->setText(dateTimeStr);
 }
 
 void machine::onBackButtonClicked() {
@@ -381,10 +380,10 @@ void machine::setupMachineTable() {
        "Date d'installation", "Score Santé", "Date mise à jour"});
 
   // Configure UI table view
-  ui->tableMachines->setModel(machineTableModel);
+  ui->tableMachines_machine->setModel(machineTableModel);
 
   // Style the table to match the interface design
-  ui->tableMachines->setStyleSheet(R"(
+  ui->tableMachines_machine->setStyleSheet(R"(
         QTableView {
             border: 2px solid #1A3C2F;
             border-radius: 6px;
@@ -423,32 +422,35 @@ void machine::setupMachineTable() {
     )");
 
   // Configure table view behavior
-  ui->tableMachines->setAlternatingRowColors(true);
-  ui->tableMachines->setSelectionBehavior(QAbstractItemView::SelectRows);
-  ui->tableMachines->setSelectionMode(QAbstractItemView::SingleSelection);
-  ui->tableMachines->setSortingEnabled(true);
-  ui->tableMachines->verticalHeader()->setVisible(false);
+  ui->tableMachines_machine->setAlternatingRowColors(true);
+  ui->tableMachines_machine->setSelectionBehavior(
+      QAbstractItemView::SelectRows);
+  ui->tableMachines_machine->setSelectionMode(
+      QAbstractItemView::SingleSelection);
+  ui->tableMachines_machine->setSortingEnabled(true);
+  ui->tableMachines_machine->verticalHeader()->setVisible(false);
   // Désactive le stretch automatique pour permettre le scroll horizontal
-  ui->tableMachines->horizontalHeader()->setStretchLastSection(false);
-  ui->tableMachines->horizontalHeader()->setSectionResizeMode(
+  ui->tableMachines_machine->horizontalHeader()->setStretchLastSection(false);
+  ui->tableMachines_machine->horizontalHeader()->setSectionResizeMode(
       QHeaderView::Interactive);
-  ui->tableMachines->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-  ui->tableMachines->setShowGrid(true);
+  ui->tableMachines_machine->setHorizontalScrollBarPolicy(
+      Qt::ScrollBarAsNeeded);
+  ui->tableMachines_machine->setShowGrid(true);
 
   // Set row height
-  ui->tableMachines->verticalHeader()->setDefaultSectionSize(40);
+  ui->tableMachines_machine->verticalHeader()->setDefaultSectionSize(40);
 }
 
 void machine::onNavigationTabClicked(int index) {
   // When changing tabs, hide form and reset view
   if (index == 0) {
     // Parc machines tab: show list by default
-    ui->scrollHistoriqueOnOff->setVisible(false);
+    ui->scrollHistoriqueOnOff_machine->setVisible(false);
     ui->scrollListeMachines->setVisible(true);
-    ui->btnHistoriqueToggle->setChecked(false);
+    ui->btnHistoriqueToggle_machine->setChecked(false);
   } else {
     // Other tabs: hide all parc machines specific views
-    ui->scrollHistoriqueOnOff->setVisible(false);
+    ui->scrollHistoriqueOnOff_machine->setVisible(false);
     ui->scrollListeMachines->setVisible(false);
   }
 
@@ -462,7 +464,7 @@ void machine::onNavigationTabClicked(int index) {
 
 void machine::setupTodoList() {
   // Connect the "+ Ajouter" button
-  connect(ui->btnAjouterTodo, &QPushButton::clicked, this,
+  connect(ui->btnAjouterTodo_machine, &QPushButton::clicked, this,
           &machine::showAddTodoDialog);
 
   // Add sample entries for demonstration
@@ -797,7 +799,7 @@ void machine::on_pushButton_enregistrer_machine_clicked() {
   }
 }
 
-void machine::on_btnReinitialiser_clicked() {
+void machine::on_btnReinitialiser_machine_clicked() {
   // 1. Réinitialiser le nom de la machine (QLineEdit)
   ui->lineEdit_nom_machine->clear();
 
@@ -934,7 +936,7 @@ void machine::chargerMachines() {
   }
 }
 
-void machine::on_tableMachines_doubleClicked(const QModelIndex &index) {
+void machine::on_tableMachines_machine_doubleClicked(const QModelIndex &index) {
   if (!index.isValid())
     return;
 
@@ -942,15 +944,15 @@ void machine::on_tableMachines_doubleClicked(const QModelIndex &index) {
   m_selectedMachineId = machineTableModel->item(m_selectedRow, 0)->text();
 
   // Highlight the row and enable buttons
-  ui->tableMachines->selectRow(m_selectedRow);
-  ui->btnModifierMachine->setEnabled(true);
-  ui->btnSupprimerMachine->setEnabled(true);
+  ui->tableMachines_machine->selectRow(m_selectedRow);
+  ui->btnModifierMachine_machine->setEnabled(true);
+  ui->btnSupprimerMachine_machine->setEnabled(true);
 
   qDebug() << "Machine sélectionnée:" << m_selectedMachineId << "à la ligne"
            << m_selectedRow;
 }
 
-void machine::on_btnSupprimerMachine_clicked() {
+void machine::on_btnSupprimerMachine_machine_clicked() {
   if (m_selectedMachineId.isEmpty())
     return;
 
@@ -973,8 +975,8 @@ void machine::on_btnSupprimerMachine_clicked() {
       // Rafraîchir le tableau
       chargerMachines();
       // Désactiver les boutons
-      ui->btnModifierMachine->setEnabled(false);
-      ui->btnSupprimerMachine->setEnabled(false);
+      ui->btnModifierMachine_machine->setEnabled(false);
+      ui->btnSupprimerMachine_machine->setEnabled(false);
       m_selectedMachineId = "";
       m_selectedRow = -1;
     } else {
@@ -985,7 +987,7 @@ void machine::on_btnSupprimerMachine_clicked() {
   }
 }
 
-void machine::on_btnModifierMachine_clicked() {
+void machine::on_btnModifierMachine_machine_clicked() {
   if (m_selectedMachineId.isEmpty() || m_selectedRow < 0)
     return;
 
