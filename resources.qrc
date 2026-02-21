@@ -1,5 +1,11 @@
 <RCC>
     <qresource>
         <file>assets/logo.png</file>
+        <file>assets/search.png</file>
+        <file>assets/table.png</file>
+        <file>assets/history.png</file>
+        <file>assets/export.png</file>
+        <file>assets/status_ok.png</file>
+        <file>assets/status_warning.png</file>
     </qresource>
 </RCC>

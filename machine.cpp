@@ -2,15 +2,16 @@
 #include "ui_machine.h"
 #include <QCheckBox>
 #include <QComboBox>
+#include <QDateEdit>
 #include <QDateTime>
 #include <QDebug>
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QHeaderView>
-#include <QLineEdit>
 #include <QMessageBox>
 #include <QSpacerItem>
+#include <QSpinBox>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QStandardItemModel>
@@ -166,8 +167,13 @@ void NavigationBar::onTabButtonClicked() {
 // ============================================================================
 
 machine::machine(QWidget *parent)
-    : QMainWindow(parent), ui(new Ui::machine), navigationBar(nullptr) {
+    : QMainWindow(parent), ui(new Ui::machine), navigationBar(nullptr),
+      m_selectedRow(-1) {
   ui->setupUi(this);
+
+  // Disable toolbar buttons initially
+  ui->btnModifierMachine->setEnabled(false);
+  ui->btnSupprimerMachine->setEnabled(false);
 
   // Fix grid column stretches and spacing to reduce gap between left/right
   // blocks
@@ -267,12 +273,25 @@ machine::machine(QWidget *parent)
     // TODO: Implement search logic
   });
 
+  connect(ui->btnActualiser, &QPushButton::clicked, this,
+          [this]() { chargerMachines(); });
+
   connect(ui->btnFiltrer, &QPushButton::clicked, this, [this]() {
     ui->scrollHistoriqueOnOff->setVisible(false);
     ui->scrollListeMachines->setVisible(true);
     ui->btnHistoriqueToggle->setChecked(false);
     // TODO: Implement filter logic
   });
+
+  // Connect toolbar buttons
+  connect(ui->btnSupprimerMachine, &QPushButton::clicked, this,
+          &machine::on_btnSupprimerMachine_clicked);
+  connect(ui->btnModifierMachine, &QPushButton::clicked, this,
+          &machine::on_btnModifierMachine_clicked);
+
+  // Connect table double click
+  connect(ui->tableMachines, &QTableView::doubleClicked, this,
+          &machine::on_tableMachines_doubleClicked);
 
   // Setup todo list for maintenance
   setupTodoList();
@@ -769,10 +788,8 @@ void machine::on_pushButton_enregistrer_machine_clicked() {
 
     msgBox.exec();
 
-    // Optionally reset the form or refresh the table
-    ui->lineEdit_nom_machine->clear();
-    // Refresh table if needed (e.g., call setupMachineTable() or a refresh
-    // method)
+    // Refresh table to show the new machine
+    chargerMachines();
   } else {
     QMessageBox::critical(this, "Erreur",
                           "Échec de l'ajout dans la base de données : " +
@@ -915,4 +932,212 @@ void machine::chargerMachines() {
     // Ajouter la ligne complète au modèle
     machineTableModel->appendRow(row);
   }
+}
+
+void machine::on_tableMachines_doubleClicked(const QModelIndex &index) {
+  if (!index.isValid())
+    return;
+
+  m_selectedRow = index.row();
+  m_selectedMachineId = machineTableModel->item(m_selectedRow, 0)->text();
+
+  // Highlight the row and enable buttons
+  ui->tableMachines->selectRow(m_selectedRow);
+  ui->btnModifierMachine->setEnabled(true);
+  ui->btnSupprimerMachine->setEnabled(true);
+
+  qDebug() << "Machine sélectionnée:" << m_selectedMachineId << "à la ligne"
+           << m_selectedRow;
+}
+
+void machine::on_btnSupprimerMachine_clicked() {
+  if (m_selectedMachineId.isEmpty())
+    return;
+
+  // Demander confirmation
+  QMessageBox::StandardButton reply;
+  reply = QMessageBox::question(
+      this, "Confirmation de suppression",
+      QString("Êtes-vous sûr de vouloir supprimer la machine %1 ?")
+          .arg(m_selectedMachineId),
+      QMessageBox::Yes | QMessageBox::No);
+
+  if (reply == QMessageBox::Yes) {
+    QSqlQuery query;
+    query.prepare("DELETE FROM MACHINE WHERE ID_MACHINE = :id");
+    query.bindValue(":id", m_selectedMachineId);
+
+    if (query.exec()) {
+      QMessageBox::information(this, "Succès",
+                               "Machine supprimée avec succès.");
+      // Rafraîchir le tableau
+      chargerMachines();
+      // Désactiver les boutons
+      ui->btnModifierMachine->setEnabled(false);
+      ui->btnSupprimerMachine->setEnabled(false);
+      m_selectedMachineId = "";
+      m_selectedRow = -1;
+    } else {
+      QMessageBox::critical(this, "Erreur",
+                            "Erreur lors de la suppression de la machine : " +
+                                query.lastError().text());
+    }
+  }
+}
+
+void machine::on_btnModifierMachine_clicked() {
+  if (m_selectedMachineId.isEmpty() || m_selectedRow < 0)
+    return;
+
+  // 1. Créer la boîte de dialogue modale
+  QDialog dialog(this);
+  dialog.setWindowTitle("Modifier la machine — " +
+                        machineTableModel->item(m_selectedRow, 1)->text());
+  dialog.setMinimumWidth(450);
+  dialog.setModal(true);
+
+  // Appliquer un style premium
+  dialog.setStyleSheet(R"(
+        QDialog { background-color: #f8f9fa; border: 1px solid #1A3C2F; border-radius: 8px; }
+        QLabel { font-weight: bold; color: #1B4D3E; font-size: 13px; }
+        QLineEdit, QComboBox, QSpinBox, QDateEdit { 
+            padding: 8px; border: 1px solid #ced4da; border-radius: 4px; background: white; 
+        }
+        QLineEdit:focus, QComboBox:focus, QSpinBox:focus, QDateEdit:focus { 
+            border-color: #2D5F47; 
+        }
+        QPushButton { 
+            padding: 10px 20px; font-weight: bold; border-radius: 6px; font-size: 13px; 
+        }
+    )");
+
+  QFormLayout *formLayout = new QFormLayout(&dialog);
+  formLayout->setSpacing(15);
+  formLayout->setContentsMargins(20, 20, 20, 20);
+
+  // 2. Créer et pré-remplir les champs
+  // Index des colonnes : 0:ID, 1:Nom, 2:Type, 3:Etat, 4:Temp, 5:Charge,
+  // 6:Fonct, 7:Alerte, 8:Crit, 9:Maint, 10:Inst, 11:Score
+
+  QLineEdit *txtNom =
+      new QLineEdit(machineTableModel->item(m_selectedRow, 1)->text());
+
+  QComboBox *cmbType = new QComboBox();
+  cmbType->addItems({"Presse", "Malaxeur", "Broyeur", "Chauffeur", "Autre"});
+  cmbType->setCurrentText(machineTableModel->item(m_selectedRow, 2)->text());
+
+  QComboBox *cmbEtat = new QComboBox();
+  cmbEtat->addItems({"ON", "OFF"});
+  cmbEtat->setCurrentText(machineTableModel->item(m_selectedRow, 3)->text());
+
+  QSpinBox *spinTemp = new QSpinBox();
+  spinTemp->setRange(-50, 500);
+  spinTemp->setSuffix(" °C");
+  spinTemp->setValue(machineTableModel->item(m_selectedRow, 4)
+                         ->text()
+                         .replace(" °C", "")
+                         .toInt());
+
+  QSpinBox *spinCharge = new QSpinBox();
+  spinCharge->setRange(0, 100);
+  spinCharge->setSuffix(" %");
+  spinCharge->setValue(machineTableModel->item(m_selectedRow, 5)
+                           ->text()
+                           .replace(" %", "")
+                           .toInt());
+
+  QComboBox *cmbFonct = new QComboBox();
+  cmbFonct->addItems({"Normal", "Dégradé", "Arrêt"});
+  cmbFonct->setCurrentText(machineTableModel->item(m_selectedRow, 6)->text());
+
+  QComboBox *cmbAlerte = new QComboBox();
+  cmbAlerte->addItems({"Aucune", "Faible", "Moyenne", "Critique"});
+  cmbAlerte->setCurrentText(machineTableModel->item(m_selectedRow, 7)->text());
+
+  QComboBox *cmbCrit = new QComboBox();
+  cmbCrit->addItems({"Faible", "Moyenne", "Élevé", "Critique"});
+  cmbCrit->setCurrentText(machineTableModel->item(m_selectedRow, 8)->text());
+
+  QDateEdit *dateMaint = new QDateEdit(QDate::fromString(
+      machineTableModel->item(m_selectedRow, 9)->text(), "yyyy-MM-dd"));
+  dateMaint->setCalendarPopup(true);
+
+  QDateEdit *dateInst = new QDateEdit(QDate::fromString(
+      machineTableModel->item(m_selectedRow, 10)->text(), "yyyy-MM-dd"));
+  dateInst->setCalendarPopup(true);
+
+  QSpinBox *spinScore = new QSpinBox();
+  spinScore->setRange(0, 100);
+  spinScore->setValue(
+      machineTableModel->item(m_selectedRow, 11)->text().toInt());
+
+  // Ajouter au formulaire
+  formLayout->addRow("Nom de la machine:", txtNom);
+  formLayout->addRow("Type:", cmbType);
+  formLayout->addRow("État de marche:", cmbEtat);
+  formLayout->addRow("Température:", spinTemp);
+  formLayout->addRow("Charge:", spinCharge);
+  formLayout->addRow("Mode Fonctionnement:", cmbFonct);
+  formLayout->addRow("Alerte:", cmbAlerte);
+  formLayout->addRow("Criticité:", cmbCrit);
+  formLayout->addRow("Dernière Maintenance:", dateMaint);
+  formLayout->addRow("Date Installation:", dateInst);
+  formLayout->addRow("Score Santé:", spinScore);
+
+  // 3. Boutons d'action
+  QHBoxLayout *btnLayout = new QHBoxLayout();
+  QPushButton *btnSave = new QPushButton("Enregistrer");
+  btnSave->setStyleSheet("background-color: #2D5F47; color: white;");
+  QPushButton *btnCancel = new QPushButton("Annuler");
+  btnCancel->setStyleSheet("background-color: #6c757d; color: white;");
+
+  btnLayout->addWidget(btnSave);
+  btnLayout->addWidget(btnCancel);
+  formLayout->addRow(btnLayout);
+
+  connect(btnCancel, &QPushButton::clicked, &dialog, &QDialog::reject);
+  connect(btnSave, &QPushButton::clicked, [&]() {
+    // Exécuter l'UPDATE dans la base de données
+    QSqlQuery query;
+    query.prepare("UPDATE MACHINE SET "
+                  "NOM_MACHINE = :nom, "
+                  "TYPE_MACHINE = :type, "
+                  "ETAT_MARCHE = :etat, "
+                  "TEMPERATURE_ACTUELLE = :temp, "
+                  "NIVEAU_CHARGE = :charge, "
+                  "ETAT_FONCTIONNEMENT = :fonct, "
+                  "TYPE_ALERTE = :alerte, "
+                  "NIVEAU_CRITICITE = :crit, "
+                  "DATE_DERNIERE_MAINTENANCE = TO_DATE(:maint, 'YYYY-MM-DD'), "
+                  "DATE_INSTALLATION = TO_DATE(:inst, 'YYYY-MM-DD'), "
+                  "SCORE_SANTE = :score, "
+                  "DATE_MISE_A_JOUR = SYSTIMESTAMP "
+                  "WHERE ID_MACHINE = :id");
+
+    query.bindValue(":nom", txtNom->text());
+    query.bindValue(":type", cmbType->currentText());
+    query.bindValue(":etat", cmbEtat->currentText());
+    query.bindValue(":temp", spinTemp->value());
+    query.bindValue(":charge", spinCharge->value());
+    query.bindValue(":fonct", cmbFonct->currentText());
+    query.bindValue(":alerte", cmbAlerte->currentText());
+    query.bindValue(":crit", cmbCrit->currentText());
+    query.bindValue(":maint", dateMaint->date().toString("yyyy-MM-dd"));
+    query.bindValue(":inst", dateInst->date().toString("yyyy-MM-dd"));
+    query.bindValue(":score", spinScore->value());
+    query.bindValue(":id", m_selectedMachineId);
+
+    if (query.exec()) {
+      QMessageBox::information(this, "Succès",
+                               "La machine a été modifiée avec succès.");
+      chargerMachines(); // Rafraîchir le tableau
+      dialog.accept();
+    } else {
+      QMessageBox::critical(this, "Erreur",
+                            "Erreur lors de la modification : " +
+                                query.lastError().text());
+    }
+  });
+
+  dialog.exec();
 }

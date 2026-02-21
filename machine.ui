@@ -496,15 +496,26 @@ QToolButton:hover {
                 <widget class="QLabel" name="lblOnlineStatus">
                   <property name="maximumSize">
                     <size>
-                      <width>120</width>
+                      <width>130</width>
                       <height>35</height>
                     </size>
                   </property>
+                  <property name="styleSheet">
+                    <string>QLabel#lblOnlineStatus { 
+    background-color: #1A3C2F; 
+    color: #4CAF50; 
+    font-weight: bold; 
+    font-size: 13px; 
+    border: 1px solid #2E7D32; 
+    border-radius: 12px; 
+    padding: 2px 10px; 
+}</string>
+                  </property>
                   <property name="text">
-                    <string>â— EN LIGNE</string>
+                    <string>● EN LIGNE</string>
                   </property>
                   <property name="alignment">
-                    <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+                    <set>Qt::AlignmentFlag::AlignCenter</set>
                   </property>
                 </widget>
               </item>
@@ -554,7 +565,7 @@ QToolButton:hover {
                             </size>
                           </property>
                           <property name="text">
-                            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p style="margin:0; padding:0;"&gt;&lt;span style=" font-size:14pt; font-weight:700; color:#2E7D32;"&gt;✓&lt;/span&gt;&lt;span style=" font-size:11pt;"&gt; Machines normales&lt;/span&gt;&lt;/p&gt;&lt;p style="margin:2px 0 0 0; padding:0;"&gt;&lt;span style=" font-size:20pt; font-weight:700; color:#1B5E20;"&gt;0&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p style=&quot;margin:0; padding:0;&quot;&gt;&lt;span style=&quot; font-size:14pt; font-weight:700; color:#2E7D32;&quot;&gt;✓&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; Machines normales&lt;/span&gt;&lt;/p&gt;&lt;p style=&quot;margin:2px 0 0 0; padding:0;&quot;&gt;&lt;span style=&quot; font-size:20pt; font-weight:700; color:#1B5E20;&quot;&gt;0&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                           </property>
                           <property name="alignment">
                             <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -570,7 +581,7 @@ QToolButton:hover {
                             </size>
                           </property>
                           <property name="text">
-                            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p style="margin:0; padding:0;"&gt;&lt;span style=" font-size:14pt; font-weight:700; color:#F57F17;"&gt;!&lt;/span&gt;&lt;span style=" font-size:11pt;"&gt; Machines en alerte&lt;/span&gt;&lt;/p&gt;&lt;p style="margin:2px 0 0 0; padding:0;"&gt;&lt;span style=" font-size:20pt; font-weight:700; color:#FFC107;"&gt;0&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p style=&quot;margin:0; padding:0;&quot;&gt;&lt;span style=&quot; font-size:14pt; font-weight:700; color:#F57F17;&quot;&gt;!&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; Machines en alerte&lt;/span&gt;&lt;/p&gt;&lt;p style=&quot;margin:2px 0 0 0; padding:0;&quot;&gt;&lt;span style=&quot; font-size:20pt; font-weight:700; color:#FFC107;&quot;&gt;0&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                           </property>
                           <property name="alignment">
                             <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -586,7 +597,7 @@ QToolButton:hover {
                             </size>
                           </property>
                           <property name="text">
-                            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=" font-size:16pt; font-weight:700; color:#D32F2F;"&gt;✗&lt;/span&gt;&lt;span style=" font-size:12pt;"&gt; Machines en panne&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=" font-size:24pt; font-weight:700; color:#B71C1C;"&gt;0&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:16pt; font-weight:700; color:#D32F2F;&quot;&gt;✗&lt;/span&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt; Machines en panne&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:24pt; font-weight:700; color:#B71C1C;&quot;&gt;0&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                           </property>
                           <property name="alignment">
                             <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -1082,7 +1093,17 @@ QToolButton:hover {
                                   <string>QPushButton { min-width: 0px; padding: 4px; font-size: 16px; }</string>
                                 </property>
                                 <property name="text">
-                                  <string>ðŸ”</string>
+                                  <string/>
+                                </property>
+                                <property name="icon">
+                                  <iconset resource="resources.qrc">
+                                    <normaloff>:/assets/search.png</normaloff>:/assets/search.png</iconset>
+                                </property>
+                                <property name="iconSize">
+                                  <size>
+                                    <width>24</width>
+                                    <height>24</height>
+                                  </size>
                                 </property>
                               </widget>
                             </item>
@@ -1107,17 +1128,93 @@ QToolButton:hover {
                                   <string>QPushButton { min-width: 0px; padding: 4px; font-size: 16px; }</string>
                                 </property>
                                 <property name="text">
-                                  <string>ðŸ“Š</string>
+                                  <string/>
+                                </property>
+                                <property name="icon">
+                                  <iconset resource="resources.qrc">
+                                    <normaloff>:/assets/table.png</normaloff>:/assets/table.png</iconset>
+                                </property>
+                                <property name="iconSize">
+                                  <size>
+                                    <width>24</width>
+                                    <height>24</height>
+                                  </size>
                                 </property>
                                 <property name="checkable">
                                   <bool>true</bool>
                                 </property>
                               </widget>
                             </item>
+                             <item>
+                               <widget class="QPushButton" name="btnModifierMachine">
+                                 <property name="enabled">
+                                   <bool>false</bool>
+                                 </property>
+                                 <property name="minimumSize">
+                                   <size>
+                                     <width>36</width>
+                                     <height>36</height>
+                                   </size>
+                                 </property>
+                                 <property name="maximumSize">
+                                   <size>
+                                     <width>36</width>
+                                     <height>36</height>
+                                   </size>
+                                 </property>
+                                 <property name="toolTip">
+                                   <string>Modifier la machine sélectionnée</string>
+                                 </property>
+                                 <property name="styleSheet">
+                                   <string>QPushButton { min-width: 0px; padding: 4px; font-size: 18px; background-color: #2196F3; color: white; border-radius: 4px; } QPushButton:disabled { background-color: #e0e0e0; color: #9e9e9e; }</string>
+                                 </property>
+                                 <property name="text">
+                                   <string>✏️</string>
+                                 </property>
+                               </widget>
+                             </item>
+                             <item>
+                               <widget class="QPushButton" name="btnSupprimerMachine">
+                                 <property name="enabled">
+                                   <bool>false</bool>
+                                 </property>
+                                 <property name="minimumSize">
+                                   <size>
+                                     <width>36</width>
+                                     <height>36</height>
+                                   </size>
+                                 </property>
+                                 <property name="maximumSize">
+                                   <size>
+                                     <width>36</width>
+                                     <height>36</height>
+                                   </size>
+                                 </property>
+                                 <property name="toolTip">
+                                   <string>Supprimer la machine sélectionnée</string>
+                                 </property>
+                                 <property name="styleSheet">
+                                   <string>QPushButton { min-width: 0px; padding: 4px; font-size: 18px; background-color: #f44336; color: white; border-radius: 4px; } QPushButton:disabled { background-color: #e0e0e0; color: #9e9e9e; }</string>
+                                 </property>
+                                 <property name="text">
+                                   <string>🗑️</string>
+                                 </property>
+                               </widget>
+                             </item>
                             <item>
                               <widget class="QPushButton" name="btnHistoriqueToggle">
                                 <property name="text">
-                                  <string>ðŸ“œ Historique ON/OFF</string>
+                                  <string> Historique ON/OFF</string>
+                                </property>
+                                <property name="icon">
+                                  <iconset resource="resources.qrc">
+                                    <normaloff>:/assets/history.png</normaloff>:/assets/history.png</iconset>
+                                </property>
+                                <property name="iconSize">
+                                  <size>
+                                    <width>20</width>
+                                    <height>20</height>
+                                  </size>
                                 </property>
                                 <property name="checkable">
                                   <bool>true</bool>
@@ -1137,10 +1234,58 @@ QToolButton:hover {
                                 </property>
                               </spacer>
                             </item>
+                             <item>
+                               <widget class="QPushButton" name="btnActualiser">
+                                 <property name="minimumSize">
+                                   <size>
+                                     <width>40</width>
+                                     <height>35</height>
+                                   </size>
+                                 </property>
+                                 <property name="maximumSize">
+                                   <size>
+                                     <width>40</width>
+                                     <height>35</height>
+                                   </size>
+                                 </property>
+                                 <property name="styleSheet">
+                                   <string>QPushButton#btnActualiser {
+    background-color: #03A9F4;
+    color: white;
+    border-radius: 6px;
+    font-size: 18px;
+    font-weight: bold;
+    border: none;
+}
+QPushButton#btnActualiser:hover {
+    background-color: #81D4FA;
+}
+QPushButton#btnActualiser:pressed {
+    background-color: #0288D1;
+}</string>
+                                 </property>
+                                 <property name="text">
+                                   <string>↻</string>
+                                 </property>
+                                 <property name="toolTip">
+                                   <string>Actualiser</string>
+                                 </property>
+                               </widget>
+                             </item>
                             <item>
                               <widget class="QPushButton" name="btnExporter">
                                 <property name="text">
-                                  <string>ðŸ“¤ Exporter</string>
+                                  <string> Exporter</string>
+                                </property>
+                                <property name="icon">
+                                  <iconset resource="resources.qrc">
+                                    <normaloff>:/assets/export.png</normaloff>:/assets/export.png</iconset>
+                                </property>
+                                <property name="iconSize">
+                                  <size>
+                                    <width>20</width>
+                                    <height>20</height>
+                                  </size>
                                 </property>
                               </widget>
                             </item>

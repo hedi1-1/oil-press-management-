@@ -71,6 +71,9 @@ private slots:
   void onNavigationTabClicked(int index);
   void on_pushButton_enregistrer_machine_clicked();
   void on_btnReinitialiser_clicked();
+  void on_tableMachines_doubleClicked(const QModelIndex &index);
+  void on_btnSupprimerMachine_clicked();
+  void on_btnModifierMachine_clicked();
 
 private:
   void setupNavigationBar();
@@ -87,6 +90,8 @@ private:
   NavigationBar *navigationBar;
   QVector<TodoItem> m_todoItems;
   QStandardItemModel *machineTableModel;
+  QString m_selectedMachineId;
+  int m_selectedRow;
   void setupMachineTable();
   void chargerMachines();
 };
