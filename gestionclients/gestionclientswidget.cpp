@@ -279,6 +279,10 @@ void GestionClientsWidget::on_pushButton_ajouter_clicked()
         QMessageBox::warning(this, "Erreur", "Le total olives doit être un nombre entier positif !");
         return;
     }
+    if (totalOlives > 99999999) {
+        QMessageBox::warning(this, "Erreur", "Le total olives ne peut pas dépasser 99 999 999 kg !");
+        return;
+    }
 
     // === Calcul automatique du STATUT ===
     QString statut = (totalOlives > 5000) ? "Important" : "Standard";
@@ -345,6 +349,10 @@ void GestionClientsWidget::on_pushButton_modifier_clicked()
     int totalOlives = ui->lineEdit_total->text().toInt(&ok);
     if (!ok || totalOlives < 0) {
         QMessageBox::warning(this, "Erreur", "Le total olives doit être un nombre entier positif !");
+        return;
+    }
+    if (totalOlives > 99999999) {
+        QMessageBox::warning(this, "Erreur", "Le total olives ne peut pas dépasser 99 999 999 kg !");
         return;
     }
 

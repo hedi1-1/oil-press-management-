@@ -1,14 +1,16 @@
 #include "connexionfinance.h"
 
 ConnexionFinance::ConnexionFinance() {
-    // Utilisation du driver QODBC avec le DSN "Projet2A" (même config que les autres modules)
+    // Connexion directe à Oracle - Base ZITOUNA
     if (QSqlDatabase::contains("finance_conn")) {
         db = QSqlDatabase::database("finance_conn");
     } else {
         db = QSqlDatabase::addDatabase("QODBC", "finance_conn");
-        db.setDatabaseName("projet");
-        db.setUserName("zitouna");
-        db.setPassword("zitouna");
+        QString connectionString = "Driver={Oracle in XE};"
+                                   "DBQ=127.0.0.1:1521/XE;"
+                                   "UID=zitouna;"
+                                   "PWD=zitouna;";
+        db.setDatabaseName(connectionString);
     }
 }
 
@@ -25,7 +27,7 @@ bool ConnexionFinance::open() {
     if (db.open()) {
         qDebug() << "========================================";
         qDebug() << "[Finance] Connexion a la base de donnees reussie !";
-        qDebug() << "[Finance] DSN : Projet2A | User : amal";
+        qDebug() << "[Finance] Host : 127.0.0.1:1521/XE | User : zitouna";
         qDebug() << "========================================";
         return true;
     } else {

@@ -2,9 +2,13 @@
 
 ConnectionJasser::ConnectionJasser() {
   db = QSqlDatabase::addDatabase("QODBC", "jasser_conn");
-  db.setDatabaseName("projet");
-  db.setUserName("zitouna");
-  db.setPassword("zitouna");
+  
+  // Connexion directe à Oracle - Base ZITOUNA
+  QString connectionString = "Driver={Oracle in XE};"
+                             "DBQ=127.0.0.1:1521/XE;"
+                             "UID=zitouna;"
+                             "PWD=zitouna;";
+  db.setDatabaseName(connectionString);
 }
 
 ConnectionJasser &ConnectionJasser::getInstance() {
