@@ -1,4 +1,4 @@
-QT       += core gui sql
+QT       += core gui sql texttospeech
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -15,6 +15,12 @@ SOURCES += \
     ../production/production.cpp \
     ../production/connection.cpp \
     ../production/productionmodel.cpp \
+    ../production/productionservice.cpp \
+    ../production/smartproductionassistant.cpp \
+    ../production/productionbot.cpp \
+    ../production/speechtotextengine.cpp \
+    ../production/intentanalyzer.cpp \
+    ../production/voiceassistant.cpp \
     ../userstaff/userstaff.cpp \
     ../gestionclients/gestionclients.cpp \
     ../stock/stock.cpp \
@@ -28,6 +34,12 @@ HEADERS += \
     ../production/production.h \
     ../production/connection.h \
     ../production/productionmodel.h \
+    ../production/productionservice.h \
+    ../production/smartproductionassistant.h \
+    ../production/productionbot.h \
+    ../production/speechtotextengine.h \
+    ../production/intentanalyzer.h \
+    ../production/voiceassistant.h \
     ../userstaff/userstaff.h \
     ../gestionclients/gestionclients.h \
     ../stock/stock.h \
