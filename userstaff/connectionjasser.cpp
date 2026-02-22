@@ -2,7 +2,7 @@
 
 ConnectionJasser::ConnectionJasser() {
   db = QSqlDatabase::addDatabase("QODBC", "jasser_conn");
-  db.setDatabaseName("Projet2A");
+  db.setDatabaseName("projet");
   db.setUserName("zitouna");
   db.setPassword("zitouna");
 }

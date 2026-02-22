@@ -30,9 +30,9 @@ bool Connexion::createConnection() {
 
   // Créer la connexion avec le driver ODBC via DSN Projet2A
   db = QSqlDatabase::addDatabase("QODBC", "stock_conn");
-  db.setDatabaseName("Projet2A");
-  db.setUserName("amal");
-  db.setPassword("qwerty123456789");
+  db.setDatabaseName("projet");
+  db.setUserName("zitouna");
+  db.setPassword("zitouna");
 
   // Tenter d'ouvrir la connexion
   if (db.open()) {

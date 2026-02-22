@@ -2,9 +2,9 @@
 
 ConnectionMachine::ConnectionMachine() {
   db = QSqlDatabase::addDatabase("QODBC", "machine_conn");
-  db.setDatabaseName("Projet2A");
-  db.setUserName("amal");
-  db.setPassword("qwerty123456789");
+  db.setDatabaseName("projet");
+  db.setUserName("zitouna");
+  db.setPassword("zitouna");
 }
 
 ConnectionMachine &ConnectionMachine::getInstance() {

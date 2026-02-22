@@ -2,9 +2,9 @@
 
 ClientConnection::ClientConnection() {
   db = QSqlDatabase::addDatabase("QODBC", "client_conn");
-  db.setDatabaseName("Projet2A");
-  db.setUserName("amal");
-  db.setPassword("qwerty123456789");
+  db.setDatabaseName("projet");
+  db.setUserName("zitouna");
+  db.setPassword("zitouna");
 
   // Auto-open the connection
   if (!db.open()) {

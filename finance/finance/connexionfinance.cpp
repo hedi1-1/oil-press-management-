@@ -6,9 +6,9 @@ ConnexionFinance::ConnexionFinance() {
         db = QSqlDatabase::database("finance_conn");
     } else {
         db = QSqlDatabase::addDatabase("QODBC", "finance_conn");
-        db.setDatabaseName("Projet2A");
-        db.setUserName("amal");
-        db.setPassword("qwerty123456789");
+        db.setDatabaseName("projet");
+        db.setUserName("zitouna");
+        db.setPassword("zitouna");
     }
 }
 
