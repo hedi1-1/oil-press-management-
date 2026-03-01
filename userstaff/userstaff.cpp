@@ -31,6 +31,11 @@ userstaff::userstaff(QWidget *parent)
     , ui(new Ui::userstaff)
 {
     ui->setupUi(this);
+    {
+        QPixmap logo(":/logo.png");
+        if (!logo.isNull())
+            ui->lblLogo->setPixmap(logo.scaled(40, 40, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    }
     setWindowTitle("PressIQ - User & Staff Management");
 
     // connect DB

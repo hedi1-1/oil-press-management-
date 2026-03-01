@@ -10,6 +10,7 @@
 #include <QDateTime>
 #include <QTimer>
 #include <QLocale>
+#include <QPixmap>
 
 menu::menu(QWidget *parent)
     : QMainWindow(parent)
@@ -22,7 +23,12 @@ menu::menu(QWidget *parent)
     , financeWindow(nullptr)
 {
     ui->setupUi(this);
-    
+    {
+        QPixmap logo(":/logo.png");
+        if (!logo.isNull())
+            ui->lblLogo->setPixmap(logo.scaled(40, 40, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    }
+
     // Connect button signals to slots
     connect(ui->btnClientManagement, &QPushButton::clicked, this, &menu::onClientManagementClicked);
     connect(ui->btnUserStaffManagement, &QPushButton::clicked, this, &menu::onUserStaffManagementClicked);

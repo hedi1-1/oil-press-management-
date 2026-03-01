@@ -1,12 +1,18 @@
 #include "gestionclients.h"
 #include "ui_gestionclients.h"
 #include <QDateTime>
+#include <QPixmap>
 
 GestionClients::GestionClients(QWidget *parent)
     : QMainWindow(parent),
       ui(new Ui::GestionClients)
 {
     ui->setupUi(this);
+    {
+        QPixmap logo(":/logo.png");
+        if (!logo.isNull())
+            ui->lblLogo->setPixmap(logo.scaled(40, 40, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    }
 
     // ── Create child widgets and add as tabs ──
     gestionClientsWidget = new GestionClientsWidget(this);

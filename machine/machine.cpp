@@ -11,6 +11,7 @@
 #include <QFormLayout>
 #include <QHeaderView>
 #include <QMessageBox>
+#include <QPixmap>
 #include <QSpacerItem>
 #include <QSpinBox>
 #include <QSqlError>
@@ -171,6 +172,12 @@ machine::machine(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::machine), navigationBar(nullptr),
       m_selectedRow(-1) {
   ui->setupUi(this);
+  {
+      QPixmap logo(":/logo.png");
+      if (logo.isNull()) logo = QPixmap(":/assets/logo.png");
+      if (!logo.isNull())
+          ui->lblLogo_machine->setPixmap(logo.scaled(40, 40, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+  }
 
   // Disable toolbar buttons initially
   ui->btnModifierMachine_machine->setEnabled(false);

@@ -1,6 +1,7 @@
 #include "production.h"
 #include "ui_production.h"
 #include <QDateTime>
+#include <QPixmap>
 
 Production::Production(QWidget *parent)
     : QMainWindow(parent)
@@ -8,7 +9,12 @@ Production::Production(QWidget *parent)
     , currentProductionId(0)
 {
     ui->setupUi(this);
-    
+    {
+        QPixmap logo(":/logo.png");
+        if (!logo.isNull())
+            ui->lblLogo->setPixmap(logo.scaled(40, 40, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    }
+
     // Establish database connection via singleton
     if (!Connection::getInstance().createconnect()) {
         showErrorNotification("Impossible de se connecter à la base de données Oracle");

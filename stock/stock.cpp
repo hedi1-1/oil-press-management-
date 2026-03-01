@@ -1,6 +1,7 @@
 #include "stock.h"
 #include "ui_stock.h"
 #include <QDate>
+#include <QPixmap>
 #include <QTime>
 #include <QSqlQuery>
 #include <QSqlError>
@@ -24,7 +25,12 @@ Stock::Stock(QWidget *parent)
     , connexion(nullptr)
 {
     ui->setupUi(this);
-    
+    {
+        QPixmap logo(":/logo.png");
+        if (!logo.isNull())
+            ui->labelLogoImage->setPixmap(logo.scaled(50, 50, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    }
+
     // Obtenir la connexion
     connexion = Connexion::getInstance();
     
