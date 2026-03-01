@@ -16,6 +16,7 @@ SOURCES += \
     ../production/connection.cpp \
     ../production/productionmodel.cpp \
     ../userstaff/userstaff.cpp \
+    ../userstaff/connectionjasser.cpp \
     ../gestionclients/gestionclients.cpp \
     ../gestionclients/gestionclientswidget.cpp \
     ../gestionclients/metierswidget.cpp \
@@ -35,6 +36,7 @@ HEADERS += \
     ../production/connection.h \
     ../production/productionmodel.h \
     ../userstaff/userstaff.h \
+    ../userstaff/connectionjasser.h \
     ../gestionclients/gestionclients.h \
     ../gestionclients/gestionclientswidget.h \
     ../gestionclients/metierswidget.h \
