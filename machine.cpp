@@ -1,4 +1,5 @@
 #include "machine.h"
+#include "connexionmachine.h"
 #include "ui_machine.h"
 #include <QCheckBox>
 #include <QComboBox>
@@ -272,9 +273,6 @@ machine::machine(QWidget *parent)
     ui->btnHistoriqueToggle_machine->setChecked(false);
     // TODO: Implement search logic
   });
-
-  connect(ui->btnActualiser_machine, &QPushButton::clicked, this,
-          [this]() { chargerMachines(); });
 
   connect(ui->btnFiltrer, &QPushButton::clicked, this, [this]() {
     ui->scrollHistoriqueOnOff_machine->setVisible(false);
@@ -737,7 +735,7 @@ void machine::on_pushButton_enregistrer_machine_clicked() {
   }
 
   // 3. Database Insertion
-  QSqlQuery query;
+  QSqlQuery query(ConnectionMachine::getInstance().getDatabase());
   query.prepare(
       "INSERT INTO MACHINE (NOM_MACHINE, TYPE_MACHINE, ETAT_MARCHE, "
       "TEMPERATURE_ACTUELLE, NIVEAU_CHARGE, ETAT_FONCTIONNEMENT, TYPE_ALERTE, "
@@ -837,7 +835,7 @@ void machine::chargerMachines() {
 
   // 2. Préparer et exécuter la requête SQL pour récupérer les données dans
   // l'ordre exact de la base de données
-  QSqlQuery query;
+  QSqlQuery query(ConnectionMachine::getInstance().getDatabase());
   // Correction : DATE_MAJ -> DATE_MISE_A_JOUR
   // Note : FABRICANT n'existe pas dans la BD image, on utilise "" ou
   // SCORE_SANTE? On va utiliser SCORE_SANTE pour la colonne 12 comme dans
@@ -965,7 +963,7 @@ void machine::on_btnSupprimerMachine_machine_clicked() {
       QMessageBox::Yes | QMessageBox::No);
 
   if (reply == QMessageBox::Yes) {
-    QSqlQuery query;
+    QSqlQuery query(ConnectionMachine::getInstance().getDatabase());
     query.prepare("DELETE FROM MACHINE WHERE ID_MACHINE = :id");
     query.bindValue(":id", m_selectedMachineId);
 
@@ -1100,7 +1098,7 @@ void machine::on_btnModifierMachine_machine_clicked() {
   connect(btnCancel, &QPushButton::clicked, &dialog, &QDialog::reject);
   connect(btnSave, &QPushButton::clicked, [&]() {
     // Exécuter l'UPDATE dans la base de données
-    QSqlQuery query;
+    QSqlQuery query(ConnectionMachine::getInstance().getDatabase());
     query.prepare("UPDATE MACHINE SET "
                   "NOM_MACHINE = :nom, "
                   "TYPE_MACHINE = :type, "

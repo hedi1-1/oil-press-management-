@@ -1,14 +1,20 @@
-#ifndef CONNECTION_H
-#define CONNECTION_H
+#ifndef CONNECTIONMACHINE_H
+#define CONNECTIONMACHINE_H
+#include <QDebug>
 #include <QSqlDatabase>
 #include <QSqlError>
 #include <QSqlQuery>
 
-class Connection
-{
+
+class ConnectionMachine {
 public:
-    Connection();
-    bool createconnect();
+  static ConnectionMachine &getInstance();
+  bool createconnect();
+  QSqlDatabase getDatabase();
+
+private:
+  ConnectionMachine();
+  QSqlDatabase db;
 };
 
-#endif // CONNECTION_H
+#endif // CONNECTIONMACHINE_H

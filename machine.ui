@@ -25,71 +25,8 @@ QMainWindow {
     background-color: #f5f5f5;
 }
 
-/* Header Styling */
-#headerWidget {
-    background-color: #1A3C2F;
-    border-bottom: 3px solid #C9A227;
-}
+/* Header Styling - now handled inline on widgets */
 
-#lblAppTitle {
-    color: white;
-    font-size: 28px;
-    font-weight: bold;
-    font-family: 'Segoe UI', Arial, sans-serif;
-    letter-spacing: 2px;
-}
-
-#lblAppSubtitle {
-    color: #C9A227;
-    font-size: 12px;
-    font-weight: 600;
-    font-family: 'Segoe UI', Arial, sans-serif;
-    letter-spacing: 3px;
-}
-
-#lblOnlineStatus {
-    color: #4CAF50;
-    font-size: 13px;
-    font-weight: 600;
-    font-family: 'Segoe UI', Arial, sans-serif;
-    background-color: #2C5F4F;
-    padding: 8px 16px;
-    border-radius: 6px;
-    border: 1px solid #3D7A60;
-    margin-left: 12px;
-}
-
-#lblDateTime {
-    color: #E8E8E8;
-    font-size: 13px;
-    font-weight: 600;
-    font-family: 'Segoe UI', Arial, sans-serif;
-    background-color: #2C5F4F;
-    padding: 8px 16px;
-    border-radius: 6px;
-    border: 1px solid #3D7A60;
-}
-
-/* Back Button */
-#btnBackToMenu {
-    background-color: #C9A227;
-    color: white;
-    font-size: 13px;
-    font-weight: bold;
-    font-family: 'Segoe UI', Arial, sans-serif;
-    padding: 8px 16px;
-    border-radius: 4px;
-    border: none;
-    min-width: 80px;
-}
-
-#btnBackToMenu:hover {
-    background-color: #B8911F;
-}
-
-#btnBackToMenu:pressed {
-    background-color: #9A7A1A;
-}
 
 /* Tab Widget Styling */
 QTabWidget::pane {
@@ -255,35 +192,35 @@ QToolButton:hover {
     letter-spacing: 0.3px;
 }
 
-#lblMachinesNormales {
+#lblMachinesNormales_machine {
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #E8F5E9, stop:1 #C8E6C9);
     color: #1B5E20;
     border-left: 5px solid #4CAF50;
 }
 
-#lblMachinesNormales:hover {
+#lblMachinesNormales_machine:hover {
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #C8E6C9, stop:1 #A5D6A7);
     border-left: 5px solid #388E3C;
 }
 
-#lblMachinesAlerte {
+#lblMachinesAlerte_machine {
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #FFF9C4, stop:1 #FFF59D);
     color: #F57F17;
     border-left: 5px solid #FFC107;
 }
 
-#lblMachinesAlerte:hover {
+#lblMachinesAlerte_machine:hover {
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #FFF59D, stop:1 #FFF176);
     border-left: 5px solid #FFA000;
 }
 
-#lblMachinesPanne {
+#lblMachinesPanne_machine {
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #FFEBEE, stop:1 #FFCDD2);
     color: #B71C1C;
     border-left: 5px solid #F44336;
 }
 
-#lblMachinesPanne:hover {
+#lblMachinesPanne_machine:hover {
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #FFCDD2, stop:1 #EF9A9A);
     border-left: 5px solid #D32F2F;
 }
@@ -311,33 +248,56 @@ QToolButton:hover {
             <property name="minimumSize">
               <size>
                 <width>0</width>
-                <height>90</height>
+                <height>80</height>
               </size>
             </property>
             <property name="maximumSize">
               <size>
                 <width>16777215</width>
-                <height>90</height>
+                <height>80</height>
               </size>
             </property>
+            <property name="styleSheet">
+              <string notr="true">QWidget#headerWidget {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+        stop:0 #1B4332, stop:0.5 #234E3E, stop:1 #1B4332);
+    border-bottom: 4px solid #C9A227;
+}</string>
+            </property>
             <layout class="QHBoxLayout" name="headerLayout">
-              <property name="spacing">
-                <number>15</number>
-              </property>
               <property name="leftMargin">
                 <number>20</number>
               </property>
               <property name="topMargin">
-                <number>5</number>
+                <number>10</number>
               </property>
               <property name="rightMargin">
                 <number>20</number>
               </property>
               <property name="bottomMargin">
-                <number>5</number>
+                <number>10</number>
               </property>
               <item>
                 <widget class="QPushButton" name="btnBackToMenu_machine">
+                  <property name="styleSheet">
+                    <string notr="true">QPushButton {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    min-width: 100px;
+}
+QPushButton:hover {
+    background-color: rgba(255, 255, 255, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+QPushButton:pressed {
+    background-color: rgba(255, 255, 255, 0.1);
+}</string>
+                  </property>
                   <property name="text">
                     <string>← Retour</string>
                   </property>
@@ -347,14 +307,14 @@ QToolButton:hover {
                 <widget class="QLabel" name="lblLogo_machine">
                   <property name="minimumSize">
                     <size>
-                      <width>120</width>
-                      <height>80</height>
+                      <width>50</width>
+                      <height>50</height>
                     </size>
                   </property>
                   <property name="maximumSize">
                     <size>
-                      <width>120</width>
-                      <height>80</height>
+                      <width>50</width>
+                      <height>50</height>
                     </size>
                   </property>
                   <property name="text">
@@ -375,6 +335,9 @@ QToolButton:hover {
                   </property>
                   <item>
                     <widget class="QLabel" name="lblAppTitle_machine">
+                      <property name="styleSheet">
+                        <string notr="true">color: white; font-size: 36px; font-weight: 800; font-family: 'Segoe UI', 'Arial Black', sans-serif; letter-spacing: 2px;</string>
+                      </property>
                       <property name="text">
                         <string>GESTION DES MACHINES</string>
                       </property>
@@ -384,6 +347,9 @@ QToolButton:hover {
                     <layout class="QHBoxLayout" name="subtitleLayout">
                       <item>
                         <widget class="QLabel" name="lblAppSubtitle">
+                          <property name="styleSheet">
+                            <string notr="true">color: #C9A227; font-size: 13px; font-weight: 600; font-family: 'Segoe UI', Arial, sans-serif; letter-spacing: 6px;</string>
+                          </property>
                           <property name="text">
                             <string>SURVEILLANCE &amp; ALERTES</string>
                           </property>
@@ -417,7 +383,7 @@ QToolButton:hover {
                             </size>
                           </property>
                           <property name="styleSheet">
-                            <string>QPushButton { background-color: transparent; color: #C9A227; font-weight: 600; border: none; font-size: 12px; font-family: 'Segoe UI', Arial, sans-serif; } QPushButton:hover { text-decoration: underline; } QPushButton:pressed { opacity: 0.7; }</string>
+                            <string notr="true">QPushButton { background-color: transparent; color: #C9A227; font-weight: 600; border: none; font-size: 12px; font-family: 'Segoe UI', Arial, sans-serif; } QPushButton:hover { text-decoration: underline; }</string>
                           </property>
                           <property name="text">
                             <string>🏭 Gestion De Stock</string>
@@ -452,7 +418,7 @@ QToolButton:hover {
                             </size>
                           </property>
                           <property name="styleSheet">
-                            <string>QPushButton { background-color: transparent; color: #C9A227; font-weight: 600; border: none; font-size: 12px; font-family: 'Segoe UI', Arial, sans-serif; } QPushButton:hover { text-decoration: underline; } QPushButton:pressed { opacity: 0.7; }</string>
+                            <string notr="true">QPushButton { background-color: transparent; color: #C9A227; font-weight: 600; border: none; font-size: 12px; font-family: 'Segoe UI', Arial, sans-serif; } QPushButton:hover { text-decoration: underline; }</string>
                           </property>
                           <property name="text">
                             <string>🏭 Gestion De Production</string>
@@ -484,8 +450,11 @@ QToolButton:hover {
                       <height>35</height>
                     </size>
                   </property>
+                  <property name="styleSheet">
+                    <string notr="true">color: rgba(255, 255, 255, 0.9); font-size: 14px; font-weight: 500; font-family: 'Segoe UI', Arial, sans-serif; padding: 8px 16px; background-color: rgba(0, 0, 0, 0.2); border-radius: 20px;</string>
+                  </property>
                   <property name="text">
-                    <string>📅 04 Février 2026 • 14:30:45</string>
+                    <string>📅 22 Février 2026 • 00:46:02</string>
                   </property>
                   <property name="alignment">
                     <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
@@ -501,15 +470,7 @@ QToolButton:hover {
                     </size>
                   </property>
                   <property name="styleSheet">
-                    <string>QLabel#lblOnlineStatus { 
-    background-color: #1A3C2F; 
-    color: #4CAF50; 
-    font-weight: bold; 
-    font-size: 13px; 
-    border: 1px solid #2E7D32; 
-    border-radius: 12px; 
-    padding: 2px 10px; 
-}</string>
+                    <string notr="true">color: #4ADE80; font-weight: bold; font-size: 14px; padding: 6px 14px; background-color: rgba(74, 222, 128, 0.15); border-radius: 15px; border: 1px solid rgba(74, 222, 128, 0.3);</string>
                   </property>
                   <property name="text">
                     <string>● EN LIGNE</string>
@@ -1076,7 +1037,7 @@ QToolButton:hover {
                               <widget class="QPushButton" name="btnRechercher">
                                 <property name="minimumSize">
                                   <size>
-                                    <width>8</width>
+                                    <width>36</width>
                                     <height>36</height>
                                   </size>
                                 </property>
@@ -1090,20 +1051,10 @@ QToolButton:hover {
                                   <string>Rechercher</string>
                                 </property>
                                 <property name="styleSheet">
-                                  <string>QPushButton { min-width: 0px; padding: 4px; font-size: 16px; }</string>
+                                  <string>QPushButton { min-width: 0px; padding: 4px; font-size: 18px; }</string>
                                 </property>
                                 <property name="text">
-                                  <string/>
-                                </property>
-                                <property name="icon">
-                                  <iconset resource="resources.qrc">
-                                    <normaloff>:/assets/search.png</normaloff>:/assets/search.png</iconset>
-                                </property>
-                                <property name="iconSize">
-                                  <size>
-                                    <width>24</width>
-                                    <height>24</height>
-                                  </size>
+                                  <string>🔍</string>
                                 </property>
                               </widget>
                             </item>
@@ -1111,7 +1062,7 @@ QToolButton:hover {
                               <widget class="QPushButton" name="btnAfficherTableau_machine">
                                 <property name="minimumSize">
                                   <size>
-                                    <width>8</width>
+                                    <width>36</width>
                                     <height>36</height>
                                   </size>
                                 </property>
@@ -1125,20 +1076,10 @@ QToolButton:hover {
                                   <string>Afficher le tableau des machines</string>
                                 </property>
                                 <property name="styleSheet">
-                                  <string>QPushButton { min-width: 0px; padding: 4px; font-size: 16px; }</string>
+                                  <string>QPushButton { min-width: 0px; padding: 4px; font-size: 18px; }</string>
                                 </property>
                                 <property name="text">
-                                  <string/>
-                                </property>
-                                <property name="icon">
-                                  <iconset resource="resources.qrc">
-                                    <normaloff>:/assets/table.png</normaloff>:/assets/table.png</iconset>
-                                </property>
-                                <property name="iconSize">
-                                  <size>
-                                    <width>24</width>
-                                    <height>24</height>
-                                  </size>
+                                  <string>📊</string>
                                 </property>
                                 <property name="checkable">
                                   <bool>true</bool>
@@ -1204,17 +1145,7 @@ QToolButton:hover {
                             <item>
                               <widget class="QPushButton" name="btnHistoriqueToggle_machine">
                                 <property name="text">
-                                  <string> Historique ON/OFF</string>
-                                </property>
-                                <property name="icon">
-                                  <iconset resource="resources.qrc">
-                                    <normaloff>:/assets/history.png</normaloff>:/assets/history.png</iconset>
-                                </property>
-                                <property name="iconSize">
-                                  <size>
-                                    <width>20</width>
-                                    <height>20</height>
-                                  </size>
+                                  <string>📜 Historique ON/OFF</string>
                                 </property>
                                 <property name="checkable">
                                   <bool>true</bool>
@@ -1234,58 +1165,11 @@ QToolButton:hover {
                                 </property>
                               </spacer>
                             </item>
-                             <item>
-                               <widget class="QPushButton" name="btnActualiser_machine">
-                                 <property name="minimumSize">
-                                   <size>
-                                     <width>40</width>
-                                     <height>35</height>
-                                   </size>
-                                 </property>
-                                 <property name="maximumSize">
-                                   <size>
-                                     <width>40</width>
-                                     <height>35</height>
-                                   </size>
-                                 </property>
-                                 <property name="styleSheet">
-                                   <string>QPushButton#btnActualiser {
-    background-color: #03A9F4;
-    color: white;
-    border-radius: 6px;
-    font-size: 18px;
-    font-weight: bold;
-    border: none;
-}
-QPushButton#btnActualiser:hover {
-    background-color: #81D4FA;
-}
-QPushButton#btnActualiser:pressed {
-    background-color: #0288D1;
-}</string>
-                                 </property>
-                                 <property name="text">
-                                   <string>↻</string>
-                                 </property>
-                                 <property name="toolTip">
-                                   <string>Actualiser</string>
-                                 </property>
-                               </widget>
-                             </item>
+
                             <item>
                               <widget class="QPushButton" name="btnExporter_machine">
                                 <property name="text">
-                                  <string> Exporter</string>
-                                </property>
-                                <property name="icon">
-                                  <iconset resource="resources.qrc">
-                                    <normaloff>:/assets/export.png</normaloff>:/assets/export.png</iconset>
-                                </property>
-                                <property name="iconSize">
-                                  <size>
-                                    <width>20</width>
-                                    <height>20</height>
-                                  </size>
+                                  <string>📤 Exporter</string>
                                 </property>
                               </widget>
                             </item>
