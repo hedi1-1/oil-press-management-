@@ -1485,27 +1485,17 @@ void Finance::initializeUI()
     titleLayout->addWidget(lblMainTitle);
     titleLayout->addWidget(lblSubtitle);
 
-    // Logo ou icône
+    // Logo
     QLabel *lblIcon = new QLabel();
-    QPixmap logoPixmap;
-    
-    // Essayer différents chemins possibles
-    if (!logoPixmap.load(":/images/resources/pressiq_logo.png")) {
-        if (!logoPixmap.load("resources/pressiq_logo.png")) {
-            logoPixmap.load("./resources/pressiq_logo.png");
-        }
-    }
-    
+    QPixmap logoPixmap(":/logo.png");
     if (!logoPixmap.isNull()) {
-        logoPixmap = logoPixmap.scaledToWidth(120, Qt::SmoothTransformation);
-        lblIcon->setPixmap(logoPixmap);
+        lblIcon->setPixmap(logoPixmap.scaled(50, 50, Qt::KeepAspectRatio, Qt::SmoothTransformation));
     } else {
-        // Fallback : afficher un texte simple
-        lblIcon->setText("PressIQ");
-        lblIcon->setStyleSheet("font-size: 12pt; font-weight: bold; color: #27ae60;");
+        lblIcon->setText("🫒");
+        lblIcon->setStyleSheet("font-size: 28px;");
     }
     lblIcon->setAlignment(Qt::AlignCenter);
-    lblIcon->setMaximumWidth(150);
+    lblIcon->setFixedSize(54, 54);
 
     // Status online
     QLabel *lblStatus = new QLabel("EN LIGNE");

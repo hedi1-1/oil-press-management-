@@ -338,8 +338,16 @@ void Login::buildUi()
     QHBoxLayout *brandRow = new QHBoxLayout();
     brandRow->setSpacing(10);
 
-    brandIcon = new QLabel(QString::fromUtf8("\xf0\x9f\xab\x92"));
+    brandIcon = new QLabel();
     brandIcon->setObjectName("brandIcon");
+    {
+        QPixmap logoPix(":/logo.png");
+        if (!logoPix.isNull())
+            brandIcon->setPixmap(logoPix.scaled(40, 40, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        else
+            brandIcon->setText(QString::fromUtf8("\xf0\x9f\xab\x92"));
+    }
+    brandIcon->setFixedSize(44, 44);
     brandRow->addWidget(brandIcon);
 
     QVBoxLayout *brandText = new QVBoxLayout();
