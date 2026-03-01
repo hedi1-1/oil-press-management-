@@ -2,7 +2,9 @@
 #define MACHINE_H
 
 #include <QCheckBox>
+#include <QEvent>
 #include <QHBoxLayout>
+#include <QKeyEvent>
 #include <QLabel>
 #include <QMainWindow>
 #include <QPushButton>
@@ -62,6 +64,9 @@ public:
   machine(QWidget *parent = nullptr);
   ~machine();
 
+protected:
+  bool eventFilter(QObject *obj, QEvent *event) override;
+
 signals:
   void backToMenu();
 
@@ -94,5 +99,7 @@ private:
   int m_selectedRow;
   void setupMachineTable();
   void chargerMachines();
+  void rechercherMachines();
+  void exporterPDF();
 };
 #endif // MACHINE_H
