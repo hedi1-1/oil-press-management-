@@ -61,9 +61,10 @@ FORMS += \
     ../finance/finance/finance.ui
 
 RESOURCES += \
-    ../production/resources.qrc \
+    menu_resources.qrc \
     ../Login/login_resources.qrc \
-    ../machine/resources.qrc
+    ../machine/resources.qrc \
+    ../stock/stock_resources.qrc
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

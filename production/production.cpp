@@ -1,5 +1,6 @@
 #include "production.h"
 #include "ui_production.h"
+#include <QCoreApplication>
 #include <QDateTime>
 #include <QPixmap>
 
@@ -10,9 +11,15 @@ Production::Production(QWidget *parent)
 {
     ui->setupUi(this);
     {
-        QPixmap logo(":/logo.png");
+        QPixmap logo;
+        for (const QString &p : QStringList{":/logo.png", "logo.png", "../production/logo.png",
+             QCoreApplication::applicationDirPath() + "/../../logo.png",
+             QCoreApplication::applicationDirPath() + "/../../../production/logo.png"}) {
+            logo = QPixmap(p);
+            if (!logo.isNull()) break;
+        }
         if (!logo.isNull())
-            ui->lblLogo->setPixmap(logo.scaled(40, 40, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+            ui->lblLogo->setPixmap(logo.scaledToHeight(50, Qt::SmoothTransformation));
     }
 
     // Establish database connection via singleton

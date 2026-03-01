@@ -1,5 +1,6 @@
 #include "menu.h"
 #include "ui_menu.h"
+#include <QCoreApplication>
 #include "../production/production.h"
 #include "../machine/machine.h"
 #include "../userstaff/userstaff.h"
@@ -24,9 +25,18 @@ menu::menu(QWidget *parent)
 {
     ui->setupUi(this);
     {
-        QPixmap logo(":/logo.png");
+        QPixmap logo;
+        for (const QString &p : QStringList{":/logo.png", "logo.png", "../production/logo.png",
+             QCoreApplication::applicationDirPath() + "/../../logo.png",
+             QCoreApplication::applicationDirPath() + "/../../../logo.png",
+             QCoreApplication::applicationDirPath() + "/../../../production/logo.png"}) {
+            logo = QPixmap(p);
+            if (!logo.isNull()) { qDebug() << "[menu] Logo loaded from:" << p; break; }
+        }
         if (!logo.isNull())
-            ui->lblLogo->setPixmap(logo.scaled(40, 40, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+            ui->lblLogo->setPixmap(logo.scaledToHeight(70, Qt::SmoothTransformation));
+        else
+            qDebug() << "[menu] WARNING: Logo not found anywhere!";
     }
 
     // Connect button signals to slots

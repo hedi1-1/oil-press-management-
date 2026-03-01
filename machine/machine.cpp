@@ -1,6 +1,7 @@
 #include "machine.h"
 #include "connexionmachine.h"
 #include "ui_machine.h"
+#include <QCoreApplication>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDateEdit>
@@ -173,10 +174,16 @@ machine::machine(QWidget *parent)
       m_selectedRow(-1) {
   ui->setupUi(this);
   {
-      QPixmap logo(":/logo.png");
-      if (logo.isNull()) logo = QPixmap(":/assets/logo.png");
+      QPixmap logo;
+      for (const QString &p : QStringList{":/logo.png", ":/assets/logo.png", "logo.png",
+           "../production/logo.png", "../machine/assets/logo.png",
+           QCoreApplication::applicationDirPath() + "/../../logo.png",
+           QCoreApplication::applicationDirPath() + "/../../../production/logo.png"}) {
+          logo = QPixmap(p);
+          if (!logo.isNull()) break;
+      }
       if (!logo.isNull())
-          ui->lblLogo_machine->setPixmap(logo.scaled(40, 40, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+          ui->lblLogo_machine->setPixmap(logo.scaledToHeight(50, Qt::SmoothTransformation));
   }
 
   // Disable toolbar buttons initially

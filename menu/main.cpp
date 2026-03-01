@@ -7,9 +7,14 @@
 
 #include <QApplication>
 #include <QMessageBox>
+#include <QDebug>
+#include <QDir>
 
 int main(int argc, char *argv[]) {
   QApplication a(argc, argv);
+
+  qDebug() << "[main] Resources check - :/logo.png exists:" << QFile::exists(":/logo.png");
+  qDebug() << "[main] App dir:" << QCoreApplication::applicationDirPath();
 
   a.setApplicationName("Smart Oil Press Management");
   a.setApplicationVersion("1.0");

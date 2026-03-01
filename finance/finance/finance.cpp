@@ -1,6 +1,7 @@
 ﻿#include "finance.h"
 #include "connexionfinance.h"
 #include "ui_finance.h"
+#include <QCoreApplication>
 #include <string>
 using namespace std;
 #include <QVBoxLayout>
@@ -1487,9 +1488,15 @@ void Finance::initializeUI()
 
     // Logo
     QLabel *lblIcon = new QLabel();
-    QPixmap logoPixmap(":/logo.png");
+    QPixmap logoPixmap;
+    for (const QString &p : QStringList{":/logo.png", "logo.png", "../production/logo.png",
+         QCoreApplication::applicationDirPath() + "/../../logo.png",
+         QCoreApplication::applicationDirPath() + "/../../../production/logo.png"}) {
+        logoPixmap = QPixmap(p);
+        if (!logoPixmap.isNull()) break;
+    }
     if (!logoPixmap.isNull()) {
-        lblIcon->setPixmap(logoPixmap.scaled(50, 50, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        lblIcon->setPixmap(logoPixmap.scaledToHeight(50, Qt::SmoothTransformation));
     } else {
         lblIcon->setText("🫒");
         lblIcon->setStyleSheet("font-size: 28px;");

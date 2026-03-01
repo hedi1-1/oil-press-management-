@@ -1,5 +1,6 @@
 #include "stock.h"
 #include "ui_stock.h"
+#include <QCoreApplication>
 #include <QDate>
 #include <QPixmap>
 #include <QTime>
@@ -26,9 +27,16 @@ Stock::Stock(QWidget *parent)
 {
     ui->setupUi(this);
     {
-        QPixmap logo(":/logo.png");
+        QPixmap logo;
+        for (const QString &p : QStringList{":/logo.png", ":/images/logo.png", "logo.png",
+             "../production/logo.png", "../stock/images/logo.png",
+             QCoreApplication::applicationDirPath() + "/../../logo.png",
+             QCoreApplication::applicationDirPath() + "/../../../production/logo.png"}) {
+            logo = QPixmap(p);
+            if (!logo.isNull()) break;
+        }
         if (!logo.isNull())
-            ui->labelLogoImage->setPixmap(logo.scaled(50, 50, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+            ui->labelLogoImage->setPixmap(logo.scaledToHeight(50, Qt::SmoothTransformation));
     }
 
     // Obtenir la connexion

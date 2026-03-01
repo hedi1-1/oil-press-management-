@@ -552,13 +552,13 @@ QScrollBar::handle:horizontal:hover {
         <widget class="QLabel" name="lblLogo">
          <property name="minimumSize">
           <size>
-           <width>50</width>
+           <width>84</width>
            <height>50</height>
           </size>
          </property>
          <property name="maximumSize">
           <size>
-           <width>50</width>
+           <width>84</width>
            <height>50</height>
           </size>
          </property>
@@ -569,7 +569,10 @@ QScrollBar::handle:horizontal:hover {
           <pixmap resource="resources.qrc">:/logo.png</pixmap>
          </property>
          <property name="scaledContents">
-          <bool>true</bool>
+          <bool>false</bool>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
          </property>
         </widget>
        </item>

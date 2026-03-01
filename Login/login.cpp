@@ -341,9 +341,15 @@ void Login::buildUi()
     brandIcon = new QLabel();
     brandIcon->setObjectName("brandIcon");
     {
-        QPixmap logoPix(":/logo.png");
+        QPixmap logoPix;
+        for (const QString &p : QStringList{":/logo.png", "logo.png", "../production/logo.png",
+             QCoreApplication::applicationDirPath() + "/../../logo.png",
+             QCoreApplication::applicationDirPath() + "/../../../production/logo.png"}) {
+            logoPix = QPixmap(p);
+            if (!logoPix.isNull()) break;
+        }
         if (!logoPix.isNull())
-            brandIcon->setPixmap(logoPix.scaled(40, 40, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+            brandIcon->setPixmap(logoPix.scaledToHeight(40, Qt::SmoothTransformation));
         else
             brandIcon->setText(QString::fromUtf8("\xf0\x9f\xab\x92"));
     }
@@ -625,14 +631,7 @@ void Login::playEntranceAnimation()
     // For the entrance, we'll just animate the card's content margins
     cardFrame->setContentsMargins(36, 80, 36, 32); // Start offset down
 
-    QPropertyAnimation *cardSlide = new QPropertyAnimation(cardFrame, "contentsMargins");
-    // Can't animate QMargins directly, so use a timer-based approach instead
-
-    // Simple approach: use a QPropertyAnimation on a custom property
-    // Already defined cardYOffset — but layout makes it tricky
-
-    // Simpler: just animate the opacity of the whole right side
-    // and use a timer to smoothly reduce top margin
+    // Simple approach: use a timer-based approach to smoothly reduce top margin
 
     // Let's do a clean parallel animation
     QParallelAnimationGroup *group = new QParallelAnimationGroup(this);
