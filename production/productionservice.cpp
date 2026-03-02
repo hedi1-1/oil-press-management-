@@ -105,6 +105,10 @@ bool ProductionService::addProduction(ProductionModel &prod)
 
 bool ProductionService::updateProduction(ProductionModel &prod)
 {
+    if (prod.getIdProduction() <= 0) {
+        qDebug() << "[ProductionService] Update failed: invalid production ID";
+        return false;
+    }
     prod.calculateRendement();
     bool ok = prod.updateProduction();
     if (ok) emit productionUpdated(prod.getIdProduction());
@@ -113,6 +117,10 @@ bool ProductionService::updateProduction(ProductionModel &prod)
 
 bool ProductionService::deleteProduction(int idProduction)
 {
+    if (idProduction <= 0) {
+        qDebug() << "[ProductionService] Delete failed: invalid production ID";
+        return false;
+    }
     bool ok = ProductionModel::deleteProduction(idProduction);
     if (ok) emit productionDeleted(idProduction);
     return ok;
@@ -134,7 +142,10 @@ ProductionModel ProductionService::getProductionById(int idProduction)
 QList<ProductionModel> ProductionService::getAllProductions()
 {
     QSqlQuery query(db());
-    query.exec("SELECT * FROM PRODUCTION ORDER BY IDPRODUCTION DESC");
+    if (!query.exec("SELECT * FROM PRODUCTION ORDER BY IDPRODUCTION DESC")) {
+        qDebug() << "[ProductionService] getAllProductions failed:" << query.lastError().text();
+        return {};
+    }
     return queryToList(query);
 }
 
@@ -371,7 +382,10 @@ QList<ProductionModel> ProductionService::rechercherParDate(const QDate &dateDeb
                   "ORDER BY DATEPRODUCTION DESC");
     query.bindValue(":d1", dateDebut);
     query.bindValue(":d2", dateFin);
-    query.exec();
+    if (!query.exec()) {
+        qDebug() << "[ProductionService] rechercherParDate failed:" << query.lastError().text();
+        return {};
+    }
     return queryToList(query);
 }
 
@@ -381,7 +395,10 @@ QList<ProductionModel> ProductionService::rechercherParStatut(const QString &sta
     query.prepare("SELECT * FROM PRODUCTION WHERE UPPER(STATUT) = UPPER(:statut) "
                   "ORDER BY IDPRODUCTION DESC");
     query.bindValue(":statut", statut);
-    query.exec();
+    if (!query.exec()) {
+        qDebug() << "[ProductionService] rechercherParStatut failed:" << query.lastError().text();
+        return {};
+    }
     return queryToList(query);
 }
 
@@ -389,7 +406,10 @@ QList<ProductionModel> ProductionService::trierParRendement(bool ascending)
 {
     QString order = ascending ? "ASC" : "DESC";
     QSqlQuery query(db());
-    query.exec("SELECT * FROM PRODUCTION ORDER BY RENDEMENT " + order);
+    if (!query.exec("SELECT * FROM PRODUCTION ORDER BY RENDEMENT " + order)) {
+        qDebug() << "[ProductionService] trierParRendement failed:" << query.lastError().text();
+        return {};
+    }
     return queryToList(query);
 }
 
@@ -397,7 +417,10 @@ QList<ProductionModel> ProductionService::trierParQuantite(bool ascending)
 {
     QString order = ascending ? "ASC" : "DESC";
     QSqlQuery query(db());
-    query.exec("SELECT * FROM PRODUCTION ORDER BY QUANTITEOLIVESKG " + order);
+    if (!query.exec("SELECT * FROM PRODUCTION ORDER BY QUANTITEOLIVESKG " + order)) {
+        qDebug() << "[ProductionService] trierParQuantite failed:" << query.lastError().text();
+        return {};
+    }
     return queryToList(query);
 }
 

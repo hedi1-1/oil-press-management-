@@ -50,20 +50,20 @@ public:
     void setIdUser(int value);
     void setIdMachine(int value);
     void setIdStock(int value);
-    void setDateProduction(QDate value);
+    void setDateProduction(const QDate &value);
     void setQuantiteOlivesKg(int value);
-    void setTypePressage(QString value);
-    void setNotesPlanification(QString value);
-    void setHeureDemarrage(QTime value);
+    void setTypePressage(const QString &value);
+    void setNotesPlanification(const QString &value);
+    void setHeureDemarrage(const QTime &value);
     void setDureeEstimee(int value);
     void setTempsEcoule(int value);
-    void setStatut(QString value);
+    void setStatut(const QString &value);
     void setHuileProduiteL(double value);
     void setRendement(double value);
-    void setQualite(QString value);
+    void setQualite(const QString &value);
     void setConformeNormes(bool value);
-    void setRemarquesQualite(QString value);
-    void setDateGenerationRapport(QDate value);
+    void setRemarquesQualite(const QString &value);
+    void setDateGenerationRapport(const QDate &value);
 
     // CRUD Operations
     bool addProduction();

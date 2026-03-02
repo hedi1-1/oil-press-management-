@@ -3,6 +3,7 @@
 #include <QRandomGenerator>
 #include <QtSql/QSqlQuery>
 #include <QtSql/QSqlDatabase>
+#include <utility>  // std::as_const
 
 // ============================================================================
 // Constructor / Destructor
@@ -142,10 +143,10 @@ void ProductionBot::etape1_Planifier()
 // ============================================================================
 void ProductionBot::etape2_LancerPlanifiees()
 {
-    QList<ProductionModel> all = m_service->getAllProductions();
+    const QList<ProductionModel> all = m_service->getAllProductions();
     int launched = 0;
 
-    for (const auto &prod : all) {
+    for (const auto &prod : std::as_const(all)) {
         if (prod.getStatut() == "Planifie" || prod.getStatut() == "Planifiee") {
             if (m_service->demarrerProduction(prod.getIdProduction())) {
                 logDecision(prod.getIdProduction(),
@@ -166,48 +167,24 @@ void ProductionBot::etape2_LancerPlanifiees()
 // ============================================================================
 void ProductionBot::etape3_TravaillerEnCours()
 {
-    QList<ProductionModel> all = m_service->getAllProductions();
+    const QList<ProductionModel> all = m_service->getAllProductions();
 
-    for (const auto &prod : all) {
+    for (const auto &prod : std::as_const(all)) {
         if (prod.getStatut() != "En cours") continue;
 
         int id = prod.getIdProduction();
         int olivesKg = prod.getQuantiteOlivesKg();
-        int dureeEstimee = prod.getDureeEstimee();
-        int tempsEcoule = prod.getTempsEcoule();
-        double huileActuelle = prod.getHuileProduiteL();
-
-        // Simuler le passage du temps (chaque cycle = +dureeEstimee minutes)
-        int nouveauTemps = tempsEcoule + dureeEstimee;
 
         // Calculer l'huile produite (rendement réaliste 14-22%)
         double rendementCible = 14.0 + (QRandomGenerator::global()->bounded(80)) / 10.0; // 14.0 à 22.0
         double huileFinale = (olivesKg * rendementCible) / 100.0;
 
-        // Progression : production terminée en un cycle de travail
-        double nouvelleHuile = huileFinale;
-
-        // Mettre à jour dans la BD
-        QMap<QString, QVariant> fields;
-        fields["TEMPSECOULE"]   = nouveauTemps;
-        fields["HUILEPRODUITEL"] = nouvelleHuile;
-        fields["RENDEMENT"]     = rendementCible;
-        fields["STATUT"]        = "Termine";
-
-        QSqlQuery query(QSqlDatabase::database("production_conn"));
-        query.prepare("UPDATE PRODUCTION SET TEMPSECOULE = :temps, HUILEPRODUITEL = :huile, "
-                      "RENDEMENT = :rend, STATUT = :statut WHERE IDPRODUCTION = :id");
-        query.bindValue(":temps", nouveauTemps);
-        query.bindValue(":huile", nouvelleHuile);
-        query.bindValue(":rend", rendementCible);
-        query.bindValue(":statut", "Termine");
-        query.bindValue(":id", id);
-
-        if (query.exec()) {
+        // Use service layer to terminate production properly
+        if (m_service->terminerProduction(id, huileFinale)) {
             logDecision(id,
                         QString("Production : #%1 terminee — %2 L d'huile, rendement %3%%")
                             .arg(id)
-                            .arg(nouvelleHuile, 0, 'f', 1)
+                            .arg(huileFinale, 0, 'f', 1)
                             .arg(rendementCible, 0, 'f', 1),
                         "positif", "production");
         }
@@ -219,9 +196,9 @@ void ProductionBot::etape3_TravaillerEnCours()
 // ============================================================================
 void ProductionBot::etape4_ControleQualite()
 {
-    QList<ProductionModel> all = m_service->getAllProductions();
+    const QList<ProductionModel> all = m_service->getAllProductions();
 
-    for (const auto &prod : all) {
+    for (const auto &prod : std::as_const(all)) {
         if (prod.getStatut() != "Termine") continue;
         // Déjà validé ?
         if (!prod.getQualite().isEmpty() && prod.getQualite() != "Non verifie") continue;
@@ -231,36 +208,23 @@ void ProductionBot::etape4_ControleQualite()
 
         // Règle de qualité
         QString qualite;
-        bool conforme;
         if (rendement >= 18.0) {
             qualite = "Excellente";
-            conforme = true;
         } else if (rendement >= 15.0) {
             qualite = "Bonne";
-            conforme = true;
         } else if (rendement >= 12.0) {
             qualite = "Moyenne";
-            conforme = false;
         } else {
             qualite = "Faible";
-            conforme = false;
         }
 
-        // Écrire dans la BD
-        QSqlQuery query(QSqlDatabase::database("production_conn"));
-        query.prepare("UPDATE PRODUCTION SET QUALITE = :q, CONFORMENORMES = :c, "
-                      "REMARQUESQUALITE = :r, STATUT = :s WHERE IDPRODUCTION = :id");
-        query.bindValue(":q", qualite);
-        query.bindValue(":c", conforme ? 1 : 0);
-        query.bindValue(":r", QString("Controle qualite par Bot Employe — Rendement: %1%%").arg(rendement, 0, 'f', 1));
-        query.bindValue(":s", conforme ? "Qualite validee" : "Non conforme");
-        query.bindValue(":id", id);
-
-        if (query.exec()) {
+        // Use service layer for quality validation
+        if (m_service->validerConformite(id, qualite)) {
+            bool conforme = m_service->isConforme(rendement, qualite);
             QString icon = conforme ? "CONFORME" : "NON CONFORME";
             logDecision(id,
                         QString("Qualite : #%1 — %2 (%3), rendement %4%%")
-                            .arg(id).arg(qualite).arg(icon).arg(rendement, 0, 'f', 1),
+                            .arg(id).arg(qualite, icon).arg(rendement, 0, 'f', 1),
                         conforme ? "positif" : "negatif", "qualite");
         }
     }
@@ -271,16 +235,16 @@ void ProductionBot::etape4_ControleQualite()
 // ============================================================================
 void ProductionBot::etape5_DetecterAnomalies()
 {
-    QList<ProductionModel> all = m_service->getAllProductions();
+    const QList<ProductionModel> all = m_service->getAllProductions();
 
-    for (const auto &prod : all) {
+    for (const auto &prod : std::as_const(all)) {
         if (prod.getStatut() == "Planifie" || prod.getStatut() == "Planifiee") continue;
 
         ProductionService::AnomalieInfo anomalie = m_service->detecterAnomalie(prod);
         if (anomalie.hasAnomalie) {
             // Avoid repeated anomaly alerts (check if we already logged for this prod)
             bool alreadyLogged = false;
-            for (const auto &d : m_decisions) {
+            for (const auto &d : std::as_const(m_decisions)) {
                 if (d.idProduction == prod.getIdProduction() && d.type == "anomalie") {
                     alreadyLogged = true;
                     break;

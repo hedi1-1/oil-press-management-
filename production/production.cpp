@@ -138,11 +138,43 @@ void Production::showErrorNotification(const QString &message)
 
 void Production::onPlanifierClicked()
 {
+    // Validate input
+    if (ui->spinOlivesKg->value() <= 0) {
+        showErrorNotification("Quantité d'olives invalide!\n\nEntrez une quantité supérieure à 0.");
+        return;
+    }
+    
+    // Use service layer for duration estimation
+    QString typePressage = ui->comboPressType->currentText();
+    int estimatedMinutes = m_productionService->estimerDuree(ui->spinOlivesKg->value(), typePressage);
+    
+    // If we have a current production ID, UPDATE instead of INSERT
+    if (currentProductionId > 0) {
+        currentProduction.setIdProduction(currentProductionId);
+        currentProduction.setQuantiteOlivesKg(ui->spinOlivesKg->value());
+        currentProduction.setTypePressage(typePressage);
+        currentProduction.setNotesPlanification(ui->txtNotesPlanification->toPlainText());
+        currentProduction.setDureeEstimee(estimatedMinutes);
+        currentProduction.setHuileProduiteL(ui->spinOilProduced->value());
+        
+        if (m_productionService->updateProduction(currentProduction)) {
+            showSuccessNotification("Production #" + QString::number(currentProductionId) + " modifiée!\n\n"
+                                   "Quantité: " + QString::number(ui->spinOlivesKg->value()) + " kg\n"
+                                   "Type: " + typePressage);
+            clearForm();
+            loadProductionHistory();
+        } else {
+            showErrorNotification("Échec de la modification!");
+        }
+        return;
+    }
+    
+    // --- New production ---
     ProductionModel prod;
     
     // Get values from UI
     prod.setQuantiteOlivesKg(ui->spinOlivesKg->value());
-    prod.setTypePressage(ui->comboPressType->currentText());
+    prod.setTypePressage(typePressage);
     prod.setNotesPlanification(ui->txtNotesPlanification->toPlainText());
     prod.setDateProduction(QDate::currentDate());
     prod.setStatut("Planifie");
@@ -154,21 +186,18 @@ void Production::onPlanifierClicked()
     prod.setIdMachine(0);
     prod.setIdStock(0);
     
-    // Estimate duration based on quantity
-    int estimatedMinutes = prod.getQuantiteOlivesKg() / 5; // ~5kg per minute
     prod.setDureeEstimee(estimatedMinutes);
     prod.setTempsEcoule(0);
     prod.setHuileProduiteL(0);
     prod.setRendement(0);
     
     qDebug() << "Attempting to add production...";
-    qDebug() << "Quantity:" << prod.getQuantiteOlivesKg();
-    qDebug() << "Type:" << prod.getTypePressage();
+    qDebug() << "Quantity:" << prod.getQuantiteOlivesKg() << "Type:" << typePressage;
     
     if (prod.addProduction()) {
         showSuccessNotification("Production planifiée avec succès!\n\n"
                                "Quantité: " + QString::number(prod.getQuantiteOlivesKg()) + " kg\n"
-                               "Type: " + prod.getTypePressage() + "\n"
+                               "Type: " + typePressage + "\n"
                                "Durée estimée: " + QString::number(estimatedMinutes) + " min");
         
         // Update UI status
@@ -497,28 +526,39 @@ void Production::onModifyClicked()
         return;
     }
     
-    // Get data from selected row
-    int productionId = ui->tableProductionHistory->item(selectedRow, 0)->text().toInt();
-    QString olivesText = ui->tableProductionHistory->item(selectedRow, 2)->text();
-    olivesText.remove(" kg");
-    int olivesKg = olivesText.toInt();
+    // Safely get ID from first column
+    QTableWidgetItem *idItem = ui->tableProductionHistory->item(selectedRow, 0);
+    if (!idItem) {
+        showErrorNotification("Erreur: Impossible de récupérer l'ID!");
+        return;
+    }
     
-    QString huileText = ui->tableProductionHistory->item(selectedRow, 3)->text();
-    huileText.remove(" L");
-    double huileL = huileText.toDouble();
+    int productionId = idItem->text().toInt();
+    
+    // Load full production data from service layer (reliable, not parsed from table text)
+    ProductionModel prod = m_productionService->getProductionById(productionId);
+    if (prod.getIdProduction() <= 0) {
+        showErrorNotification("Production #" + QString::number(productionId) + " introuvable en base!");
+        return;
+    }
     
     // Set current production ID for updates
     currentProductionId = productionId;
+    currentProduction = prod;
     
-    // Fill form with selected data
-    ui->spinOlivesKg->setValue(olivesKg);
-    ui->spinOilProduced->setValue(huileL);
+    // Fill form with DB data
+    ui->spinOlivesKg->setValue(prod.getQuantiteOlivesKg());
+    ui->spinOilProduced->setValue(prod.getHuileProduiteL());
+    if (!prod.getNotesPlanification().isEmpty()) {
+        ui->txtNotesPlanification->setPlainText(prod.getNotesPlanification());
+    }
     
     // Switch to Planification tab
     ui->tabWidgetProduction->setCurrentIndex(0);
     
     showSuccessNotification("Production chargée pour modification!\n\n"
                            "ID: " + QString::number(productionId) + "\n"
+                           "Quantité: " + QString::number(prod.getQuantiteOlivesKg()) + " kg\n"
                            "Modifiez les valeurs puis cliquez sur 'Planifier'");
 }
 

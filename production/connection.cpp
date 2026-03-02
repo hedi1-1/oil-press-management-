@@ -32,9 +32,16 @@ bool Connection::createconnect()
 
 void Connection::closeconnect()
 {
+    QString connName;
     if (db.isOpen()) {
+        connName = db.connectionName();
         db.close();
         qDebug() << "Database connection closed.";
+    }
+    // Remove connection from Qt pool to avoid resource leak
+    if (!connName.isEmpty()) {
+        db = QSqlDatabase();  // release handle before removeDatabase
+        QSqlDatabase::removeDatabase(connName);
     }
 }
 

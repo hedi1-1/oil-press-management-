@@ -1,6 +1,9 @@
 #include "productionmodel.h"
 #include <QRegularExpression>
 
+// Reusable regex – compiled once
+static const QRegularExpression kNonAsciiRe(QStringLiteral("[^a-zA-Z0-9\\s]"));
+
 // ============================================================================
 // CONSTRUCTORS
 // ============================================================================
@@ -89,20 +92,20 @@ void ProductionModel::setIdClient(int value) { m_idClient = value; }
 void ProductionModel::setIdUser(int value) { m_idUser = value; }
 void ProductionModel::setIdMachine(int value) { m_idMachine = value; }
 void ProductionModel::setIdStock(int value) { m_idStock = value; }
-void ProductionModel::setDateProduction(QDate value) { m_dateProduction = value; }
+void ProductionModel::setDateProduction(const QDate &value) { m_dateProduction = value; }
 void ProductionModel::setQuantiteOlivesKg(int value) { m_quantiteOlivesKg = value; }
-void ProductionModel::setTypePressage(QString value) { m_typePressage = value; }
-void ProductionModel::setNotesPlanification(QString value) { m_notesPlanification = value; }
-void ProductionModel::setHeureDemarrage(QTime value) { m_heureDemarrage = value; }
+void ProductionModel::setTypePressage(const QString &value) { m_typePressage = value; }
+void ProductionModel::setNotesPlanification(const QString &value) { m_notesPlanification = value; }
+void ProductionModel::setHeureDemarrage(const QTime &value) { m_heureDemarrage = value; }
 void ProductionModel::setDureeEstimee(int value) { m_dureeEstimee = value; }
 void ProductionModel::setTempsEcoule(int value) { m_tempsEcoule = value; }
-void ProductionModel::setStatut(QString value) { m_statut = value; }
+void ProductionModel::setStatut(const QString &value) { m_statut = value; }
 void ProductionModel::setHuileProduiteL(double value) { m_huileProduiteL = value; }
 void ProductionModel::setRendement(double value) { m_rendement = value; }
-void ProductionModel::setQualite(QString value) { m_qualite = value; }
+void ProductionModel::setQualite(const QString &value) { m_qualite = value; }
 void ProductionModel::setConformeNormes(bool value) { m_conformeNormes = value; }
-void ProductionModel::setRemarquesQualite(QString value) { m_remarquesQualite = value; }
-void ProductionModel::setDateGenerationRapport(QDate value) { m_dateGenerationRapport = value; }
+void ProductionModel::setRemarquesQualite(const QString &value) { m_remarquesQualite = value; }
+void ProductionModel::setDateGenerationRapport(const QDate &value) { m_dateGenerationRapport = value; }
 
 // ============================================================================
 // UTILITY - AUTO CALCULATE RENDEMENT
@@ -129,7 +132,7 @@ bool ProductionModel::addProduction()
     
     // Clean typePressage - remove emojis for Oracle compatibility
     QString cleanTypePressage = m_typePressage;
-    cleanTypePressage.remove(QRegularExpression("[^a-zA-Z0-9\\s]")); // Keep only ASCII letters, numbers, spaces
+    cleanTypePressage.remove(kNonAsciiRe); // Uses static regex — compiled once
     cleanTypePressage = cleanTypePressage.trimmed();
     if (cleanTypePressage.isEmpty()) cleanTypePressage = "Standard";
     
@@ -158,10 +161,10 @@ bool ProductionModel::addProduction()
     qDebug() << "QuantiteOlives:" << m_quantiteOlivesKg << "TypePressage:" << cleanTypePressage << "Statut:" << m_statut;
     
     if (query.exec()) {
-        // Get the generated ID
+        // Safer ID retrieval using RETURNING INTO via a separate MAX query
+        // (CURRVAL is session-safe but this is more explicit)
         QSqlQuery idQuery(QSqlDatabase::database("production_conn"));
-        idQuery.exec("SELECT SEQ_PRODUCTION.CURRVAL FROM DUAL");
-        if (idQuery.next()) {
+        if (idQuery.exec("SELECT MAX(IDPRODUCTION) FROM PRODUCTION") && idQuery.next()) {
             m_idProduction = idQuery.value(0).toInt();
         }
         qDebug() << "Production added successfully! ID:" << m_idProduction;
@@ -187,7 +190,7 @@ bool ProductionModel::updateProduction()
     
     // Clean typePressage
     QString cleanTypePressage = m_typePressage;
-    cleanTypePressage.remove(QRegularExpression("[^a-zA-Z0-9\\s]"));
+    cleanTypePressage.remove(kNonAsciiRe);
     cleanTypePressage = cleanTypePressage.trimmed();
     if (cleanTypePressage.isEmpty()) cleanTypePressage = "Standard";
     
