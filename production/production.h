@@ -8,8 +8,13 @@
 #include <QtSql/QSqlQuery>
 #include <QTableWidgetItem>
 #include <QHeaderView>
+#include <QFileDialog>
+#include <QPrinter>
+#include <QPainter>
+#include <QTextDocument>
 #include "connection.h"
 #include "productionmodel.h"
+#include "productioneditdialog.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -30,6 +35,7 @@ public:
     void clearForm();
     void showSuccessNotification(const QString &message);
     void showErrorNotification(const QString &message);
+    void generatePdf(const QString &filePath);
 
 signals:
     void backToMenu();
