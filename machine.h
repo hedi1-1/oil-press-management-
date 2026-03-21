@@ -2,6 +2,7 @@
 #define MACHINE_H
 
 #include <QCheckBox>
+#include <QDialog>
 #include <QEvent>
 #include <QHBoxLayout>
 #include <QKeyEvent>
@@ -56,6 +57,15 @@ struct TodoItem {
   bool done;
 };
 
+// Historique entry for live timer
+struct HistoriqueEntry {
+  QString machineName;
+  QString currentState; // "ON", "OFF", "VEILLE"
+  int secondsOn;
+  int secondsOff;
+  int secondsVeille;
+};
+
 // Machine Main Window Class
 class machine : public QMainWindow {
   Q_OBJECT
@@ -95,11 +105,21 @@ private:
   NavigationBar *navigationBar;
   QVector<TodoItem> m_todoItems;
   QStandardItemModel *machineTableModel;
+  QStandardItemModel *historiqueTableModel;
   QString m_selectedMachineId;
   int m_selectedRow;
+  QTimer *machineCardPollingTimer;
+  QDialog *machineCardDialog;
+  QTimer *countsTimer;
+  QTimer *historiqueTimer;
+  QVector<HistoriqueEntry> m_historiqueEntries;
   void setupMachineTable();
   void chargerMachines();
+  void chargerHistorique();
   void rechercherMachines();
   void exporterPDF();
+  void showMachineCard();
+  void updateMachineCounts();
+  void updateHistoriqueDisplay();
 };
 #endif // MACHINE_H

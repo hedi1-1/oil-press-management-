@@ -12,6 +12,7 @@
 #include <QFileDialog>
 #include <QFormLayout>
 #include <QHeaderView>
+#include <QMap>
 #include <QMessageBox>
 #include <QPainter>
 #include <QPrinter>
@@ -174,7 +175,9 @@ void NavigationBar::onTabButtonClicked() {
 
 machine::machine(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::machine), navigationBar(nullptr),
-      m_selectedRow(-1) {
+      historiqueTableModel(nullptr), m_selectedRow(-1),
+      machineCardPollingTimer(nullptr), machineCardDialog(nullptr),
+      countsTimer(nullptr), historiqueTimer(nullptr) {
   ui->setupUi(this);
 
   // Disable toolbar buttons initially
@@ -182,6 +185,11 @@ machine::machine(QWidget *parent)
   ui->btnSupprimerMachine_machine->setEnabled(false);
   ui->btnExporter_machine->setEnabled(false);
   ui->btnToggleOnOff_machine->setEnabled(false);
+  ui->btnCarteMachine->setEnabled(false);
+
+  // Connect carte machine button
+  connect(ui->btnCarteMachine, &QPushButton::clicked, this,
+          &machine::showMachineCard);
 
   // Fix grid column stretches and spacing to reduce gap between left/right
   // blocks
@@ -226,10 +234,13 @@ machine::machine(QWidget *parent)
   connect(ui->btnExporter_machine, &QPushButton::clicked, this,
           [this]() { exporterPDF(); });
 
-  // Connect Historique ON/OFF toggle button
+  // Connect Historique toggle button
+  ui->btnHistoriqueToggle_machine->setText(
+      QString::fromUtf8("\xF0\x9F\x93\x9C Historique"));
   connect(ui->btnHistoriqueToggle_machine, &QPushButton::toggled, this,
           [this](bool checked) {
             if (checked) {
+              chargerHistorique();
               ui->scrollHistoriqueOnOff_machine->setVisible(true);
               ui->tableMachines_machine->setVisible(false);
               ui->scrollListeMachines->setVisible(false);
@@ -249,14 +260,12 @@ machine::machine(QWidget *parent)
   });
 
   // Connect search and filter buttons
-  connect(ui->btnRechercher, &QPushButton::clicked, this, [this]() {
-    rechercherMachines();
-  });
+  connect(ui->btnRechercher, &QPushButton::clicked, this,
+          [this]() { rechercherMachines(); });
 
   // Enter key on search field = same as clicking search button
-  connect(ui->recherche_nom_machine, &QLineEdit::returnPressed, this, [this]() {
-    rechercherMachines();
-  });
+  connect(ui->recherche_nom_machine, &QLineEdit::returnPressed, this,
+          [this]() { rechercherMachines(); });
 
   // Install event filter for Escape key on search field and table
   ui->recherche_nom_machine->installEventFilter(this);
@@ -287,14 +296,16 @@ machine::machine(QWidget *parent)
 
     // Update in database
     QSqlQuery query(ConnectionMachine::getInstance().getDatabase());
-    query.prepare("UPDATE MACHINE SET ETAT_MARCHE = :etat, DATE_MISE_A_JOUR = SYSTIMESTAMP WHERE ID_MACHINE = :id");
+    query.prepare("UPDATE MACHINE SET ETAT_MARCHE = :etat, DATE_MISE_A_JOUR = "
+                  "SYSTIMESTAMP WHERE ID_MACHINE = :id");
     query.bindValue(":etat", newState);
     query.bindValue(":id", m_selectedMachineId);
 
     if (query.exec()) {
       QMessageBox msgBox(this);
       msgBox.setWindowTitle("Succès");
-      msgBox.setText(QString("✅ Machine %1 avec succès !").arg(newState == "ON" ? "allumée" : "éteinte"));
+      msgBox.setText(QString("✅ Machine %1 avec succès !")
+                         .arg(newState == "ON" ? "allumée" : "éteinte"));
       msgBox.setIcon(QMessageBox::Information);
       msgBox.setStyleSheet(R"(
         QMessageBox { background-color: #f8f9fa; border: 2px solid #1A3C2F; }
@@ -320,6 +331,12 @@ machine::machine(QWidget *parent)
 
   // Initialize "Actions" form dates
   ui->dateEdit_derniere_maintenance_machine->setDate(QDate::currentDate());
+
+  // Setup real-time counters polling timer
+  countsTimer = new QTimer(this);
+  connect(countsTimer, &QTimer::timeout, this, &machine::updateMachineCounts);
+  countsTimer->start(10000); // 10 seconds
+  updateMachineCounts();     // Initial call
 }
 
 machine::~machine() {
@@ -974,6 +991,7 @@ void machine::on_tableMachines_machine_doubleClicked(const QModelIndex &index) {
   ui->btnSupprimerMachine_machine->setEnabled(true);
   ui->btnExporter_machine->setEnabled(true);
   ui->btnToggleOnOff_machine->setEnabled(true);
+  ui->btnCarteMachine->setEnabled(true);
 
   qDebug() << "Machine sélectionnée:" << m_selectedMachineId << "à la ligne"
            << m_selectedRow;
@@ -1006,6 +1024,7 @@ void machine::on_btnSupprimerMachine_machine_clicked() {
       ui->btnSupprimerMachine_machine->setEnabled(false);
       ui->btnExporter_machine->setEnabled(false);
       ui->btnToggleOnOff_machine->setEnabled(false);
+      ui->btnCarteMachine->setEnabled(false);
       m_selectedMachineId = "";
       m_selectedRow = -1;
     } else {
@@ -1058,7 +1077,7 @@ void machine::on_btnModifierMachine_machine_clicked() {
   cmbType->setCurrentText(machineTableModel->item(m_selectedRow, 2)->text());
 
   QComboBox *cmbEtat = new QComboBox();
-  cmbEtat->addItems({"ON", "OFF"});
+  cmbEtat->addItems({"ON", "OFF", "VEILLE"});
   cmbEtat->setCurrentText(machineTableModel->item(m_selectedRow, 3)->text());
 
   QSpinBox *spinTemp = new QSpinBox();
@@ -1078,15 +1097,15 @@ void machine::on_btnModifierMachine_machine_clicked() {
                            .toInt());
 
   QComboBox *cmbFonct = new QComboBox();
-  cmbFonct->addItems({"Normal", "Dégradé", "Arrêt"});
+  cmbFonct->addItems({"Normal", "Alerte", "Panne"});
   cmbFonct->setCurrentText(machineTableModel->item(m_selectedRow, 6)->text());
 
   QComboBox *cmbAlerte = new QComboBox();
-  cmbAlerte->addItems({"Aucune", "Faible", "Moyenne", "Critique"});
+  cmbAlerte->addItems({"Aucune", "Température", "Maintenance", "Sécurité"});
   cmbAlerte->setCurrentText(machineTableModel->item(m_selectedRow, 7)->text());
 
   QComboBox *cmbCrit = new QComboBox();
-  cmbCrit->addItems({"Faible", "Moyenne", "Élevé", "Critique"});
+  cmbCrit->addItems({"Faible", "Moyen", QString::fromUtf8("\xC3\x89lev\xC3\xa9"), "Critique"});
   cmbCrit->setCurrentText(machineTableModel->item(m_selectedRow, 8)->text());
 
   QDateEdit *dateMaint = new QDateEdit(QDate::fromString(
@@ -1108,7 +1127,7 @@ void machine::on_btnModifierMachine_machine_clicked() {
   formLayout->addRow("État de marche:", cmbEtat);
   formLayout->addRow("Température:", spinTemp);
   formLayout->addRow("Charge:", spinCharge);
-  formLayout->addRow("Mode Fonctionnement:", cmbFonct);
+  formLayout->addRow(QString::fromUtf8("\xC3\x89tat de fonctionnement:"), cmbFonct);
   formLayout->addRow("Alerte:", cmbAlerte);
   formLayout->addRow("Criticité:", cmbCrit);
   formLayout->addRow("Dernière Maintenance:", dateMaint);
@@ -1285,6 +1304,7 @@ void machine::rechercherMachines() {
   ui->btnSupprimerMachine_machine->setEnabled(false);
   ui->btnExporter_machine->setEnabled(false);
   ui->btnToggleOnOff_machine->setEnabled(false);
+  ui->btnCarteMachine->setEnabled(false);
 }
 
 bool machine::eventFilter(QObject *obj, QEvent *event) {
@@ -1305,6 +1325,7 @@ bool machine::eventFilter(QObject *obj, QEvent *event) {
       ui->btnSupprimerMachine_machine->setEnabled(false);
       ui->btnExporter_machine->setEnabled(false);
       ui->btnToggleOnOff_machine->setEnabled(false);
+      ui->btnCarteMachine->setEnabled(false);
       return true;
     }
   }
@@ -1511,4 +1532,457 @@ void machine::exporterPDF() {
     QPushButton:hover { background-color: #0F241E; }
   )");
   msgBox.exec();
+}
+
+// ============================================================================
+// Historique Implementation (Live Timer)
+// ============================================================================
+
+void machine::chargerHistorique() {
+  // Title
+  ui->lblHistoriqueTitle->setText(
+      QString::fromUtf8("\xF0\x9F\x93\x9C Historique des machines"));
+  ui->btnFermerHistorique->setText(QString::fromUtf8("\xE2\x9C\x95"));
+
+  // Create or reset model
+  if (!historiqueTableModel) {
+    historiqueTableModel = new QStandardItemModel(0, 4, this);
+  }
+  historiqueTableModel->setRowCount(0);
+  historiqueTableModel->setHorizontalHeaderLabels(
+      {QString::fromUtf8("\xF0\x9F\x8F\xAD Nom Machine"),
+       QString::fromUtf8("\xE2\x8F\xB1 Temps ON"),
+       QString::fromUtf8("\xE2\x8F\xB1 Temps OFF"),
+       QString::fromUtf8("\xE2\x8F\xB1 Temps Veille")});
+
+  // Configure table view
+  ui->tableHistorique_machine->setModel(historiqueTableModel);
+  ui->tableHistorique_machine->verticalHeader()->setVisible(false);
+  ui->tableHistorique_machine->horizontalHeader()->setStretchLastSection(true);
+  ui->tableHistorique_machine->horizontalHeader()->setSectionResizeMode(
+      QHeaderView::Stretch);
+  ui->tableHistorique_machine->setEditTriggers(
+      QAbstractItemView::NoEditTriggers);
+  ui->tableHistorique_machine->verticalHeader()->setDefaultSectionSize(45);
+  ui->tableHistorique_machine->setShowGrid(true);
+
+  // Query: get seconds in current state for each machine
+  QSqlQuery query(ConnectionMachine::getInstance().getDatabase());
+  query.prepare(
+      "SELECT NOM_MACHINE, ETAT_MARCHE, "
+      "EXTRACT(DAY FROM (SYSTIMESTAMP - DATE_MISE_A_JOUR)) * 86400 + "
+      "EXTRACT(HOUR FROM (SYSTIMESTAMP - DATE_MISE_A_JOUR)) * 3600 + "
+      "EXTRACT(MINUTE FROM (SYSTIMESTAMP - DATE_MISE_A_JOUR)) * 60 + "
+      "EXTRACT(SECOND FROM (SYSTIMESTAMP - DATE_MISE_A_JOUR)) AS SECONDS_ETAT "
+      "FROM MACHINE "
+      "ORDER BY NOM_MACHINE");
+
+  if (!query.exec()) {
+    qDebug() << "Erreur chargement historique :" << query.lastError().text();
+    return;
+  }
+
+  // Store entries in memory for live update
+  m_historiqueEntries.clear();
+
+  QFont boldFont;
+  boldFont.setBold(true);
+  boldFont.setFamily("Segoe UI");
+
+  // Helper to format seconds as "Xh Ym Zs"
+  auto formatDuration = [](int totalSeconds) -> QString {
+    if (totalSeconds <= 0)
+      return "0h 00m 00s";
+    int hours = totalSeconds / 3600;
+    int minutes = (totalSeconds % 3600) / 60;
+    int seconds = totalSeconds % 60;
+    return QString("%1h %2m %3s")
+        .arg(hours)
+        .arg(minutes, 2, 10, QChar('0'))
+        .arg(seconds, 2, 10, QChar('0'));
+  };
+
+  while (query.next()) {
+    HistoriqueEntry entry;
+    entry.machineName = query.value(0).toString();
+    entry.currentState = query.value(1).toString().toUpper();
+    int secondsEtat = query.value(2).toInt();
+
+    entry.secondsOn = 0;
+    entry.secondsOff = 0;
+    entry.secondsVeille = 0;
+
+    if (entry.currentState == "ON")
+      entry.secondsOn = secondsEtat;
+    else if (entry.currentState == "OFF")
+      entry.secondsOff = secondsEtat;
+    else
+      entry.secondsVeille = secondsEtat;
+
+    m_historiqueEntries.append(entry);
+
+    // Build row
+    QList<QStandardItem *> row;
+
+    auto *itemNom =
+        new QStandardItem(QString::fromUtf8("\xF0\x9F\x8F\xAD ") + entry.machineName);
+    itemNom->setEditable(false);
+    itemNom->setTextAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    itemNom->setFont(boldFont);
+    itemNom->setForeground(QColor("#1B4D3E"));
+    row.append(itemNom);
+
+    auto *itemOn = new QStandardItem(formatDuration(entry.secondsOn));
+    itemOn->setEditable(false);
+    itemOn->setTextAlignment(Qt::AlignCenter);
+    itemOn->setFont(boldFont);
+    itemOn->setForeground(QColor("#155724"));
+    itemOn->setBackground(QColor("#d4edda"));
+    row.append(itemOn);
+
+    auto *itemOff = new QStandardItem(formatDuration(entry.secondsOff));
+    itemOff->setEditable(false);
+    itemOff->setTextAlignment(Qt::AlignCenter);
+    itemOff->setFont(boldFont);
+    itemOff->setForeground(QColor("#721c24"));
+    itemOff->setBackground(QColor("#f8d7da"));
+    row.append(itemOff);
+
+    auto *itemVeille = new QStandardItem(formatDuration(entry.secondsVeille));
+    itemVeille->setEditable(false);
+    itemVeille->setTextAlignment(Qt::AlignCenter);
+    itemVeille->setFont(boldFont);
+    itemVeille->setForeground(QColor("#856404"));
+    itemVeille->setBackground(QColor("#fff3cd"));
+    row.append(itemVeille);
+
+    historiqueTableModel->appendRow(row);
+  }
+
+  // Start 1-second live timer
+  if (!historiqueTimer) {
+    historiqueTimer = new QTimer(this);
+    connect(historiqueTimer, &QTimer::timeout, this,
+            &machine::updateHistoriqueDisplay);
+  }
+  historiqueTimer->start(1000);
+}
+
+void machine::updateHistoriqueDisplay() {
+  // If historique view is not visible, stop timer
+  if (!ui->scrollHistoriqueOnOff_machine->isVisible()) {
+    if (historiqueTimer)
+      historiqueTimer->stop();
+    return;
+  }
+
+  auto formatDuration = [](int totalSeconds) -> QString {
+    if (totalSeconds <= 0)
+      return "0h 00m 00s";
+    int hours = totalSeconds / 3600;
+    int minutes = (totalSeconds % 3600) / 60;
+    int seconds = totalSeconds % 60;
+    return QString("%1h %2m %3s")
+        .arg(hours)
+        .arg(minutes, 2, 10, QChar('0'))
+        .arg(seconds, 2, 10, QChar('0'));
+  };
+
+  for (int i = 0; i < m_historiqueEntries.size(); ++i) {
+    HistoriqueEntry &e = m_historiqueEntries[i];
+
+    // Increment the active state's counter
+    if (e.currentState == "ON")
+      e.secondsOn++;
+    else if (e.currentState == "OFF")
+      e.secondsOff++;
+    else
+      e.secondsVeille++;
+
+    // Update table cells (columns 1, 2, 3)
+    if (i < historiqueTableModel->rowCount()) {
+      historiqueTableModel->item(i, 1)->setText(formatDuration(e.secondsOn));
+      historiqueTableModel->item(i, 2)->setText(formatDuration(e.secondsOff));
+      historiqueTableModel->item(i, 3)->setText(formatDuration(e.secondsVeille));
+    }
+  }
+}
+
+// ============================================================================
+// Machine Card (Fiche Machine) Implementation
+// ============================================================================
+
+void machine::showMachineCard() {
+  if (m_selectedMachineId.isEmpty() || m_selectedRow < 0)
+    return;
+
+  // Query all machine info from Oracle
+  QSqlQuery query(ConnectionMachine::getInstance().getDatabase());
+  query.prepare(
+      "SELECT NOM_MACHINE, TYPE_MACHINE, ETAT_MARCHE, TEMPERATURE_ACTUELLE, "
+      "NIVEAU_CHARGE, ETAT_FONCTIONNEMENT, TYPE_ALERTE, NIVEAU_CRITICITE, "
+      "DATE_DERNIERE_MAINTENANCE, DATE_INSTALLATION, SCORE_SANTE, "
+      "GARANTIE_EXPIRATION "
+      "FROM MACHINE WHERE ID_MACHINE = :id");
+  query.bindValue(":id", m_selectedMachineId);
+
+  // Try with GARANTIE_EXPIRATION, if it fails try without
+  bool hasGarantie = true;
+  if (!query.exec() || !query.next()) {
+    // Retry without GARANTIE_EXPIRATION column
+    QSqlQuery query2(ConnectionMachine::getInstance().getDatabase());
+    query2.prepare(
+        "SELECT NOM_MACHINE, TYPE_MACHINE, ETAT_MARCHE, TEMPERATURE_ACTUELLE, "
+        "NIVEAU_CHARGE, ETAT_FONCTIONNEMENT, TYPE_ALERTE, NIVEAU_CRITICITE, "
+        "DATE_DERNIERE_MAINTENANCE, DATE_INSTALLATION, SCORE_SANTE "
+        "FROM MACHINE WHERE ID_MACHINE = :id");
+    query2.bindValue(":id", m_selectedMachineId);
+    if (!query2.exec() || !query2.next()) {
+      QMessageBox::critical(this, "Erreur",
+                            QString::fromUtf8("Impossible de r\xC3\xa9cup\xC3\xa9rer "
+                                              "les donn\xC3\xa9es de la machine."));
+      return;
+    }
+    hasGarantie = false;
+    query = query2;
+  }
+
+  // Extract values
+  QString nom = query.value(0).toString();
+  QString type = query.value(1).toString();
+  QString etatMarche = query.value(2).toString();
+  QString temperature = query.value(3).toString();
+  QString charge = query.value(4).toString();
+  QString fonctionnement = query.value(5).toString();
+  QString alerte = query.value(6).toString();
+  QString criticite = query.value(7).toString();
+  QString maintenance = query.value(8).toDate().toString("yyyy-MM-dd");
+  QString installation = query.value(9).toDate().toString("yyyy-MM-dd");
+  QString scoreSante = query.value(10).toString();
+  QString garantie = hasGarantie ? query.value(11).toDate().toString("yyyy-MM-dd") : "N/A";
+
+  // Determine border color based on ETAT_FONCTIONNEMENT
+  QString borderColor;
+  if (fonctionnement == "Normal")
+    borderColor = "#4CAF50";
+  else if (fonctionnement == "Alerte")
+    borderColor = "#FF9800";
+  else if (fonctionnement == "Panne")
+    borderColor = "#F44336";
+  else
+    borderColor = "#4CAF50";
+
+  // Create modal dialog
+  machineCardDialog = new QDialog(this);
+  machineCardDialog->setWindowTitle(
+      QString::fromUtf8("\xF0\x9F\x97\xBA\xEF\xB8\x8F Fiche Machine — ") + nom);
+  machineCardDialog->setMinimumWidth(500);
+  machineCardDialog->setMinimumHeight(520);
+  machineCardDialog->setModal(false); // Non-modal to allow background interaction
+  machineCardDialog->setObjectName("machineCardDialog");
+
+  // Lambda to build stylesheet with dynamic border color
+  auto buildDialogStyle = [](const QString &bColor) -> QString {
+    return QString(
+        "QDialog#machineCardDialog { "
+        "  background-color: #1A3C2F; "
+        "  border: 4px solid %1; "
+        "  border-radius: 12px; "
+        "} "
+        "QLabel { color: white; font-family: 'Segoe UI', Arial, sans-serif; border: none; } "
+        "QLabel#cardTitle { font-size: 18px; font-weight: bold; color: white; } "
+        "QLabel#cardFieldLabel { font-size: 12px; color: #A0C4B0; font-weight: 600; } "
+        "QLabel#cardFieldValue { font-size: 13px; color: white; font-weight: bold; } "
+        "QLabel#cardStatusBadge { "
+        "  font-size: 13px; font-weight: bold; color: white; "
+        "  background-color: %1; border-radius: 8px; padding: 4px 14px; "
+        "} "
+        "QPushButton#btnCloseCard { "
+        "  background-color: rgba(255,255,255,0.15); color: white; "
+        "  font-size: 12px; font-weight: bold; border: 1px solid rgba(255,255,255,0.3); "
+        "  border-radius: 6px; padding: 8px 20px; min-width: 100px; "
+        "} "
+        "QPushButton#btnCloseCard:hover { background-color: rgba(255,255,255,0.25); } "
+        ).arg(bColor);
+  };
+
+  machineCardDialog->setStyleSheet(buildDialogStyle(borderColor));
+
+  QVBoxLayout *mainLay = new QVBoxLayout(machineCardDialog);
+  mainLay->setSpacing(12);
+  mainLay->setContentsMargins(24, 20, 24, 20);
+
+  // Title
+  QLabel *lblTitle = new QLabel(
+      QString::fromUtf8("\xF0\x9F\x97\xBA\xEF\xB8\x8F Fiche Machine"));
+  lblTitle->setObjectName("cardTitle");
+  lblTitle->setAlignment(Qt::AlignCenter);
+  mainLay->addWidget(lblTitle);
+
+  // Status badge
+  QLabel *lblStatus = new QLabel(fonctionnement);
+  lblStatus->setObjectName("cardStatusBadge");
+  lblStatus->setAlignment(Qt::AlignCenter);
+  lblStatus->setMaximumWidth(160);
+  QHBoxLayout *statusRow = new QHBoxLayout();
+  statusRow->addStretch();
+  statusRow->addWidget(lblStatus);
+  statusRow->addStretch();
+  mainLay->addLayout(statusRow);
+
+  // Separator
+  QFrame *sep = new QFrame();
+  sep->setFrameShape(QFrame::HLine);
+  sep->setStyleSheet("background-color: rgba(255,255,255,0.2); max-height: 1px;");
+  mainLay->addWidget(sep);
+
+  // Grid of fields
+  QGridLayout *grid = new QGridLayout();
+  grid->setHorizontalSpacing(20);
+  grid->setVerticalSpacing(8);
+
+  auto addField = [&](int row, int col, const QString &label, const QString &value) {
+    QLabel *lbl = new QLabel(label);
+    lbl->setObjectName("cardFieldLabel");
+    QLabel *val = new QLabel(value);
+    val->setObjectName("cardFieldValue");
+    grid->addWidget(lbl, row, col * 2);
+    grid->addWidget(val, row, col * 2 + 1);
+  };
+
+  addField(0, 0, "Nom:", nom);
+  addField(0, 1, "Type:", type);
+  addField(1, 0, QString::fromUtf8("\xC3\x89tat marche:"), etatMarche);
+  addField(1, 1, QString::fromUtf8("Temp\xC3\xa9rature:"), temperature + QString::fromUtf8(" \xC2\xB0C"));
+  addField(2, 0, "Charge:", charge + " %");
+  addField(2, 1, "Fonctionnement:", fonctionnement);
+  addField(3, 0, "Alerte:", alerte);
+  addField(3, 1, QString::fromUtf8("Criticit\xC3\xa9:"), criticite);
+  addField(4, 0, "Score Santé:", scoreSante);
+  addField(4, 1, "Maintenance:", maintenance);
+  addField(5, 0, "Installation:", installation);
+  addField(5, 1, "Garantie:", garantie);
+
+  mainLay->addLayout(grid);
+
+  // Spacer
+  mainLay->addStretch();
+
+  // Close button
+  QPushButton *btnClose = new QPushButton("Fermer");
+  btnClose->setObjectName("btnCloseCard");
+  btnClose->setCursor(Qt::PointingHandCursor);
+  QHBoxLayout *closeRow = new QHBoxLayout();
+  closeRow->addStretch();
+  closeRow->addWidget(btnClose);
+  closeRow->addStretch();
+  mainLay->addLayout(closeRow);
+
+  connect(btnClose, &QPushButton::clicked, machineCardDialog, &QDialog::close);
+
+  // === Polling timer for real-time color update ===
+  if (machineCardPollingTimer) {
+    machineCardPollingTimer->stop();
+    delete machineCardPollingTimer;
+  }
+  machineCardPollingTimer = new QTimer(this);
+  machineCardPollingTimer->setInterval(5000); // 5 seconds
+
+  QString machineId = m_selectedMachineId;
+  QDialog *dlg = machineCardDialog;
+
+  connect(machineCardPollingTimer, &QTimer::timeout, this,
+          [this, dlg, machineId, buildDialogStyle, lblStatus]() {
+            if (!dlg || !dlg->isVisible()) {
+              if (machineCardPollingTimer)
+                machineCardPollingTimer->stop();
+              return;
+            }
+            // Re-query ETAT_FONCTIONNEMENT
+            QSqlQuery pollQuery(ConnectionMachine::getInstance().getDatabase());
+            pollQuery.prepare("SELECT ETAT_FONCTIONNEMENT FROM MACHINE WHERE ID_MACHINE = :id");
+            pollQuery.bindValue(":id", machineId);
+            if (pollQuery.exec() && pollQuery.next()) {
+              QString newFonct = pollQuery.value(0).toString();
+              QString newColor;
+              if (newFonct == "Normal")
+                newColor = "#4CAF50";
+              else if (newFonct == "Alerte")
+                newColor = "#FF9800";
+              else if (newFonct == "Panne")
+                newColor = "#F44336";
+              else
+                newColor = "#4CAF50";
+              dlg->setStyleSheet(buildDialogStyle(newColor));
+              lblStatus->setText(newFonct);
+            }
+          });
+
+  machineCardPollingTimer->start();
+
+  // Stop polling when dialog closes
+  connect(dlg, &QDialog::finished, this, [this]() {
+    if (machineCardPollingTimer) {
+      machineCardPollingTimer->stop();
+    }
+    machineCardDialog = nullptr;
+  });
+
+  machineCardDialog->show();
+}
+
+// ============================================================================
+// Real-time Machine Counts Implementation
+// ============================================================================
+
+void machine::updateMachineCounts() {
+  int countNormal = 0, countAlerte = 0, countPanne = 0;
+
+  QSqlQuery query(ConnectionMachine::getInstance().getDatabase());
+
+  // Count Normal
+  query.prepare("SELECT COUNT(*) FROM MACHINE WHERE ETAT_FONCTIONNEMENT = 'Normal'");
+  if (query.exec() && query.next())
+    countNormal = query.value(0).toInt();
+
+  // Count Alerte
+  query.prepare("SELECT COUNT(*) FROM MACHINE WHERE ETAT_FONCTIONNEMENT = 'Alerte'");
+  if (query.exec() && query.next())
+    countAlerte = query.value(0).toInt();
+
+  // Count Panne
+  query.prepare("SELECT COUNT(*) FROM MACHINE WHERE ETAT_FONCTIONNEMENT = 'Panne'");
+  if (query.exec() && query.next())
+    countPanne = query.value(0).toInt();
+
+  // Update labels with HTML format matching the .ui design
+  ui->lblMachinesNormales_machine->setText(
+      QString("<html><head/><body>"
+              "<p style=\"margin:0; padding:0;\">"
+              "<span style=\" font-size:14pt; font-weight:700; color:#2E7D32;\">\xe2\x9c\x93</span>"
+              "<span style=\" font-size:11pt;\"> Machines normales</span></p>"
+              "<p style=\"margin:2px 0 0 0; padding:0;\">"
+              "<span style=\" font-size:20pt; font-weight:700; color:#1B5E20;\">%1</span></p>"
+              "</body></html>")
+          .arg(countNormal));
+
+  ui->lblMachinesAlerte_machine->setText(
+      QString("<html><head/><body>"
+              "<p style=\"margin:0; padding:0;\">"
+              "<span style=\" font-size:14pt; font-weight:700; color:#F57F17;\">!</span>"
+              "<span style=\" font-size:11pt;\"> Machines en alerte</span></p>"
+              "<p style=\"margin:2px 0 0 0; padding:0;\">"
+              "<span style=\" font-size:20pt; font-weight:700; color:#FFC107;\">%1</span></p>"
+              "</body></html>")
+          .arg(countAlerte));
+
+  ui->lblMachinesPanne_machine->setText(
+      QString("<html><head/><body>"
+              "<p style=\"margin:0; padding:0;\">"
+              "<span style=\" font-size:16pt; font-weight:700; color:#D32F2F;\">\xe2\x9c\x97</span>"
+              "<span style=\" font-size:12pt;\"> Machines en panne</span></p>"
+              "<p style=\"margin:2px 0 0 0; padding:0;\">"
+              "<span style=\" font-size:24pt; font-weight:700; color:#B71C1C;\">%1</span></p>"
+              "</body></html>")
+          .arg(countPanne));
 }

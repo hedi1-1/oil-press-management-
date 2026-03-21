@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
   <class>machine</class>
   <widget class="QMainWindow" name="machine">
@@ -1143,9 +1143,37 @@ QPushButton:pressed {
                                </widget>
                              </item>
                             <item>
+                              <widget class="QPushButton" name="btnCarteMachine">
+                                <property name="enabled">
+                                  <bool>false</bool>
+                                </property>
+                                <property name="minimumSize">
+                                  <size>
+                                    <width>36</width>
+                                    <height>36</height>
+                                  </size>
+                                </property>
+                                <property name="maximumSize">
+                                  <size>
+                                    <width>36</width>
+                                    <height>36</height>
+                                  </size>
+                                </property>
+                                <property name="toolTip">
+                                  <string>Fiche machine</string>
+                                </property>
+                                <property name="styleSheet">
+                                  <string>QPushButton { min-width: 0px; padding: 4px; font-size: 18px; background-color: #FF9800; color: white; border-radius: 4px; } QPushButton:disabled { background-color: #e0e0e0; color: #9e9e9e; }</string>
+                                </property>
+                                <property name="text">
+                                  <string>🗺️</string>
+                                </property>
+                              </widget>
+                            </item>
+                            <item>
                               <widget class="QPushButton" name="btnHistoriqueToggle_machine">
                                 <property name="text">
-                                  <string>📜 Historique ON/OFF</string>
+                                  <string>Historique</string>
                                 </property>
                                 <property name="checkable">
                                   <bool>true</bool>
@@ -1207,19 +1235,19 @@ QPushButton:pressed {
                       </property>
                       <layout class="QVBoxLayout" name="layoutHistoriqueList">
                         <property name="spacing">
-                          <number>15</number>
+                          <number>2</number>
                         </property>
                         <property name="leftMargin">
-                          <number>20</number>
+                          <number>10</number>
                         </property>
                         <property name="topMargin">
-                          <number>20</number>
+                          <number>10</number>
                         </property>
                         <property name="rightMargin">
-                          <number>20</number>
+                          <number>10</number>
                         </property>
                         <property name="bottomMargin">
-                          <number>20</number>
+                          <number>5</number>
                         </property>
                         <item>
                           <layout class="QHBoxLayout" name="layoutHistoriqueHeader">
@@ -1232,7 +1260,7 @@ QPushButton:pressed {
                                   <string>font-weight: bold; font-size: 16px; color: #1B4D3E;</string>
                                 </property>
                                 <property name="text">
-                                  <string>ðŸ“œ Historique ON / OFF des machines</string>
+                                  <string>Historique ON / OFF des machines</string>
                                 </property>
                               </widget>
                             </item>
@@ -1280,330 +1308,59 @@ QPushButton:pressed {
 }</string>
                                 </property>
                                 <property name="text">
-                                  <string>âœ•</string>
+                                  <string>X</string>
                                 </property>
                               </widget>
                             </item>
                           </layout>
                         </item>
                         <item>
-                          <widget class="QFrame" name="frameMachine1">
+                          <widget class="QTableView" name="tableHistorique_machine">
                             <property name="styleSheet">
-                              <string>QFrame { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 12px; }</string>
+                              <string>QTableView {
+    border: 2px solid #1A3C2F;
+    border-radius: 6px;
+    background-color: #FFFFFF;
+    alternate-background-color: #F0F7F4;
+    gridline-color: #D5E8D4;
+    font-size: 13px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    selection-background-color: #C8E6C9;
+    selection-color: #1A3C2F;
+}
+QTableView::item {
+    padding: 10px 14px;
+    border-bottom: 1px solid #E8E8E8;
+}
+QTableView::item:hover {
+    background-color: #E0F2E9;
+}
+QHeaderView::section {
+    background-color: #1B4D3E;
+    color: white;
+    padding: 12px 10px;
+    border: none;
+    border-right: 1px solid #2C5F4F;
+    font-weight: bold;
+    font-size: 13px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+QHeaderView::section:last {
+    border-right: none;
+}</string>
                             </property>
-                            <layout class="QHBoxLayout" name="layoutMachine1">
-                              <property name="spacing">
-                                <number>15</number>
-                              </property>
-                              <item>
-                                <widget class="QLabel" name="lblMachine1Nom">
-                                  <property name="minimumSize">
-                                    <size>
-                                      <width>200</width>
-                                      <height>0</height>
-                                    </size>
-                                  </property>
-                                  <property name="styleSheet">
-                                    <string>font-weight: bold; font-size: 14px; color: #1B4D3E; border: none;</string>
-                                  </property>
-                                  <property name="text">
-                                    <string>🏭 Presse Hydraulique P-001</string>
-                                  </property>
-                                </widget>
-                              </item>
-                              <item>
-                                <widget class="QLabel" name="lblMachine1On">
-                                  <property name="styleSheet">
-                                    <string>font-weight: bold; color: #155724; background-color: #d4edda; padding: 8px 15px; border-radius: 4px; border: none;</string>
-                                  </property>
-                                  <property name="text">
-                                    <string>â±ï¸ Temps total ON: 8h 45m</string>
-                                  </property>
-                                </widget>
-                              </item>
-                              <item>
-                                <widget class="QLabel" name="lblMachine1Off">
-                                  <property name="styleSheet">
-                                    <string>font-weight: bold; color: #721c24; background-color: #f8d7da; padding: 8px 15px; border-radius: 4px; border: none;</string>
-                                  </property>
-                                  <property name="text">
-                                    <string>â±ï¸ Temps total OFF: 3h 15m</string>
-                                  </property>
-                                </widget>
-                              </item>
-                              <item>
-                                <spacer name="spacerMachine1">
-                                  <property name="orientation">
-                                    <enum>Qt::Orientation::Horizontal</enum>
-                                  </property>
-                                  <property name="sizeHint" stdset="0">
-                                    <size>
-                                      <width>40</width>
-                                      <height>20</height>
-                                    </size>
-                                  </property>
-                                </spacer>
-                              </item>
-                            </layout>
+                            <property name="alternatingRowColors">
+                              <bool>true</bool>
+                            </property>
+                            <property name="selectionBehavior">
+                              <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
+                            </property>
+                            <property name="sortingEnabled">
+                              <bool>true</bool>
+                            </property>
                           </widget>
                         </item>
-                        <item>
-                          <widget class="QFrame" name="frameMachine2">
-                            <property name="styleSheet">
-                              <string>QFrame { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 12px; }</string>
-                            </property>
-                            <layout class="QHBoxLayout" name="layoutMachine2">
-                              <property name="spacing">
-                                <number>15</number>
-                              </property>
-                              <item>
-                                <widget class="QLabel" name="lblMachine2Nom">
-                                  <property name="minimumSize">
-                                    <size>
-                                      <width>200</width>
-                                      <height>0</height>
-                                    </size>
-                                  </property>
-                                  <property name="styleSheet">
-                                    <string>font-weight: bold; font-size: 14px; color: #1B4D3E; border: none;</string>
-                                  </property>
-                                  <property name="text">
-                                    <string>🏭 Broyeur Industriel B-007</string>
-                                  </property>
-                                </widget>
-                              </item>
-                              <item>
-                                <widget class="QLabel" name="lblMachine2On">
-                                  <property name="styleSheet">
-                                    <string>font-weight: bold; color: #155724; background-color: #d4edda; padding: 8px 15px; border-radius: 4px; border: none;</string>
-                                  </property>
-                                  <property name="text">
-                                    <string>â±ï¸ Temps total ON: 12h 30m</string>
-                                  </property>
-                                </widget>
-                              </item>
-                              <item>
-                                <widget class="QLabel" name="lblMachine2Off">
-                                  <property name="styleSheet">
-                                    <string>font-weight: bold; color: #721c24; background-color: #f8d7da; padding: 8px 15px; border-radius: 4px; border: none;</string>
-                                  </property>
-                                  <property name="text">
-                                    <string>â±ï¸ Temps total OFF: 1h 05m</string>
-                                  </property>
-                                </widget>
-                              </item>
-                              <item>
-                                <spacer name="spacerMachine2">
-                                  <property name="orientation">
-                                    <enum>Qt::Orientation::Horizontal</enum>
-                                  </property>
-                                  <property name="sizeHint" stdset="0">
-                                    <size>
-                                      <width>40</width>
-                                      <height>20</height>
-                                    </size>
-                                  </property>
-                                </spacer>
-                              </item>
-                            </layout>
-                          </widget>
-                        </item>
-                        <item>
-                          <widget class="QFrame" name="frameMachine3">
-                            <property name="styleSheet">
-                              <string>QFrame { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 12px; }</string>
-                            </property>
-                            <layout class="QHBoxLayout" name="layoutMachine3">
-                              <property name="spacing">
-                                <number>15</number>
-                              </property>
-                              <item>
-                                <widget class="QLabel" name="lblMachine3Nom">
-                                  <property name="minimumSize">
-                                    <size>
-                                      <width>200</width>
-                                      <height>0</height>
-                                    </size>
-                                  </property>
-                                  <property name="styleSheet">
-                                    <string>font-weight: bold; font-size: 14px; color: #1B4D3E; border: none;</string>
-                                  </property>
-                                  <property name="text">
-                                    <string>🏭 Malaxeur Rotatif M-103</string>
-                                  </property>
-                                </widget>
-                              </item>
-                              <item>
-                                <widget class="QLabel" name="lblMachine3On">
-                                  <property name="styleSheet">
-                                    <string>font-weight: bold; color: #155724; background-color: #d4edda; padding: 8px 15px; border-radius: 4px; border: none;</string>
-                                  </property>
-                                  <property name="text">
-                                    <string>â±ï¸ Temps total ON: 6h 20m</string>
-                                  </property>
-                                </widget>
-                              </item>
-                              <item>
-                                <widget class="QLabel" name="lblMachine3Off">
-                                  <property name="styleSheet">
-                                    <string>font-weight: bold; color: #721c24; background-color: #f8d7da; padding: 8px 15px; border-radius: 4px; border: none;</string>
-                                  </property>
-                                  <property name="text">
-                                    <string>â±ï¸ Temps total OFF: 5h 40m</string>
-                                  </property>
-                                </widget>
-                              </item>
-                              <item>
-                                <spacer name="spacerMachine3">
-                                  <property name="orientation">
-                                    <enum>Qt::Orientation::Horizontal</enum>
-                                  </property>
-                                  <property name="sizeHint" stdset="0">
-                                    <size>
-                                      <width>40</width>
-                                      <height>20</height>
-                                    </size>
-                                  </property>
-                                </spacer>
-                              </item>
-                            </layout>
-                          </widget>
-                        </item>
-                        <item>
-                          <widget class="QFrame" name="frameMachine4">
-                            <property name="styleSheet">
-                              <string>QFrame { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 12px; }</string>
-                            </property>
-                            <layout class="QHBoxLayout" name="layoutMachine4">
-                              <property name="spacing">
-                                <number>15</number>
-                              </property>
-                              <item>
-                                <widget class="QLabel" name="lblMachine4Nom">
-                                  <property name="minimumSize">
-                                    <size>
-                                      <width>200</width>
-                                      <height>0</height>
-                                    </size>
-                                  </property>
-                                  <property name="styleSheet">
-                                    <string>font-weight: bold; font-size: 14px; color: #1B4D3E; border: none;</string>
-                                  </property>
-                                  <property name="text">
-                                    <string>🏭 Chauffeur Électrique C-025</string>
-                                  </property>
-                                </widget>
-                              </item>
-                              <item>
-                                <widget class="QLabel" name="lblMachine4On">
-                                  <property name="styleSheet">
-                                    <string>font-weight: bold; color: #155724; background-color: #d4edda; padding: 8px 15px; border-radius: 4px; border: none;</string>
-                                  </property>
-                                  <property name="text">
-                                    <string>â±ï¸ Temps total ON: 10h 15m</string>
-                                  </property>
-                                </widget>
-                              </item>
-                              <item>
-                                <widget class="QLabel" name="lblMachine4Off">
-                                  <property name="styleSheet">
-                                    <string>font-weight: bold; color: #721c24; background-color: #f8d7da; padding: 8px 15px; border-radius: 4px; border: none;</string>
-                                  </property>
-                                  <property name="text">
-                                    <string>â±ï¸ Temps total OFF: 2h 30m</string>
-                                  </property>
-                                </widget>
-                              </item>
-                              <item>
-                                <spacer name="spacerMachine4">
-                                  <property name="orientation">
-                                    <enum>Qt::Orientation::Horizontal</enum>
-                                  </property>
-                                  <property name="sizeHint" stdset="0">
-                                    <size>
-                                      <width>40</width>
-                                      <height>20</height>
-                                    </size>
-                                  </property>
-                                </spacer>
-                              </item>
-                            </layout>
-                          </widget>
-                        </item>
-                        <item>
-                          <widget class="QFrame" name="frameMachine5">
-                            <property name="styleSheet">
-                              <string>QFrame { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 12px; }</string>
-                            </property>
-                            <layout class="QHBoxLayout" name="layoutMachine5">
-                              <property name="spacing">
-                                <number>15</number>
-                              </property>
-                              <item>
-                                <widget class="QLabel" name="lblMachine5Nom">
-                                  <property name="minimumSize">
-                                    <size>
-                                      <width>200</width>
-                                      <height>0</height>
-                                    </size>
-                                  </property>
-                                  <property name="styleSheet">
-                                    <string>font-weight: bold; font-size: 14px; color: #1B4D3E; border: none;</string>
-                                  </property>
-                                  <property name="text">
-                                    <string>🏭 Presse Mécanique P-042</string>
-                                  </property>
-                                </widget>
-                              </item>
-                              <item>
-                                <widget class="QLabel" name="lblMachine5On">
-                                  <property name="styleSheet">
-                                    <string>font-weight: bold; color: #155724; background-color: #d4edda; padding: 8px 15px; border-radius: 4px; border: none;</string>
-                                  </property>
-                                  <property name="text">
-                                    <string>â±ï¸ Temps total ON: 4h 50m</string>
-                                  </property>
-                                </widget>
-                              </item>
-                              <item>
-                                <widget class="QLabel" name="lblMachine5Off">
-                                  <property name="styleSheet">
-                                    <string>font-weight: bold; color: #721c24; background-color: #f8d7da; padding: 8px 15px; border-radius: 4px; border: none;</string>
-                                  </property>
-                                  <property name="text">
-                                    <string>â±ï¸ Temps total OFF: 7h 10m</string>
-                                  </property>
-                                </widget>
-                              </item>
-                              <item>
-                                <spacer name="spacerMachine5">
-                                  <property name="orientation">
-                                    <enum>Qt::Orientation::Horizontal</enum>
-                                  </property>
-                                  <property name="sizeHint" stdset="0">
-                                    <size>
-                                      <width>40</width>
-                                      <height>20</height>
-                                    </size>
-                                  </property>
-                                </spacer>
-                              </item>
-                            </layout>
-                          </widget>
-                        </item>
-                        <item>
-                          <spacer name="verticalSpacerHistorique">
-                            <property name="orientation">
-                              <enum>Qt::Orientation::Vertical</enum>
-                            </property>
-                            <property name="sizeHint" stdset="0">
-                              <size>
-                                <width>20</width>
-                                <height>40</height>
-                              </size>
-                            </property>
-                          </spacer>
-                        </item>
+
                       </layout>
                     </widget>
                   </widget>
