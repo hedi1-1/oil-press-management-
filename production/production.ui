@@ -1,0 +1,2670 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Production</class>
+ <widget class="QMainWindow" name="Production">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1440</width>
+    <height>616</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>1200</width>
+    <height>550</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>PressIQ - Gestion de la Production v2.0</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="resources.qrc">
+    <normaloff>:/logo.png</normaloff>:/logo.png</iconset>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">
+/* ═══════════════════════════════════════════════════════════════
+   PRESSIQ PRODUCTION MODULE - PROFESSIONAL DASHBOARD THEME
+   Version 2.0 - Modern Industrial Design
+═══════════════════════════════════════════════════════════════ */
+
+QMainWindow {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, 
+                stop:0 #f0f2f5, stop:1 #e4e7eb);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   HEADER SECTION
+───────────────────────────────────────────────────────────────── */
+#headerWidget {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, 
+                stop:0 #1B4332, stop:0.5 #234E3E, stop:1 #1B4332);
+    border-bottom: 4px solid #C9A227;
+}
+
+#lblAppTitle {
+    color: white;
+    font-size: 26px;
+    font-weight: 700;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    letter-spacing: 1px;
+}
+
+#lblAppSubtitle {
+    color: #C9A227;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    letter-spacing: 3px;
+}
+
+#lblOnlineStatus {
+    color: #4ADE80;
+    font-size: 13px;
+    font-weight: bold;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    padding: 6px 14px;
+    background-color: rgba(74, 222, 128, 0.15);
+    border-radius: 15px;
+    border: 1px solid rgba(74, 222, 128, 0.3);
+}
+
+#btnBackToMenu {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    min-width: 100px;
+}
+
+#btnBackToMenu:hover {
+    background-color: rgba(255, 255, 255, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+#btnBackToMenu:pressed {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   STATISTICS DASHBOARD CARDS
+───────────────────────────────────────────────────────────────── */
+#dashboardWidget {
+    background: transparent;
+}
+
+#dashCard1, #dashCard2, #dashCard3, #dashCard4 {
+    background: white;
+    border-radius: 12px;
+    border: none;
+    border-left: 4px solid #1B4332;
+}
+
+#dashCard1 { border-left-color: #4ADE80; }
+#dashCard2 { border-left-color: #3B82F6; }
+#dashCard3 { border-left-color: #F59E0B; }
+#dashCard4 { border-left-color: #EF4444; }
+
+/* ─────────────────────────────────────────────────────────────────
+   TAB WIDGET - MODERN DESIGN
+───────────────────────────────────────────────────────────────── */
+QTabWidget::pane {
+    border: none;
+    background-color: transparent;
+    border-radius: 12px;
+    margin-top: 5px;
+}
+
+QTabBar {
+    background: transparent;
+}
+
+QTabBar::tab {
+    background-color: white;
+    color: #666;
+    padding: 12px 24px;
+    margin-right: 4px;
+    border: none;
+    border-radius: 8px 8px 0 0;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    min-width: 120px;
+}
+
+QTabBar::tab:selected {
+    background-color: #1B4332;
+    color: white;
+    font-weight: 700;
+}
+
+QTabBar::tab:hover:!selected {
+    background-color: #f0f0f0;
+    color: #1B4332;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   GROUP BOX - CARD STYLE
+───────────────────────────────────────────────────────────────── */
+QGroupBox {
+    font-size: 14px;
+    font-weight: 700;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #1B4332;
+    background-color: white;
+    border: none;
+    border-radius: 12px;
+    margin-top: 20px;
+    padding: 20px 15px 15px 15px;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    left: 20px;
+    top: 0px;
+    padding: 8px 16px;
+    background-color: #1B4332;
+    color: white;
+    border-radius: 8px;
+    font-size: 13px;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   INPUT FIELDS - MODERN STYLE
+───────────────────────────────────────────────────────────────── */
+QLineEdit, QSpinBox, QDoubleSpinBox, QDateEdit, QComboBox {
+    padding: 10px 14px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    background-color: #fafafa;
+    color: #333;
+    font-size: 14px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    min-height: 20px;
+    selection-background-color: #1B4332;
+}
+
+QLineEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus, QDateEdit:focus, QComboBox:focus {
+    border: 2px solid #1B4332;
+    background-color: white;
+}
+
+QLineEdit:hover, QSpinBox:hover, QDoubleSpinBox:hover, QDateEdit:hover, QComboBox:hover {
+    border: 2px solid #4ADE80;
+}
+
+QComboBox::drop-down {
+    border: none;
+    padding-right: 15px;
+    width: 30px;
+}
+
+QComboBox QAbstractItemView {
+    border: 2px solid #1B4332;
+    border-radius: 8px;
+    background-color: white;
+    selection-background-color: #1B4332;
+    selection-color: white;
+    padding: 5px;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   TEXT EDIT - MODERN STYLE
+───────────────────────────────────────────────────────────────── */
+QTextEdit, QTextBrowser {
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    background-color: #fafafa;
+    color: #333;
+    font-size: 14px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    padding: 12px;
+}
+
+QTextEdit:focus, QTextBrowser:focus {
+    border: 2px solid #1B4332;
+    background-color: white;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   BUTTONS - PROFESSIONAL STYLE
+───────────────────────────────────────────────────────────────── */
+QPushButton {
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    min-width: 120px;
+    border: none;
+}
+
+/* Primary Buttons */
+QPushButton#btnPlanifier, 
+QPushButton#btnStart, 
+QPushButton#btnValidateQuality, 
+QPushButton#btnGenerateReport, 
+QPushButton#btnUpdateMonitoring,
+QPushButton#btnSearch,
+QPushButton#btnApplySort,
+QPushButton#btnCalculateYield {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                stop:0 #234E3E, stop:1 #1B4332);
+    color: white;
+    border: none;
+}
+
+QPushButton#btnPlanifier:hover, 
+QPushButton#btnStart:hover, 
+QPushButton#btnValidateQuality:hover, 
+QPushButton#btnGenerateReport:hover, 
+QPushButton#btnUpdateMonitoring:hover,
+QPushButton#btnSearch:hover,
+QPushButton#btnApplySort:hover,
+QPushButton#btnCalculateYield:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                stop:0 #2D5A45, stop:1 #234E3E);
+}
+
+QPushButton#btnPlanifier:pressed, 
+QPushButton#btnStart:pressed, 
+QPushButton#btnValidateQuality:pressed, 
+QPushButton#btnGenerateReport:pressed, 
+QPushButton#btnUpdateMonitoring:pressed,
+QPushButton#btnSearch:pressed,
+QPushButton#btnApplySort:pressed,
+QPushButton#btnCalculateYield:pressed {
+    background: #0F2A1F;
+}
+
+/* Danger Button */
+QPushButton#btnStop {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                stop:0 #EF4444, stop:1 #DC2626);
+    color: white;
+}
+
+QPushButton#btnStop:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                stop:0 #F87171, stop:1 #EF4444);
+}
+
+QPushButton#btnStop:pressed {
+    background: #B91C1C;
+}
+
+/* Secondary/Export Button */
+QPushButton#btnExportPDF {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                stop:0 #D4A732, stop:1 #C9A227);
+    color: white;
+}
+
+QPushButton#btnExportPDF:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                stop:0 #E5B833, stop:1 #D4A732);
+}
+
+/* Clear/Reset Button */
+QPushButton#btnClearSearch {
+    background-color: #6B7280;
+    color: white;
+}
+
+QPushButton#btnClearSearch:hover {
+    background-color: #4B5563;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   PROGRESS BAR - MODERN ANIMATED STYLE
+───────────────────────────────────────────────────────────────── */
+QProgressBar {
+    border: none;
+    border-radius: 10px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 13px;
+    background-color: #e5e7eb;
+    min-height: 24px;
+    color: white;
+}
+
+QProgressBar::chunk {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, 
+                stop:0 #1B4332, stop:0.5 #234E3E, stop:1 #1B4332);
+    border-radius: 10px;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   TABLE WIDGET - PROFESSIONAL STYLE
+───────────────────────────────────────────────────────────────── */
+QTableWidget {
+    border: none;
+    border-radius: 8px;
+    background-color: white;
+    gridline-color: #e5e7eb;
+    font-size: 13px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #1f2937;
+    selection-background-color: #dbeafe;
+    selection-color: #1e40af;
+}
+
+QTableWidget::item {
+    padding: 12px;
+    border-bottom: 1px solid #e5e7eb;
+    color: #1f2937;
+    background-color: white;
+}
+
+QTableWidget::item:selected {
+    background-color: #dbeafe;
+    color: #1e40af;
+}
+
+QTableWidget::item:hover {
+    background-color: #f0fdf4;
+}
+
+QTableWidget::item:alternate {
+    background-color: #f9fafb;
+}
+
+QHeaderView::section {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                stop:0 #1B4332, stop:1 #163829);
+    color: white;
+    padding: 14px 12px;
+    border: none;
+    font-weight: 700;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+QHeaderView::section:first {
+    border-top-left-radius: 8px;
+}
+
+QHeaderView::section:last {
+    border-top-right-radius: 8px;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   LABELS - TYPOGRAPHY
+───────────────────────────────────────────────────────────────── */
+QLabel {
+    color: #374151;
+    font-size: 14px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   CHECKBOX - MODERN STYLE
+───────────────────────────────────────────────────────────────── */
+QCheckBox {
+    font-size: 14px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #374151;
+    spacing: 12px;
+    padding: 8px;
+}
+
+QCheckBox::indicator {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+}
+
+QCheckBox::indicator:unchecked {
+    background-color: #fafafa;
+    border: 2px solid #d1d5db;
+}
+
+QCheckBox::indicator:unchecked:hover {
+    border: 2px solid #1B4332;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #1B4332;
+    border: 2px solid #1B4332;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   STATUS INDICATORS
+───────────────────────────────────────────────────────────────── */
+#lblStatusPlanification, #lblCurrentStatus, #lblRunningProduction {
+    font-weight: 700;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   SCROLLBAR - MINIMAL STYLE
+───────────────────────────────────────────────────────────────── */
+QScrollBar:vertical {
+    border: none;
+    background: #f0f0f0;
+    width: 10px;
+    border-radius: 5px;
+    margin: 0;
+}
+
+QScrollBar::handle:vertical {
+    background: #c0c0c0;
+    border-radius: 5px;
+    min-height: 30px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: #1B4332;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0;
+}
+
+QScrollBar:horizontal {
+    border: none;
+    background: #f0f0f0;
+    height: 10px;
+    border-radius: 5px;
+}
+
+QScrollBar::handle:horizontal {
+    background: #c0c0c0;
+    border-radius: 5px;
+    min-width: 30px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background: #1B4332;
+}
+
+   </string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="mainLayout">
+    <property name="spacing">
+     <number>0</number>
+    </property>
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
+    <!-- ═══════════════════════════════════════════════════════════════
+         HEADER SECTION
+    ═══════════════════════════════════════════════════════════════ -->
+    <item>
+     <widget class="QWidget" name="headerWidget" native="true">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>65</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>65</height>
+       </size>
+      </property>
+      <layout class="QHBoxLayout" name="headerLayout">
+       <property name="spacing">
+        <number>20</number>
+       </property>
+       <property name="leftMargin">
+        <number>25</number>
+       </property>
+       <property name="topMargin">
+        <number>10</number>
+       </property>
+       <property name="rightMargin">
+        <number>25</number>
+       </property>
+       <property name="bottomMargin">
+        <number>10</number>
+       </property>
+       <item>
+        <widget class="QPushButton" name="btnBackToMenu">
+         <property name="text">
+          <string>← Retour au menu</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="lblLogo">
+         <property name="minimumSize">
+          <size>
+           <width>84</width>
+           <height>50</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>84</width>
+           <height>50</height>
+          </size>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="pixmap">
+          <pixmap resource="resources.qrc">:/logo.png</pixmap>
+         </property>
+         <property name="scaledContents">
+          <bool>false</bool>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" name="titleLayout">
+         <property name="spacing">
+          <number>2</number>
+         </property>
+         <item>
+          <widget class="QLabel" name="lblAppTitle">
+           <property name="text">
+            <string>Gestion de la Production</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="lblAppSubtitle">
+           <property name="text">
+            <string>MODULE DE PRODUCTION INTELLIGENT</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <spacer name="headerSpacer">
+         <property name="orientation">
+          <enum>Qt::Orientation::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QLabel" name="lblDateTime">
+         <property name="text">
+          <string>📅 --/--/---- | --:--</string>
+         </property>
+         <property name="styleSheet">
+          <string>color: rgba(255,255,255,0.8); font-size: 13px; padding: 8px 15px; background: rgba(0,0,0,0.2); border-radius: 15px;</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btnDarkMode">
+         <property name="minimumSize"><size><width>0</width><height>34</height></size></property>
+         <property name="text"><string>🌙  Mode Sombre</string></property>
+         <property name="checkable"><bool>false</bool></property>
+         <property name="styleSheet">
+          <string>QPushButton { background: rgba(255,255,255,0.15); color: white; font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); min-width: 0; } QPushButton:hover { background: rgba(255,255,255,0.28); border-color: rgba(255,255,255,0.55); } QPushButton:pressed { background: rgba(201,162,39,0.35); border-color: #C9A227; color: #C9A227; }</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btnLanguage">
+         <property name="minimumSize"><size><width>0</width><height>34</height></size></property>
+         <property name="text"><string>🌐  FR</string></property>
+         <property name="styleSheet">
+          <string>QPushButton { background: rgba(255,255,255,0.15); color: white; font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); min-width: 0; } QPushButton:hover { background: rgba(255,255,255,0.28); border-color: rgba(255,255,255,0.55); } QPushButton:pressed { background: rgba(59,130,246,0.35); border-color: #3B82F6; color: #93c5fd; }</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="lblOnlineStatus">
+         <property name="text">
+          <string>● EN LIGNE</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <!-- ═══════════════════════════════════════════════════════════════
+         DASHBOARD STATISTICS CARDS
+    ═══════════════════════════════════════════════════════════════ -->
+    <item>
+     <widget class="QWidget" name="dashboardWidget" native="true">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>90</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>100</height>
+       </size>
+      </property>
+      <layout class="QHBoxLayout" name="dashboardLayout">
+       <property name="spacing">
+        <number>12</number>
+       </property>
+       <property name="leftMargin">
+        <number>20</number>
+       </property>
+       <property name="topMargin">
+        <number>8</number>
+       </property>
+       <property name="rightMargin">
+        <number>20</number>
+       </property>
+       <property name="bottomMargin">
+        <number>8</number>
+       </property>
+       <!-- Card 1: Production Status -->
+       <item>
+        <widget class="QWidget" name="dashCard1" native="true">
+         <layout class="QHBoxLayout" name="dashCard1Layout">
+          <property name="spacing">
+           <number>10</number>
+          </property>
+          <property name="leftMargin">
+           <number>12</number>
+          </property>
+          <property name="topMargin">
+           <number>8</number>
+          </property>
+          <property name="rightMargin">
+           <number>12</number>
+          </property>
+          <property name="bottomMargin">
+           <number>8</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="lblDashIcon1">
+            <property name="text">
+             <string>▶</string>
+            </property>
+            <property name="styleSheet">
+             <string>font-size: 20px; color: #4ADE80; background: rgba(74, 222, 128, 0.1); padding: 6px 10px; border-radius: 6px;</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QVBoxLayout" name="dashText1Layout">
+            <property name="spacing">
+             <number>2</number>
+            </property>
+            <item>
+             <widget class="QLabel" name="lblDashValue1">
+              <property name="text">
+               <string>En attente</string>
+              </property>
+              <property name="styleSheet">
+               <string>color: #1B4332; font-size: 15px; font-weight: 700;</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="lblDashLabel1">
+              <property name="text">
+               <string>STATUT PRODUCTION</string>
+              </property>
+              <property name="styleSheet">
+               <string>color: #9ca3af; font-size: 10px; font-weight: 600; letter-spacing: 1px;</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <!-- Card 2: Olives Quantity -->
+       <item>
+        <widget class="QWidget" name="dashCard2" native="true">
+         <layout class="QHBoxLayout" name="dashCard2Layout">
+          <property name="spacing">
+           <number>10</number>
+          </property>
+          <property name="leftMargin">
+           <number>12</number>
+          </property>
+          <property name="topMargin">
+           <number>8</number>
+          </property>
+          <property name="rightMargin">
+           <number>12</number>
+          </property>
+          <property name="bottomMargin">
+           <number>8</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="lblDashIcon2">
+            <property name="text">
+             <string>🫒</string>
+            </property>
+            <property name="styleSheet">
+             <string>font-size: 20px; background: rgba(59, 130, 246, 0.1); padding: 6px 10px; border-radius: 6px;</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QVBoxLayout" name="dashText2Layout">
+            <property name="spacing">
+             <number>2</number>
+            </property>
+            <item>
+             <widget class="QLabel" name="lblDashValue2">
+              <property name="text">
+               <string>0 kg</string>
+              </property>
+              <property name="styleSheet">
+               <string>color: #3B82F6; font-size: 15px; font-weight: 700;</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="lblDashLabel2">
+              <property name="text">
+               <string>OLIVES PLANIFIÉES</string>
+              </property>
+              <property name="styleSheet">
+               <string>color: #9ca3af; font-size: 10px; font-weight: 600; letter-spacing: 1px;</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <!-- Card 3: Expected Yield -->
+       <item>
+        <widget class="QWidget" name="dashCard3" native="true">
+         <layout class="QHBoxLayout" name="dashCard3Layout">
+          <property name="spacing">
+           <number>10</number>
+          </property>
+          <property name="leftMargin">
+           <number>12</number>
+          </property>
+          <property name="topMargin">
+           <number>8</number>
+          </property>
+          <property name="rightMargin">
+           <number>12</number>
+          </property>
+          <property name="bottomMargin">
+           <number>8</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="lblDashIcon3">
+            <property name="text">
+             <string>📊</string>
+            </property>
+            <property name="styleSheet">
+             <string>font-size: 20px; background: rgba(245, 158, 11, 0.1); padding: 6px 10px; border-radius: 6px;</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QVBoxLayout" name="dashText3Layout">
+            <property name="spacing">
+             <number>2</number>
+            </property>
+            <item>
+             <widget class="QLabel" name="lblDashValue3">
+              <property name="text">
+               <string>-- %</string>
+              </property>
+              <property name="styleSheet">
+               <string>color: #F59E0B; font-size: 15px; font-weight: 700;</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="lblDashLabel3">
+              <property name="text">
+               <string>RENDEMENT ESTIMÉ</string>
+              </property>
+              <property name="styleSheet">
+               <string>color: #9ca3af; font-size: 10px; font-weight: 600; letter-spacing: 1px;</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <!-- Card 4: Alerts -->
+       <item>
+        <widget class="QWidget" name="dashCard4" native="true">
+         <layout class="QHBoxLayout" name="dashCard4Layout">
+          <property name="spacing">
+           <number>10</number>
+          </property>
+          <property name="leftMargin">
+           <number>12</number>
+          </property>
+          <property name="topMargin">
+           <number>8</number>
+          </property>
+          <property name="rightMargin">
+           <number>12</number>
+          </property>
+          <property name="bottomMargin">
+           <number>8</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="lblDashIcon4">
+            <property name="text">
+             <string>🔔</string>
+            </property>
+            <property name="styleSheet">
+             <string>font-size: 20px; background: rgba(239, 68, 68, 0.1); padding: 6px 10px; border-radius: 6px;</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QVBoxLayout" name="dashText4Layout">
+            <property name="spacing">
+             <number>2</number>
+            </property>
+            <item>
+             <widget class="QLabel" name="lblDashValue4">
+              <property name="text">
+               <string>0</string>
+              </property>
+              <property name="styleSheet">
+               <string>color: #4ADE80; font-size: 15px; font-weight: 700;</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="lblDashLabel4">
+              <property name="text">
+               <string>ALERTES ACTIVES</string>
+              </property>
+              <property name="styleSheet">
+               <string>color: #9ca3af; font-size: 10px; font-weight: 600; letter-spacing: 1px;</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <!-- ═══════════════════════════════════════════════════════════════
+         TAB WIDGET - MAIN CONTENT
+    ═══════════════════════════════════════════════════════════════ -->
+    <item>
+     <widget class="QWidget" name="tabContainerWidget" native="true">
+      <layout class="QHBoxLayout" name="tabContainerLayout">
+       <property name="spacing">
+        <number>0</number>
+       </property>
+       <property name="leftMargin">
+        <number>25</number>
+       </property>
+       <property name="topMargin">
+        <number>5</number>
+       </property>
+       <property name="rightMargin">
+        <number>25</number>
+       </property>
+       <property name="bottomMargin">
+        <number>10</number>
+       </property>
+       <item>
+        <widget class="QTabWidget" name="tabWidgetProduction">
+         <property name="currentIndex">
+          <number>0</number>
+         </property>
+         <!-- ═══════════════════════════════════════════════════════════════
+              TAB 1: PLANIFICATION
+         ═══════════════════════════════════════════════════════════════ -->
+         <widget class="QWidget" name="tabPlanification">
+          <attribute name="title">
+           <string>📋  Planification</string>
+          </attribute>
+          <layout class="QHBoxLayout" name="layoutPlanificationMain">
+           <property name="spacing">
+            <number>15</number>
+           </property>
+           <property name="leftMargin">
+            <number>15</number>
+           </property>
+           <property name="topMargin">
+            <number>15</number>
+           </property>
+           <property name="rightMargin">
+            <number>15</number>
+           </property>
+           <property name="bottomMargin">
+            <number>15</number>
+           </property>
+           <!-- Left Column: Form -->
+           <item>
+            <layout class="QVBoxLayout" name="layoutPlanLeft">
+             <property name="spacing">
+              <number>15</number>
+             </property>
+             <item>
+              <widget class="QGroupBox" name="groupProductionParams">
+               <property name="title">
+                <string>  Paramètres de production</string>
+               </property>
+               <layout class="QFormLayout" name="formProductionParams">
+                <property name="labelAlignment">
+                 <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+                </property>
+                <property name="horizontalSpacing">
+                 <number>20</number>
+                </property>
+                <property name="verticalSpacing">
+                 <number>15</number>
+                </property>
+                <property name="leftMargin">
+                 <number>25</number>
+                </property>
+                <property name="topMargin">
+                 <number>30</number>
+                </property>
+                <property name="rightMargin">
+                 <number>25</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>20</number>
+                </property>
+                <item row="0" column="0">
+                 <widget class="QLabel" name="lblDateProduction">
+                  <property name="text">
+                   <string>📅 Date de production :</string>
+                  </property>
+                  <property name="styleSheet">
+                   <string>font-weight: 600;</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1">
+                 <widget class="QDateEdit" name="dateEditProduction">
+                  <property name="minimumSize">
+                   <size>
+                    <width>220</width>
+                    <height>40</height>
+                   </size>
+                  </property>
+                  <property name="calendarPopup">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="0">
+                 <widget class="QLabel" name="lblOlivesQty">
+                  <property name="text">
+                   <string>⚖ Quantité d'olives :</string>
+                  </property>
+                  <property name="styleSheet">
+                   <string>font-weight: 600;</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="1">
+                 <widget class="QSpinBox" name="spinOlivesKg">
+                  <property name="minimumSize">
+                   <size>
+                    <width>220</width>
+                    <height>40</height>
+                   </size>
+                  </property>
+                  <property name="suffix">
+                   <string>  kg</string>
+                  </property>
+                  <property name="maximum">
+                   <number>100000</number>
+                  </property>
+                  <property name="value">
+                   <number>500</number>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="0">
+                 <widget class="QLabel" name="lblPressType">
+                  <property name="text">
+                   <string>🔧 Type de pressage :</string>
+                  </property>
+                  <property name="styleSheet">
+                   <string>font-weight: 600;</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="1">
+                 <widget class="QComboBox" name="comboPressType">
+                  <property name="minimumSize">
+                   <size>
+                    <width>220</width>
+                    <height>40</height>
+                   </size>
+                  </property>
+                  <item>
+                   <property name="text">
+                    <string>❄  Pressage à froid</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>🔥  Pressage à chaud</string>
+                   </property>
+                  </item>
+                 </widget>
+                </item>
+                <item row="3" column="0">
+                 <widget class="QLabel" name="lblOliveVariety">
+                  <property name="text">
+                   <string>🫒 Variété d'olive :</string>
+                  </property>
+                  <property name="styleSheet">
+                   <string>font-weight: 600;</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="3" column="1">
+                 <widget class="QComboBox" name="comboOliveVariety">
+                  <property name="minimumSize">
+                   <size>
+                    <width>220</width>
+                    <height>40</height>
+                   </size>
+                  </property>
+                  <item>
+                   <property name="text">
+                    <string>Chemlali</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Chétoui</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Oueslati</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Zalmati</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Mélange</string>
+                   </property>
+                  </item>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item>
+              <widget class="QGroupBox" name="groupNotesPlanification">
+               <property name="title">
+                <string>  Notes et instructions</string>
+               </property>
+               <layout class="QVBoxLayout" name="layoutNotes">
+                <property name="leftMargin">
+                 <number>20</number>
+                </property>
+                <property name="topMargin">
+                 <number>30</number>
+                </property>
+                <property name="rightMargin">
+                 <number>20</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>15</number>
+                </property>
+                <item>
+                 <widget class="QTextEdit" name="txtNotesPlanification">
+                  <property name="minimumSize">
+                   <size>
+                    <width>0</width>
+                    <height>100</height>
+                   </size>
+                  </property>
+                  <property name="placeholderText">
+                   <string>Saisir les notes de planification (qualité des olives, conditions particulières, instructions spéciales...)
+
+Exemple: Olives fraîchement récoltées, maturité optimale, première pression de la saison...</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item>
+              <spacer name="spacerPlanLeft">
+               <property name="orientation">
+                <enum>Qt::Orientation::Vertical</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>40</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </item>
+           <!-- Right Column: Status & Actions -->
+           <item>
+            <layout class="QVBoxLayout" name="layoutPlanRight">
+             <property name="spacing">
+              <number>15</number>
+             </property>
+             <item>
+              <widget class="QGroupBox" name="groupPlanStatus">
+               <property name="title">
+                <string>  État de la planification</string>
+               </property>
+               <layout class="QVBoxLayout" name="layoutPlanStatus">
+                <property name="spacing">
+                 <number>15</number>
+                </property>
+                <property name="leftMargin">
+                 <number>20</number>
+                </property>
+                <property name="topMargin">
+                 <number>30</number>
+                </property>
+                <property name="rightMargin">
+                 <number>20</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>20</number>
+                </property>
+                <item>
+                 <widget class="QLabel" name="lblStatusPlanification">
+                  <property name="styleSheet">
+                   <string>background-color: #FEF3C7; color: #92400E; border: 2px solid #FCD34D; border-radius: 8px; font-size: 15px;</string>
+                  </property>
+                  <property name="text">
+                   <string>⏳  En attente de planification</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignmentFlag::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="lblEstimatedYield">
+                  <property name="text">
+                   <string>📊 Rendement estimé : -- %</string>
+                  </property>
+                  <property name="styleSheet">
+                   <string>background-color: #f0fdf4; color: #166534; padding: 12px; border-radius: 8px; border: 1px solid #86efac;</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignmentFlag::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="lblDuration">
+                  <property name="text">
+                   <string>⏱ Durée estimée : --</string>
+                  </property>
+                  <property name="styleSheet">
+                   <string>background-color: #eff6ff; color: #1e40af; padding: 12px; border-radius: 8px; border: 1px solid #93c5fd;</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignmentFlag::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item>
+              <widget class="QGroupBox" name="groupQuickStats">
+               <property name="title">
+                <string>  Statistiques rapides</string>
+               </property>
+               <layout class="QGridLayout" name="gridQuickStats">
+                <property name="leftMargin">
+                 <number>20</number>
+                </property>
+                <property name="topMargin">
+                 <number>30</number>
+                </property>
+                <property name="rightMargin">
+                 <number>20</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>15</number>
+                </property>
+                <property name="horizontalSpacing">
+                 <number>15</number>
+                </property>
+                <property name="verticalSpacing">
+                 <number>10</number>
+                </property>
+                <item row="0" column="0">
+                 <widget class="QLabel" name="lblTodayProductions">
+                  <property name="text">
+                   <string>Productions aujourd'hui</string>
+                  </property>
+                  <property name="styleSheet">
+                   <string>color: #6b7280;</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1">
+                 <widget class="QLabel" name="lblTodayProductionsValue">
+                  <property name="text">
+                   <string>--</string>
+                  </property>
+                  <property name="styleSheet">
+                   <string>font-weight: 700; color: #1B4332; font-size: 16px;</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignVCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="0">
+                 <widget class="QLabel" name="lblWeekProductions">
+                  <property name="text">
+                   <string>Cette semaine</string>
+                  </property>
+                  <property name="styleSheet">
+                   <string>color: #6b7280;</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="1">
+                 <widget class="QLabel" name="lblWeekProductionsValue">
+                  <property name="text">
+                   <string>--</string>
+                  </property>
+                  <property name="styleSheet">
+                   <string>font-weight: 700; color: #1B4332; font-size: 16px;</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignVCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="0">
+                 <widget class="QLabel" name="lblAvgYield">
+                  <property name="text">
+                   <string>Rendement moyen</string>
+                  </property>
+                  <property name="styleSheet">
+                   <string>color: #6b7280;</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="1">
+                 <widget class="QLabel" name="lblAvgYieldValue">
+                  <property name="text">
+                   <string>-- %</string>
+                  </property>
+                  <property name="styleSheet">
+                   <string>font-weight: 700; color: #059669; font-size: 16px;</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignVCenter</set>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item>
+              <spacer name="spacerPlanRight">
+               <property name="orientation">
+                <enum>Qt::Orientation::Vertical</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>40</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QPushButton" name="btnPlanifier">
+               <property name="minimumSize">
+                <size>
+                 <width>0</width>
+                 <height>50</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>✓  Planifier la production</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+         <!-- ═══════════════════════════════════════════════════════════════
+              TAB 2: LANCEMENT
+         ═══════════════════════════════════════════════════════════════ -->
+         <widget class="QWidget" name="tabLancement">
+          <attribute name="title">
+           <string>▶  Lancement</string>
+          </attribute>
+          <layout class="QVBoxLayout" name="layoutLancement">
+           <property name="spacing"><number>0</number></property>
+           <property name="leftMargin"><number>0</number></property>
+           <property name="topMargin"><number>0</number></property>
+           <property name="rightMargin"><number>0</number></property>
+           <property name="bottomMargin"><number>0</number></property>
+           <item>
+            <widget class="QScrollArea" name="scrollLancement">
+             <property name="widgetResizable"><bool>true</bool></property>
+             <property name="frameShape"><enum>QFrame::NoFrame</enum></property>
+             <property name="styleSheet">
+              <string>QScrollArea { background: transparent; } QScrollArea > QWidget > QWidget { background: transparent; }</string>
+             </property>
+             <widget class="QWidget" name="scrollContentsLancement">
+              <property name="styleSheet"><string>background: transparent;</string></property>
+              <layout class="QVBoxLayout" name="layoutLancementInner">
+               <property name="spacing"><number>16</number></property>
+               <property name="leftMargin"><number>20</number></property>
+               <property name="topMargin"><number>16</number></property>
+               <property name="rightMargin"><number>20</number></property>
+               <property name="bottomMargin"><number>20</number></property>
+
+               <!-- ── ROW 1: Selection + État side by side ── -->
+               <item>
+                <layout class="QHBoxLayout" name="layoutRow1">
+                 <property name="spacing"><number>16</number></property>
+
+                 <!-- LEFT: Selection -->
+                 <item>
+                  <widget class="QGroupBox" name="groupSelectProduction">
+                   <property name="title"><string> Sélectionner une production planifiée </string></property>
+                   <property name="minimumSize"><size><width>0</width><height>160</height></size></property>
+                   <property name="autoFillBackground"><bool>true</bool></property>
+                   <property name="styleSheet">
+                    <string>QGroupBox { background-color: #f8fafc; border: 2px solid #1B4332; border-radius: 12px; margin-top: 22px; } QGroupBox::title { subcontrol-origin: margin; subcontrol-position: top left; left: 14px; top: -11px; padding: 5px 16px; background-color: #1B4332; color: #ffffff; font-size: 13px; font-weight: 700; border-radius: 8px; } QComboBox { background-color: #ffffff; color: #111827; border: 2px solid #1B4332; border-radius: 10px; padding: 8px 14px; font-size: 13px; font-weight: 600; } QComboBox:hover { border-color: #234E3E; background-color: #f0fdf4; } QComboBox::drop-down { border: none; width: 30px; background: transparent; } QComboBox QAbstractItemView { background-color: #ffffff; color: #111827; border: 2px solid #1B4332; border-radius: 8px; selection-background-color: #1B4332; selection-color: #ffffff; font-size: 13px; padding: 4px; } QPushButton#btnRefreshPlanned { background-color: #ffffff; border: 2px solid #1B4332; border-radius: 10px; font-size: 20px; color: #1B4332; } QPushButton#btnRefreshPlanned:hover { background-color: #f0fdf4; }</string>
+                   </property>
+                   <layout class="QVBoxLayout" name="layoutSelectProd">
+                    <property name="leftMargin"><number>20</number></property>
+                    <property name="topMargin"><number>18</number></property>
+                    <property name="rightMargin"><number>20</number></property>
+                    <property name="bottomMargin"><number>18</number></property>
+                    <property name="spacing"><number>12</number></property>
+                    <item>
+                     <layout class="QHBoxLayout" name="layoutSelectRow">
+                      <property name="spacing"><number>10</number></property>
+                      <item>
+                       <widget class="QComboBox" name="comboSelectProduction">
+                        <property name="minimumSize"><size><width>0</width><height>44</height></size></property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QPushButton" name="btnRefreshPlanned">
+                        <property name="minimumSize"><size><width>44</width><height>44</height></size></property>
+                        <property name="maximumSize"><size><width>44</width><height>44</height></size></property>
+                        <property name="text"><string>↻</string></property>
+                        <property name="toolTip"><string>Actualiser la liste</string></property>
+                       </widget>
+                      </item>
+                     </layout>
+                    </item>
+                    <item>
+                     <widget class="QLabel" name="lblSelectedProductionInfo">
+                      <property name="text"><string>Aucune production sélectionnée</string></property>
+                      <property name="styleSheet">
+                       <string>color: #374151; font-size: 12px; font-weight: 600; padding: 6px 10px; background-color: #ffffff; border-radius: 6px; border: 1px solid #d1d5db;</string>
+                      </property>
+                      <property name="wordWrap"><bool>true</bool></property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+
+                 <!-- RIGHT: État -->
+                 <item>
+                  <widget class="QGroupBox" name="groupLancementStatus">
+                   <property name="title"><string> État de la production </string></property>
+                   <property name="minimumSize"><size><width>0</width><height>160</height></size></property>
+                   <property name="styleSheet">
+                    <string>QGroupBox { background: white; border: 2px solid #d1fae5; border-radius: 12px; margin-top: 20px; } QGroupBox::title { subcontrol-origin: margin; subcontrol-position: top left; left: 14px; top: -2px; padding: 5px 14px; background: #1B4332; color: white; font-size: 13px; font-weight: 700; border-radius: 8px; }</string>
+                   </property>
+                   <layout class="QHBoxLayout" name="layoutLancementStatus">
+                    <property name="spacing"><number>20</number></property>
+                    <property name="leftMargin"><number>20</number></property>
+                    <property name="topMargin"><number>18</number></property>
+                    <property name="rightMargin"><number>20</number></property>
+                    <property name="bottomMargin"><number>18</number></property>
+                    <item>
+                     <layout class="QVBoxLayout" name="layoutCurrentStatus">
+                      <property name="spacing"><number>6</number></property>
+                      <item>
+                       <widget class="QLabel" name="lblCurrentStatusTitle">
+                        <property name="styleSheet"><string>font-weight: 700; color: #6b7280; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;</string></property>
+                        <property name="text"><string>STATUT ACTUEL</string></property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QLabel" name="lblCurrentStatus">
+                        <property name="minimumSize"><size><width>0</width><height>52</height></size></property>
+                        <property name="styleSheet"><string>background-color: #D1FAE5; color: #065F46; border: 2px solid #34D399; font-size: 15px; font-weight: 700; padding: 10px 18px; border-radius: 10px;</string></property>
+                        <property name="text"><string>🟢  Prêt à démarrer</string></property>
+                        <property name="alignment"><set>Qt::AlignmentFlag::AlignCenter</set></property>
+                       </widget>
+                      </item>
+                     </layout>
+                    </item>
+                    <item>
+                     <layout class="QVBoxLayout" name="layoutStartTime">
+                      <property name="spacing"><number>6</number></property>
+                      <item>
+                       <widget class="QLabel" name="lblStartTimeTitle">
+                        <property name="styleSheet"><string>font-weight: 700; color: #6b7280; font-size: 11px; letter-spacing: 1.5px;</string></property>
+                        <property name="text"><string>TEMPS SIMULÉ</string></property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QLabel" name="lblStartTime">
+                        <property name="minimumSize"><size><width>0</width><height>52</height></size></property>
+                        <property name="styleSheet"><string>background-color: #f3f4f6; color: #1f2937; padding: 10px 18px; font-size: 15px; font-weight: 700; border-radius: 10px; border: 2px solid #e5e7eb;</string></property>
+                        <property name="text"><string>🏭  0h 00min</string></property>
+                        <property name="alignment"><set>Qt::AlignmentFlag::AlignCenter</set></property>
+                       </widget>
+                      </item>
+                     </layout>
+                    </item>
+                    <item>
+                     <layout class="QVBoxLayout" name="layoutElapsedTime">
+                      <property name="spacing"><number>6</number></property>
+                      <item>
+                       <widget class="QLabel" name="lblElapsedTimeTitle">
+                        <property name="styleSheet"><string>font-weight: 700; color: #6b7280; font-size: 11px; letter-spacing: 1.5px;</string></property>
+                        <property name="text"><string>TEMPS RÉEL ÉCOULÉ</string></property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QLabel" name="lblElapsedTime">
+                        <property name="minimumSize"><size><width>0</width><height>52</height></size></property>
+                        <property name="styleSheet"><string>background-color: #FEF3C7; color: #92400E; padding: 10px 18px; font-size: 15px; font-weight: 700; border-radius: 10px; border: 2px solid #FCD34D;</string></property>
+                        <property name="text"><string>⏱  00:00:00</string></property>
+                        <property name="alignment"><set>Qt::AlignmentFlag::AlignCenter</set></property>
+                       </widget>
+                      </item>
+                     </layout>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+
+               <!-- ── ROW 2: Progression ── -->
+               <item>
+                <widget class="QGroupBox" name="groupProgress">
+                 <property name="title"><string> Progression de la production </string></property>
+                 <property name="minimumSize"><size><width>0</width><height>140</height></size></property>
+                 <property name="styleSheet">
+                  <string>QGroupBox { background: white; border: 2px solid #d1fae5; border-radius: 12px; margin-top: 20px; } QGroupBox::title { subcontrol-origin: margin; subcontrol-position: top left; left: 14px; top: -2px; padding: 5px 14px; background: #1B4332; color: white; font-size: 13px; font-weight: 700; border-radius: 8px; }</string>
+                 </property>
+                 <layout class="QVBoxLayout" name="layoutProgress">
+                  <property name="spacing"><number>14</number></property>
+                  <property name="leftMargin"><number>24</number></property>
+                  <property name="topMargin"><number>18</number></property>
+                  <property name="rightMargin"><number>24</number></property>
+                  <property name="bottomMargin"><number>20</number></property>
+                  <item>
+                   <widget class="QProgressBar" name="progressProduction">
+                    <property name="minimumSize"><size><width>0</width><height>40</height></size></property>
+                    <property name="value"><number>0</number></property>
+                    <property name="format"><string>%p% complété</string></property>
+                    <property name="styleSheet">
+                     <string>QProgressBar { background: #e5e7eb; border-radius: 10px; text-align: center; font-weight: 700; font-size: 13px; color: #1f2937; } QProgressBar::chunk { background: qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #22c55e,stop:1 #1B4332); border-radius: 10px; }</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <layout class="QHBoxLayout" name="layoutProgressLabels">
+                    <property name="spacing"><number>12</number></property>
+                    <item>
+                     <widget class="QLabel" name="lblPhase">
+                      <property name="text"><string>Phase : En attente</string></property>
+                      <property name="styleSheet"><string>color: #374151; font-weight: 600; font-size: 13px;</string></property>
+                     </widget>
+                    </item>
+                    <item>
+                     <spacer name="spacerProgress">
+                      <property name="orientation"><enum>Qt::Orientation::Horizontal</enum></property>
+                      <property name="sizeHint" stdset="0"><size><width>40</width><height>20</height></size></property>
+                     </spacer>
+                    </item>
+                    <item>
+                     <widget class="QLabel" name="lblProgressEnd">
+                      <property name="styleSheet"><string>color: #1B4332; font-weight: 700; font-size: 14px;</string></property>
+                      <property name="text"><string>0 / 500 kg traités</string></property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+
+               <!-- ── ROW 3: Contrôles ── -->
+               <item>
+                <widget class="QGroupBox" name="groupControls">
+                 <property name="title"><string> Contrôles de production </string></property>
+                 <property name="minimumSize"><size><width>0</width><height>120</height></size></property>
+                 <property name="styleSheet">
+                  <string>QGroupBox { background: white; border: 2px solid #d1fae5; border-radius: 12px; margin-top: 20px; } QGroupBox::title { subcontrol-origin: margin; subcontrol-position: top left; left: 14px; top: -2px; padding: 5px 14px; background: #1B4332; color: white; font-size: 13px; font-weight: 700; border-radius: 8px; }</string>
+                 </property>
+                 <layout class="QHBoxLayout" name="layoutControls">
+                  <property name="spacing"><number>16</number></property>
+                  <property name="leftMargin"><number>24</number></property>
+                  <property name="topMargin"><number>18</number></property>
+                  <property name="rightMargin"><number>24</number></property>
+                  <property name="bottomMargin"><number>18</number></property>
+                  <item>
+                   <spacer name="spacerControlsLeft">
+                    <property name="orientation"><enum>Qt::Orientation::Horizontal</enum></property>
+                    <property name="sizeHint" stdset="0"><size><width>40</width><height>20</height></size></property>
+                   </spacer>
+                  </item>
+                  <item>
+                   <widget class="QPushButton" name="btnStart">
+                    <property name="minimumSize"><size><width>170</width><height>52</height></size></property>
+                    <property name="text"><string>▶  Démarrer</string></property>
+                    <property name="styleSheet">
+                     <string>QPushButton { background: #1B4332; color: white; font-size: 15px; font-weight: 700; border-radius: 10px; border: none; } QPushButton:hover { background: #234E3E; } QPushButton:pressed { background: #14532d; } QPushButton:disabled { background: #d1d5db; color: #9ca3af; }</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QPushButton" name="btnStop">
+                    <property name="minimumSize"><size><width>170</width><height>52</height></size></property>
+                    <property name="text"><string>⏸  Pause</string></property>
+                    <property name="styleSheet">
+                     <string>QPushButton { background: #dc2626; color: white; font-size: 15px; font-weight: 700; border-radius: 10px; border: none; } QPushButton:hover { background: #b91c1c; } QPushButton:pressed { background: #991b1b; } QPushButton:disabled { background: #d1d5db; color: #9ca3af; }</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QPushButton" name="btnFinishProduction">
+                    <property name="minimumSize"><size><width>170</width><height>52</height></size></property>
+                    <property name="text"><string>✔  Terminer</string></property>
+                    <property name="enabled"><bool>false</bool></property>
+                   </widget>
+                  </item>
+                  <item>
+                   <spacer name="spacerControlsRight">
+                    <property name="orientation"><enum>Qt::Orientation::Horizontal</enum></property>
+                    <property name="sizeHint" stdset="0"><size><width>40</width><height>20</height></size></property>
+                   </spacer>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+
+               <!-- Bottom spacer -->
+               <item>
+                <spacer name="spacerLancement">
+                 <property name="orientation"><enum>Qt::Orientation::Vertical</enum></property>
+                 <property name="sizeHint" stdset="0"><size><width>20</width><height>20</height></size></property>
+                </spacer>
+               </item>
+              </layout>
+             </widget>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+         <!-- ═══════════════════════════════════════════════════════════════
+              TAB 3: SUIVI
+         ═══════════════════════════════════════════════════════════════ -->
+         <widget class="QWidget" name="tabSuivi">
+          <attribute name="title">
+           <string>📍  Suivi</string>
+          </attribute>
+          <layout class="QVBoxLayout" name="layoutSuivi">
+           <property name="spacing">
+            <number>15</number>
+           </property>
+           <property name="leftMargin">
+            <number>15</number>
+           </property>
+           <property name="topMargin">
+            <number>15</number>
+           </property>
+           <property name="rightMargin">
+            <number>15</number>
+           </property>
+           <property name="bottomMargin">
+            <number>15</number>
+           </property>
+           <item>
+            <widget class="QGroupBox" name="groupRunningProduction">
+             <property name="title"><string> Production en cours </string></property>
+             <property name="autoFillBackground"><bool>true</bool></property>
+             <property name="styleSheet">
+              <string>QGroupBox { background-color: #f8fafc; border: 2px solid #1B4332; border-radius: 12px; margin-top: 22px; } QGroupBox::title { subcontrol-origin: margin; subcontrol-position: top left; left: 14px; top: -11px; padding: 5px 16px; background-color: #1B4332; color: #ffffff; font-size: 13px; font-weight: 700; border-radius: 8px; }</string>
+             </property>
+             <layout class="QVBoxLayout" name="layoutRunningProduction">
+              <property name="leftMargin"><number>20</number></property>
+              <property name="topMargin"><number>16</number></property>
+              <property name="rightMargin"><number>20</number></property>
+              <property name="bottomMargin"><number>16</number></property>
+              <property name="spacing"><number>12</number></property>
+              <!-- Idle banner (shown when no simulation running) -->
+              <item>
+               <widget class="QLabel" name="lblRunningProduction">
+                <property name="styleSheet">
+                 <string>background-color: #EFF6FF; color: #1E40AF; border: 2px solid #93C5FD; padding: 14px; font-size: 14px; border-radius: 10px;</string>
+                </property>
+                <property name="text">
+                 <string>ℹ  Aucune production en cours actuellement. Planifiez et lancez une production pour voir les détails ici.</string>
+                </property>
+                <property name="wordWrap"><bool>true</bool></property>
+               </widget>
+              </item>
+              <!-- Active simulation details (hidden by default, shown when running) -->
+              <item>
+               <widget class="QWidget" name="widgetRunningActive">
+                <property name="visible"><bool>false</bool></property>
+                <layout class="QVBoxLayout" name="layoutRunningActive">
+                 <property name="spacing"><number>10</number></property>
+                 <property name="leftMargin"><number>0</number></property>
+                 <property name="topMargin"><number>0</number></property>
+                 <property name="rightMargin"><number>0</number></property>
+                 <property name="bottomMargin"><number>0</number></property>
+                 <!-- Row 1: Status + Phase -->
+                 <item>
+                  <layout class="QHBoxLayout" name="layoutRunningRow1">
+                   <property name="spacing"><number>12</number></property>
+                   <item>
+                    <widget class="QLabel" name="lblRunningStatus">
+                     <property name="minimumSize"><size><width>0</width><height>44</height></size></property>
+                     <property name="styleSheet"><string>background-color: #DBEAFE; color: #1E40AF; border: 2px solid #93C5FD; font-size: 14px; font-weight: 700; padding: 8px 16px; border-radius: 10px;</string></property>
+                     <property name="text"><string>▶  En cours</string></property>
+                     <property name="alignment"><set>Qt::AlignmentFlag::AlignCenter</set></property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QLabel" name="lblRunningPhase">
+                     <property name="minimumSize"><size><width>0</width><height>44</height></size></property>
+                     <property name="styleSheet"><string>background-color: #F3F4F6; color: #374151; border: 2px solid #E5E7EB; font-size: 14px; font-weight: 600; padding: 8px 16px; border-radius: 10px;</string></property>
+                     <property name="text"><string>Phase : ⏳ Chargement</string></property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </item>
+                 <!-- Row 2: Progress bar -->
+                 <item>
+                  <widget class="QProgressBar" name="progressRunning">
+                   <property name="minimumSize"><size><width>0</width><height>32</height></size></property>
+                   <property name="value"><number>0</number></property>
+                   <property name="format"><string>%p% — En cours...</string></property>
+                   <property name="styleSheet">
+                    <string>QProgressBar { background: #e5e7eb; border-radius: 8px; text-align: center; font-weight: 700; font-size: 12px; color: #1f2937; } QProgressBar::chunk { background: qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #22c55e,stop:1 #1B4332); border-radius: 8px; }</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <!-- Row 3: Stats cards -->
+                 <item>
+                  <layout class="QHBoxLayout" name="layoutRunningStats">
+                   <property name="spacing"><number>10</number></property>
+                   <item>
+                    <widget class="QLabel" name="lblRunningOlives">
+                     <property name="minimumSize"><size><width>0</width><height>56</height></size></property>
+                     <property name="styleSheet"><string>background: white; border: 2px solid #d1fae5; border-radius: 10px; font-size: 13px; font-weight: 700; color: #1B4332; padding: 8px 12px;</string></property>
+                     <property name="text"><string>🫒 Olives&#10;0 kg</string></property>
+                     <property name="alignment"><set>Qt::AlignmentFlag::AlignCenter</set></property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QLabel" name="lblRunningOil">
+                     <property name="minimumSize"><size><width>0</width><height>56</height></size></property>
+                     <property name="styleSheet"><string>background: white; border: 2px solid #d1fae5; border-radius: 10px; font-size: 13px; font-weight: 700; color: #1B4332; padding: 8px 12px;</string></property>
+                     <property name="text"><string>🛢 Huile&#10;0.00 L</string></property>
+                     <property name="alignment"><set>Qt::AlignmentFlag::AlignCenter</set></property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QLabel" name="lblRunningRendement">
+                     <property name="minimumSize"><size><width>0</width><height>56</height></size></property>
+                     <property name="styleSheet"><string>background: white; border: 2px solid #d1fae5; border-radius: 10px; font-size: 13px; font-weight: 700; color: #1B4332; padding: 8px 12px;</string></property>
+                     <property name="text"><string>📊 Rendement&#10;0.00 %</string></property>
+                     <property name="alignment"><set>Qt::AlignmentFlag::AlignCenter</set></property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QLabel" name="lblRunningSimTime">
+                     <property name="minimumSize"><size><width>0</width><height>56</height></size></property>
+                     <property name="styleSheet"><string>background: white; border: 2px solid #FCD34D; border-radius: 10px; font-size: 13px; font-weight: 700; color: #92400E; padding: 8px 12px;</string></property>
+                     <property name="text"><string>🏭 Simulé&#10;0h 00min</string></property>
+                     <property name="alignment"><set>Qt::AlignmentFlag::AlignCenter</set></property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QLabel" name="lblRunningRealTime">
+                     <property name="minimumSize"><size><width>0</width><height>56</height></size></property>
+                     <property name="styleSheet"><string>background: white; border: 2px solid #FCD34D; border-radius: 10px; font-size: 13px; font-weight: 700; color: #92400E; padding: 8px 12px;</string></property>
+                     <property name="text"><string>⏱ Réel&#10;00:00:00</string></property>
+                     <property name="alignment"><set>Qt::AlignmentFlag::AlignCenter</set></property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <widget class="QGroupBox" name="groupHistory">
+             <property name="title"><string> Historique des productions </string></property>
+             <property name="autoFillBackground"><bool>true</bool></property>
+             <property name="styleSheet">
+              <string>QGroupBox { background-color: #f8fafc; border: 2px solid #1B4332; border-radius: 12px; margin-top: 22px; } QGroupBox::title { subcontrol-origin: margin; subcontrol-position: top left; left: 14px; top: -11px; padding: 5px 16px; background-color: #1B4332; color: #ffffff; font-size: 13px; font-weight: 700; border-radius: 8px; }</string>
+             </property>
+             <layout class="QVBoxLayout" name="layoutHistory">
+              <property name="leftMargin"><number>15</number></property>
+              <property name="topMargin"><number>16</number></property>
+              <property name="rightMargin"><number>15</number></property>
+              <property name="bottomMargin"><number>15</number></property>
+              <item>
+               <widget class="QTableWidget" name="tableProductionHistory">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>200</height>
+                 </size>
+                </property>
+                <property name="alternatingRowColors">
+                 <bool>true</bool>
+                </property>
+                <property name="selectionBehavior">
+                 <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
+                </property>
+                <property name="showGrid">
+                 <bool>false</bool>
+                </property>
+                <column>
+                 <property name="text">
+                  <string>ID</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Date</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Olives (kg)</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Huile (L)</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Rendement</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Statut</string>
+                 </property>
+                </column>
+               </widget>
+              </item>
+              <item>
+               <layout class="QHBoxLayout" name="layoutHistoryButtons">
+                <item>
+                 <spacer name="spacerHistoryLeft">
+                  <property name="orientation">
+                   <enum>Qt::Orientation::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="btnModifyProduction">
+                  <property name="minimumSize">
+                   <size>
+                    <width>150</width>
+                    <height>40</height>
+                   </size>
+                  </property>
+                  <property name="styleSheet">
+                   <string>background-color: #3B82F6; color: white;</string>
+                  </property>
+                  <property name="text">
+                   <string>✏  Modifier</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="btnDeleteProduction">
+                  <property name="minimumSize">
+                   <size>
+                    <width>150</width>
+                    <height>40</height>
+                   </size>
+                  </property>
+                  <property name="styleSheet">
+                   <string>background-color: #EF4444; color: white;</string>
+                  </property>
+                  <property name="text">
+                   <string>🗑  Supprimer</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="layoutSuiviFooter">
+             <item>
+              <spacer name="spacerSuiviFooter">
+               <property name="orientation">
+                <enum>Qt::Orientation::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QPushButton" name="btnUpdateMonitoring">
+               <property name="minimumSize">
+                <size>
+                 <width>0</width>
+                 <height>45</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>🔄  Actualiser le suivi</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+         <!-- ═══════════════════════════════════════════════════════════════
+              TAB 4: RENDEMENT
+         ═══════════════════════════════════════════════════════════════ -->
+         <widget class="QWidget" name="tabRendement">
+          <attribute name="title">
+           <string>📊  Rendement</string>
+          </attribute>
+          <layout class="QHBoxLayout" name="layoutRendementMain">
+           <property name="spacing">
+            <number>15</number>
+           </property>
+           <property name="leftMargin">
+            <number>15</number>
+           </property>
+           <property name="topMargin">
+            <number>15</number>
+           </property>
+           <property name="rightMargin">
+            <number>15</number>
+           </property>
+           <property name="bottomMargin">
+            <number>15</number>
+           </property>
+           <!-- Left: Input -->
+           <item>
+            <layout class="QVBoxLayout" name="layoutRendementLeft">
+             <property name="spacing">
+              <number>15</number>
+             </property>
+             <!-- Selection production terminée -->
+             <item>
+              <widget class="QGroupBox" name="groupSelectTerminated">
+               <property name="title"><string> Sélectionner une production terminée </string></property>
+               <property name="minimumSize"><size><width>0</width><height>130</height></size></property>
+               <property name="autoFillBackground"><bool>true</bool></property>
+               <property name="styleSheet">
+                <string>QGroupBox { background-color: #f8fafc; border: 2px solid #1B4332; border-radius: 12px; margin-top: 22px; } QGroupBox::title { subcontrol-origin: margin; subcontrol-position: top left; left: 14px; top: -11px; padding: 5px 16px; background-color: #1B4332; color: #ffffff; font-size: 13px; font-weight: 700; border-radius: 8px; } QComboBox { background-color: #ffffff; color: #111827; border: 2px solid #1B4332; border-radius: 10px; padding: 8px 14px; font-size: 13px; font-weight: 600; } QComboBox:hover { border-color: #234E3E; background-color: #f0fdf4; } QComboBox::drop-down { border: none; width: 30px; background: transparent; } QComboBox QAbstractItemView { background-color: #ffffff; color: #111827; border: 2px solid #1B4332; border-radius: 8px; selection-background-color: #1B4332; selection-color: #ffffff; font-size: 13px; padding: 4px; }</string>
+               </property>
+               <layout class="QVBoxLayout" name="layoutSelectTerminated">
+                <property name="leftMargin"><number>16</number></property>
+                <property name="topMargin"><number>16</number></property>
+                <property name="rightMargin"><number>16</number></property>
+                <property name="bottomMargin"><number>14</number></property>
+                <property name="spacing"><number>10</number></property>
+                <item>
+                 <layout class="QHBoxLayout" name="layoutTerminatedRow">
+                  <property name="spacing"><number>10</number></property>
+                  <item>
+                   <widget class="QComboBox" name="comboTerminatedProductions">
+                    <property name="minimumSize"><size><width>0</width><height>42</height></size></property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QPushButton" name="btnRefreshTerminated">
+                    <property name="minimumSize"><size><width>42</width><height>42</height></size></property>
+                    <property name="maximumSize"><size><width>42</width><height>42</height></size></property>
+                    <property name="text"><string>↻</string></property>
+                    <property name="toolTip"><string>Actualiser la liste</string></property>
+                    <property name="styleSheet"><string>QPushButton { background: #ffffff; border: 2px solid #1B4332; border-radius: 10px; font-size: 20px; color: #1B4332; } QPushButton:hover { background: #f0fdf4; }</string></property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+                <item>
+                 <widget class="QLabel" name="lblTerminatedInfo">
+                  <property name="text"><string>Sélectionnez une production pour charger ses données automatiquement</string></property>
+                  <property name="styleSheet"><string>color: #6b7280; font-size: 11px; font-weight: 500; padding: 3px 4px;</string></property>
+                  <property name="wordWrap"><bool>true</bool></property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item>
+              <widget class="QGroupBox" name="groupRendementInput">
+               <property name="title">
+                <string>  Données de production</string>
+               </property>
+               <layout class="QFormLayout" name="formRendementInput">
+                <property name="labelAlignment">
+                 <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignVCenter</set>
+                </property>
+                <property name="horizontalSpacing">
+                 <number>20</number>
+                </property>
+                <property name="verticalSpacing">
+                 <number>20</number>
+                </property>
+                <property name="leftMargin">
+                 <number>25</number>
+                </property>
+                <property name="topMargin">
+                 <number>35</number>
+                </property>
+                <property name="rightMargin">
+                 <number>25</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>25</number>
+                </property>
+                <item row="0" column="0">
+                 <widget class="QLabel" name="lblOlivesUsedTitle">
+                  <property name="styleSheet">
+                   <string>font-weight: 600;</string>
+                  </property>
+                  <property name="text">
+                   <string>🫒 Olives utilisées :</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1">
+                 <widget class="QLabel" name="lblOlivesUsed">
+                  <property name="styleSheet">
+                   <string>background-color: #f3f4f6; padding: 12px 20px; border-radius: 8px; font-size: 18px; font-weight: 700; color: #1B4332; border: 2px solid #e5e7eb;</string>
+                  </property>
+                  <property name="text">
+                   <string>500 kg</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="0">
+                 <widget class="QLabel" name="lblOilProducedTitle">
+                  <property name="styleSheet">
+                   <string>font-weight: 600;</string>
+                  </property>
+                  <property name="text">
+                   <string>🛢 Huile produite :</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="1">
+                 <widget class="QDoubleSpinBox" name="spinOilProduced">
+                  <property name="minimumSize">
+                   <size>
+                    <width>200</width>
+                    <height>45</height>
+                   </size>
+                  </property>
+                  <property name="suffix">
+                   <string>  L</string>
+                  </property>
+                  <property name="decimals">
+                   <number>2</number>
+                  </property>
+                  <property name="maximum">
+                   <double>99999.990000000005239</double>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="btnCalculateYield">
+               <property name="minimumSize">
+                <size>
+                 <width>0</width>
+                 <height>50</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>📊  Calculer le rendement</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="spacerRendementLeft">
+               <property name="orientation">
+                <enum>Qt::Orientation::Vertical</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>40</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </item>
+           <!-- Right: Results -->
+           <item>
+            <layout class="QVBoxLayout" name="layoutRendementRight">
+             <property name="spacing">
+              <number>15</number>
+             </property>
+             <item>
+              <widget class="QGroupBox" name="groupRendementResult">
+               <property name="title">
+                <string>  Résultat du rendement</string>
+               </property>
+               <layout class="QVBoxLayout" name="layoutRendementResult">
+                <property name="spacing">
+                 <number>20</number>
+                </property>
+                <property name="leftMargin">
+                 <number>25</number>
+                </property>
+                <property name="topMargin">
+                 <number>35</number>
+                </property>
+                <property name="rightMargin">
+                 <number>25</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>25</number>
+                </property>
+                <item>
+                 <widget class="QLabel" name="lblYield">
+                  <property name="styleSheet">
+                   <string>background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #1B4332, stop:1 #234E3E); color: white; padding: 25px 40px; border-radius: 12px; font-size: 36px; font-weight: 800;</string>
+                  </property>
+                  <property name="text">
+                   <string>0.00 %</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignmentFlag::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QProgressBar" name="progressYield">
+                  <property name="minimumSize">
+                   <size>
+                    <width>0</width>
+                    <height>30</height>
+                   </size>
+                  </property>
+                  <property name="value">
+                   <number>0</number>
+                  </property>
+                  <property name="format">
+                   <string>Rendement: %p%</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item>
+              <widget class="QGroupBox" name="groupYieldMessage">
+               <property name="title">
+                <string>  Évaluation</string>
+               </property>
+               <layout class="QVBoxLayout" name="layoutYieldMessage">
+                <property name="leftMargin">
+                 <number>20</number>
+                </property>
+                <property name="topMargin">
+                 <number>30</number>
+                </property>
+                <property name="rightMargin">
+                 <number>20</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>15</number>
+                </property>
+                <item>
+                 <widget class="QLabel" name="lblYieldMessage">
+                  <property name="styleSheet">
+                   <string>background-color: #f8fafc; padding: 18px; border-left: 5px solid #C9A227; font-size: 14px; border-radius: 0 8px 8px 0;</string>
+                  </property>
+                  <property name="text">
+                   <string>ℹ  Entrez la quantité d'huile produite et cliquez sur "Calculer" pour obtenir le rendement.
+
+Un bon rendement se situe entre 15% et 22% selon la variété et la maturité des olives.</string>
+                  </property>
+                  <property name="wordWrap">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item>
+              <spacer name="spacerRendementRight">
+               <property name="orientation">
+                <enum>Qt::Orientation::Vertical</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>40</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+         <!-- ═══════════════════════════════════════════════════════════════
+              TAB 5: QUALITÉ
+         ═══════════════════════════════════════════════════════════════ -->
+         <widget class="QWidget" name="tabQualite">
+          <attribute name="title">
+           <string>✓  Qualité</string>
+          </attribute>
+          <layout class="QVBoxLayout" name="layoutQualite">
+           <property name="spacing">
+            <number>15</number>
+           </property>
+           <property name="leftMargin">
+            <number>15</number>
+           </property>
+           <property name="topMargin">
+            <number>15</number>
+           </property>
+           <property name="rightMargin">
+            <number>15</number>
+           </property>
+           <property name="bottomMargin">
+            <number>15</number>
+           </property>
+           <item>
+            <layout class="QHBoxLayout" name="layoutQualityMain">
+             <property name="spacing">
+              <number>15</number>
+             </property>
+             <item>
+              <widget class="QGroupBox" name="groupQualityEval">
+               <property name="title">
+                <string>  Évaluation de la qualité</string>
+               </property>
+               <layout class="QVBoxLayout" name="layoutQualityEval">
+                <property name="spacing">
+                 <number>20</number>
+                </property>
+                <property name="leftMargin">
+                 <number>25</number>
+                </property>
+                <property name="topMargin">
+                 <number>35</number>
+                </property>
+                <property name="rightMargin">
+                 <number>25</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>25</number>
+                </property>
+                <item>
+                 <layout class="QFormLayout" name="formQuality">
+                  <property name="labelAlignment">
+                   <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignVCenter</set>
+                  </property>
+                  <property name="horizontalSpacing">
+                   <number>20</number>
+                  </property>
+                  <property name="verticalSpacing">
+                   <number>18</number>
+                  </property>
+                  <item row="0" column="0">
+                   <widget class="QLabel" name="lblOilQuality">
+                    <property name="styleSheet">
+                     <string>font-weight: 600;</string>
+                    </property>
+                    <property name="text">
+                     <string>⭐ Qualité de l'huile :</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="1">
+                   <widget class="QComboBox" name="comboOilQuality">
+                    <property name="minimumSize">
+                     <size>
+                      <width>220</width>
+                      <height>45</height>
+                     </size>
+                    </property>
+                    <item>
+                     <property name="text">
+                      <string>⭐⭐⭐  Excellente</string>
+                     </property>
+                    </item>
+                    <item>
+                     <property name="text">
+                      <string>⭐⭐  Bonne</string>
+                     </property>
+                    </item>
+                    <item>
+                     <property name="text">
+                      <string>⭐  Moyenne</string>
+                     </property>
+                    </item>
+                    <item>
+                     <property name="text">
+                      <string>✗  Faible</string>
+                     </property>
+                    </item>
+                   </widget>
+                  </item>
+                  <item row="1" column="0">
+                   <widget class="QLabel" name="lblAcidity">
+                    <property name="styleSheet">
+                     <string>font-weight: 600;</string>
+                    </property>
+                    <property name="text">
+                     <string>🧪 Acidité :</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="1" column="1">
+                   <widget class="QComboBox" name="comboAcidity">
+                    <property name="minimumSize">
+                     <size>
+                      <width>220</width>
+                      <height>45</height>
+                     </size>
+                    </property>
+                    <item>
+                     <property name="text">
+                      <string>&lt; 0.8%  (Extra vierge)</string>
+                     </property>
+                    </item>
+                    <item>
+                     <property name="text">
+                      <string>0.8% - 2%  (Vierge)</string>
+                     </property>
+                    </item>
+                    <item>
+                     <property name="text">
+                      <string>> 2%  (Lampante)</string>
+                     </property>
+                    </item>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+                <item>
+                 <widget class="QCheckBox" name="checkConformity">
+                  <property name="styleSheet">
+                   <string>font-weight: 600; padding: 10px; background-color: #f0fdf4; border-radius: 8px;</string>
+                  </property>
+                  <property name="text">
+                   <string>✓  Conforme aux normes de qualité</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item>
+              <widget class="QGroupBox" name="groupQualityNotes">
+               <property name="title">
+                <string>  Remarques qualité</string>
+               </property>
+               <layout class="QVBoxLayout" name="layoutQualityNotes">
+                <property name="leftMargin">
+                 <number>20</number>
+                </property>
+                <property name="topMargin">
+                 <number>30</number>
+                </property>
+                <property name="rightMargin">
+                 <number>20</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>15</number>
+                </property>
+                <item>
+                 <widget class="QTextEdit" name="txtQualityNotes">
+                  <property name="minimumSize">
+                   <size>
+                    <width>0</width>
+                    <height>150</height>
+                   </size>
+                  </property>
+                  <property name="placeholderText">
+                   <string>Saisir les remarques sur la qualité de l'huile...
+
+• Couleur (vert doré, jaune, etc.)
+• Arôme (fruité, herbacé, etc.)
+• Goût (amer, piquant, doux)
+• Autres observations</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <widget class="QGroupBox" name="groupQualitySummary">
+             <property name="title">
+              <string>  Résumé qualité</string>
+             </property>
+             <layout class="QVBoxLayout" name="layoutQualitySummary">
+              <property name="leftMargin">
+               <number>20</number>
+              </property>
+              <property name="topMargin">
+               <number>30</number>
+              </property>
+              <property name="rightMargin">
+               <number>20</number>
+              </property>
+              <property name="bottomMargin">
+               <number>15</number>
+              </property>
+              <item>
+               <widget class="QLabel" name="lblQualitySummary">
+                <property name="styleSheet">
+                 <string>background-color: #f8fafc; padding: 18px; border-left: 5px solid #1B4332; font-size: 14px; border-radius: 0 8px 8px 0;</string>
+                </property>
+                <property name="text">
+                 <string>ℹ  Aucune évaluation de qualité enregistrée. Remplissez le formulaire ci-dessus et validez pour enregistrer l'évaluation.</string>
+                </property>
+                <property name="wordWrap">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="layoutQualiteFooter">
+             <item>
+              <spacer name="spacerQualiteFooter">
+               <property name="orientation">
+                <enum>Qt::Orientation::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QPushButton" name="btnValidateQuality">
+               <property name="minimumSize">
+                <size>
+                 <width>0</width>
+                 <height>50</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>✓  Valider l'évaluation qualité</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+         <!-- ═══════════════════════════════════════════════════════════════
+              TAB 6: RAPPORTS
+         ═══════════════════════════════════════════════════════════════ -->
+         <widget class="QWidget" name="tabRapports">
+          <attribute name="title">
+           <string>📄  Rapports</string>
+          </attribute>
+          <layout class="QVBoxLayout" name="layoutRapports">
+           <property name="spacing">
+            <number>15</number>
+           </property>
+           <property name="leftMargin">
+            <number>15</number>
+           </property>
+           <property name="topMargin">
+            <number>15</number>
+           </property>
+           <property name="rightMargin">
+            <number>15</number>
+           </property>
+           <property name="bottomMargin">
+            <number>15</number>
+           </property>
+           <item>
+            <widget class="QGroupBox" name="groupReportSummary">
+             <property name="title">
+              <string>  Résumé de la production</string>
+             </property>
+             <layout class="QVBoxLayout" name="layoutReportSummary">
+              <property name="leftMargin">
+               <number>20</number>
+              </property>
+              <property name="topMargin">
+               <number>30</number>
+              </property>
+              <property name="rightMargin">
+               <number>20</number>
+              </property>
+              <property name="bottomMargin">
+               <number>15</number>
+              </property>
+              <item>
+               <widget class="QLabel" name="lblProductionSummary">
+                <property name="styleSheet">
+                 <string>background-color: #D1FAE5; color: #065F46; padding: 15px; border: 2px solid #34D399; border-radius: 10px; font-size: 14px;</string>
+                </property>
+                <property name="text">
+                 <string>📋  Aucun rapport généré. Cliquez sur "Générer rapport" pour créer un rapport détaillé de la production.</string>
+                </property>
+                <property name="wordWrap">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <widget class="QGroupBox" name="groupReportContent">
+             <property name="title">
+              <string>  Contenu du rapport</string>
+             </property>
+             <layout class="QVBoxLayout" name="layoutReportContent">
+              <property name="leftMargin">
+               <number>15</number>
+              </property>
+              <property name="topMargin">
+               <number>30</number>
+              </property>
+              <property name="rightMargin">
+               <number>15</number>
+              </property>
+              <property name="bottomMargin">
+               <number>15</number>
+              </property>
+              <item>
+               <widget class="QTextBrowser" name="textReport">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>200</height>
+                 </size>
+                </property>
+                <property name="html">
+                 <string>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd"&gt;
+&lt;html&gt;&lt;head&gt;&lt;style type="text/css"&gt;
+body { font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; background-color: #fafafa; }
+h1 { color: #1B4332; border-bottom: 3px solid #C9A227; padding-bottom: 10px; }
+p { color: #666; font-size: 14px; line-height: 1.8; }
+&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
+&lt;h1&gt;📋 Rapport de Production&lt;/h1&gt;
+&lt;p style="font-style: italic; color: #9ca3af;"&gt;Le rapport détaillé apparaîtra ici après génération...&lt;/p&gt;
+&lt;p&gt;Cliquez sur le bouton "Générer rapport" pour créer un rapport complet incluant :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Détails de la production&lt;/li&gt;
+&lt;li&gt;Quantités et rendements&lt;/li&gt;
+&lt;li&gt;Évaluation de la qualité&lt;/li&gt;
+&lt;li&gt;Observations et notes&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="layoutReportActions">
+             <property name="spacing">
+              <number>15</number>
+             </property>
+             <item>
+              <widget class="QLabel" name="lblReportDate">
+               <property name="styleSheet">
+                <string>color: #6b7280; font-style: italic; padding: 8px 15px; background: #f3f4f6; border-radius: 8px;</string>
+               </property>
+               <property name="text">
+                <string>📅  Dernière génération : --/--/----</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="spacerReportActions">
+               <property name="orientation">
+                <enum>Qt::Orientation::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QPushButton" name="btnGenerateReport">
+               <property name="minimumSize">
+                <size>
+                 <width>0</width>
+                 <height>50</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>📊  Générer rapport</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="btnExportPDF">
+               <property name="minimumSize">
+                <size>
+                 <width>0</width>
+                 <height>50</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>📥  Exporter PDF</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources>
+  <include location="resources.qrc"/>
+ </resources>
+ <connections/>
+</ui>
