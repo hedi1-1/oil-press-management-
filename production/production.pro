@@ -1,4 +1,4 @@
-QT       += core gui sql printsupport
+QT       += core gui sql printsupport charts
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -13,13 +13,15 @@ SOURCES += \
     production.cpp \
     connection.cpp \
     productionmodel.cpp \
-    productioneditdialog.cpp
+    productioneditdialog.cpp \
+    qualityaiagent.cpp
 
 HEADERS += \
     production.h \
     connection.h \
     productionmodel.h \
-    productioneditdialog.h
+    productioneditdialog.h \
+    qualityaiagent.h
 
 FORMS += \
     production.ui

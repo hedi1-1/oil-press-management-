@@ -1,6 +1,7 @@
 #include "production.h"
 #include "ui_production.h"
 #include "productioneditdialog.h"
+#include "qualityaiagent.h"
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QPixmap>
@@ -18,15 +19,27 @@
 #include <QtSql/QSqlError>
 #include <QStandardPaths>
 #include <QRegularExpression>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QFormLayout>
+#include <QGroupBox>
+#include <QLabel>
+#include <QTextEdit>
+#include <QSignalBlocker>
+#include <QtCharts/QValueAxis>
+#include <QtCharts/QChart>
+#include <QSqlRecord>
 
 Production::Production(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::Production)
     , currentProductionId(0)
     , m_rendementProductionId(0)
+    , m_qualityProductionId(0)
     , m_isDarkMode(false)
     , m_langIndex(0)
     , m_simTimer(new QTimer(this))
+    , m_statsTimer(new QTimer(this))
     , m_simTicks(0)
     , m_totalDurationMin(60)
     , m_olivesKgTotal(500)
@@ -34,6 +47,31 @@ Production::Production(QWidget *parent)
     , m_isRunning(false)
     , m_isPaused(false)
     , m_oilProducedL(0.0)
+    , m_comboQualityProduction(nullptr)
+    , m_btnRefreshQualityProduction(nullptr)
+    , m_spinAcidityPercent(nullptr)
+    , m_lblAiQualityScore(nullptr)
+    , m_lblAiRecommendations(nullptr)
+    , m_comboReportPeriod(nullptr)
+    , m_dateReportFrom(nullptr)
+    , m_dateReportTo(nullptr)
+    , m_comboReportQuality(nullptr)
+    , m_btnApplyReportFilters(nullptr)
+    , m_tabStatistiques(nullptr)
+    , m_lblStatProdToday(nullptr)
+    , m_lblStatRendAvg(nullptr)
+    , m_lblStatAcidAvg(nullptr)
+    , m_lblStatConformity(nullptr)
+    , m_lineChartView(nullptr)
+    , m_pieChartView(nullptr)
+    , m_seriesOlives(nullptr)
+    , m_seriesHuile(nullptr)
+    , m_seriesRendement(nullptr)
+    , m_axisStatsX(nullptr)
+    , m_axisStatsYVolume(nullptr)
+    , m_axisStatsYRendement(nullptr)
+    , m_qualityPie(nullptr)
+    , m_statsTick(0)
 {
     ui->setupUi(this);
     {
@@ -73,6 +111,7 @@ Production::Production(QWidget *parent)
     // Connect simulation controls
     connect(ui->btnRefreshPlanned, &QPushButton::clicked, this, &Production::onRefreshPlannedClicked);
     connect(m_simTimer, &QTimer::timeout, this, &Production::onSimTick);
+    connect(m_statsTimer, &QTimer::timeout, this, &Production::refreshStatistics);
 
     // Connect rendement tab controls
     connect(ui->btnRefreshTerminated, &QPushButton::clicked, this, &Production::onRefreshTerminatedClicked);
@@ -86,8 +125,16 @@ Production::Production(QWidget *parent)
     // Capture light stylesheet for toggling
     m_lightStyleSheet = this->styleSheet();
 
+    // Build advanced modules requested by user
+    setupAdvancedQualityUI();
+    setupAdvancedReportsUI();
+    buildStatisticsTab();
+
     // 1 production hour = 30 real seconds → timer fires every 500ms = 1 prod minute
     m_simTimer->setInterval(500);
+    // Higher cadence for a smoother live dashboard.
+    m_statsTimer->setInterval(700);
+    m_statsTimer->start();
 
     // Style the new Terminer button
     ui->btnFinishProduction->setStyleSheet(
@@ -101,9 +148,12 @@ Production::Production(QWidget *parent)
     loadPlannedProductions();
     // Load terminated productions into rendement dropdown
     loadTerminatedProductions();
+    loadQualityEvaluableProductions();
 
     // Load production history on startup
     loadProductionHistory();
+    updateReportPreview();
+    refreshStatistics();
 }
 
 Production::~Production()
@@ -281,6 +331,667 @@ void Production::loadTerminatedProductions()
 void Production::onRefreshTerminatedClicked()
 {
     loadTerminatedProductions();
+}
+
+void Production::setupAdvancedQualityUI()
+{
+    auto *form = ui->groupQualityEval->findChild<QFormLayout*>("formQuality");
+    if (form) {
+        form->setFormAlignment(Qt::AlignTop);
+        form->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
+        form->setRowWrapPolicy(QFormLayout::DontWrapRows);
+        form->setLabelAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+        form->setHorizontalSpacing(14);
+        form->setVerticalSpacing(14);
+
+        // Row 0: production selection for automatic AI evaluation
+        auto *lblProd = new QLabel("🏭 Production :", ui->groupQualityEval);
+        lblProd->setStyleSheet("font-weight: 600;");
+        lblProd->setMinimumHeight(40);
+        lblProd->setMinimumWidth(140);
+        auto *selectorWrap = new QWidget(ui->groupQualityEval);
+        auto *selectorLayout = new QHBoxLayout(selectorWrap);
+        selectorLayout->setContentsMargins(0, 0, 0, 0);
+        selectorLayout->setSpacing(8);
+
+        m_comboQualityProduction = new QComboBox(selectorWrap);
+        m_comboQualityProduction->setMinimumHeight(45);
+        m_btnRefreshQualityProduction = new QPushButton("↻", selectorWrap);
+        m_btnRefreshQualityProduction->setFixedSize(45, 45);
+        m_btnRefreshQualityProduction->setToolTip("Actualiser la liste des productions");
+        m_btnRefreshQualityProduction->setCursor(Qt::PointingHandCursor);
+
+        selectorLayout->addWidget(m_comboQualityProduction, 1);
+        selectorLayout->addWidget(m_btnRefreshQualityProduction, 0);
+        form->insertRow(0, lblProd, selectorWrap);
+
+        // Use the acidity field defined in the .ui form row to avoid layout detachment issues.
+        ui->lblAcidity->setText("🧪 Acidité mesurée :");
+        ui->lblAcidity->setMinimumWidth(140);
+        m_spinAcidityPercent = ui->comboAcidity;
+        m_spinAcidityPercent->setRange(0.10, 5.00);
+        m_spinAcidityPercent->setDecimals(2);
+        m_spinAcidityPercent->setSingleStep(0.05);
+        m_spinAcidityPercent->setValue(0.80);
+        m_spinAcidityPercent->setSuffix(" %");
+        m_spinAcidityPercent->setMinimumHeight(45);
+        m_spinAcidityPercent->setMinimumWidth(220);
+        m_spinAcidityPercent->setButtonSymbols(QAbstractSpinBox::NoButtons);
+
+        ui->comboOilQuality->setMinimumHeight(45);
+        ui->lblOilQuality->setMinimumWidth(140);
+        ui->checkConformity->setMinimumHeight(44);
+    }
+
+    ui->groupQualityEval->setMinimumHeight(320);
+    ui->groupQualityNotes->setMinimumHeight(320);
+    ui->groupQualityEval->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    ui->groupQualityNotes->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+
+    if (ui->txtQualityNotes) {
+        ui->txtQualityNotes->setMinimumHeight(180);
+    }
+
+    if (ui->btnValidateQuality) {
+        ui->btnValidateQuality->setMinimumWidth(280);
+    }
+
+    auto *qualityMain = ui->tabQualite->findChild<QHBoxLayout*>("layoutQualityMain");
+    if (qualityMain) {
+        qualityMain->setStretch(0, 5);
+        qualityMain->setStretch(1, 4);
+        qualityMain->setAlignment(Qt::AlignTop);
+    }
+
+    auto *sumLayout = qobject_cast<QVBoxLayout*>(ui->groupQualitySummary->layout());
+    if (sumLayout) {
+        m_lblAiQualityScore = new QLabel("IA: score --/100 | confiance --%", ui->groupQualitySummary);
+        m_lblAiQualityScore->setStyleSheet("background-color: #eff6ff; color: #1e3a8a; border-left: 5px solid #3b82f6; padding: 12px; border-radius: 8px;");
+        m_lblAiRecommendations = new QLabel("Remarques IA: en attente d'evaluation.", ui->groupQualitySummary);
+        m_lblAiRecommendations->setWordWrap(true);
+        m_lblAiRecommendations->setStyleSheet("background-color: #f8fafc; color: #334155; border-left: 5px solid #0ea5e9; padding: 12px; border-radius: 8px;");
+        sumLayout->addWidget(m_lblAiQualityScore);
+        sumLayout->addWidget(m_lblAiRecommendations);
+    }
+
+    if (m_btnRefreshQualityProduction) {
+        connect(m_btnRefreshQualityProduction, &QPushButton::clicked,
+                this, &Production::onRefreshQualityProductions);
+    }
+    if (m_comboQualityProduction) {
+        connect(m_comboQualityProduction, QOverload<int>::of(&QComboBox::currentIndexChanged),
+                this, &Production::onQualityProductionSelected);
+    }
+    if (m_spinAcidityPercent) {
+        connect(m_spinAcidityPercent, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+            [this](double) { autoEvaluateQuality(false, false); });
+    }
+
+        connect(ui->comboOilQuality, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, [this](int) { autoEvaluateQuality(false, false); });
+        connect(ui->checkConformity, &QCheckBox::toggled,
+            this, [this](bool) { autoEvaluateQuality(false, false); });
+}
+
+void Production::loadQualityEvaluableProductions()
+{
+    if (!m_comboQualityProduction) return;
+
+    m_comboQualityProduction->clear();
+    m_comboQualityProduction->addItem("— Choisir une production terminee —", -1);
+
+    QSqlQuery q(QSqlDatabase::database("production_conn"));
+    q.exec("SELECT IDPRODUCTION, DATEPRODUCTION, QUANTITEOLIVESKG, RENDEMENT "
+           "FROM PRODUCTION "
+           "WHERE STATUT = 'Termine' OR STATUT = 'Qualité validée' "
+           "ORDER BY IDPRODUCTION DESC");
+
+    int count = 0;
+    while (q.next()) {
+        const int id = q.value(0).toInt();
+        const QString date = q.value(1).toDate().toString("dd/MM/yyyy");
+        const int kg = q.value(2).toInt();
+        const double rend = q.value(3).toDouble();
+        m_comboQualityProduction->addItem(
+            QString("ID #%1 — %2 — %3 kg — %4 %")
+                .arg(id).arg(date).arg(kg).arg(rend, 0, 'f', 2),
+            id);
+        count++;
+    }
+
+    if (count == 0) {
+        ui->lblQualitySummary->setText("ℹ  Aucune production terminee disponible pour evaluation.");
+    }
+}
+
+void Production::onRefreshQualityProductions()
+{
+    loadQualityEvaluableProductions();
+}
+
+void Production::onQualityProductionSelected(int index)
+{
+    if (!m_comboQualityProduction || index <= 0) {
+        m_qualityProductionId = 0;
+        ui->lblQualitySummary->setText("ℹ  Sélectionnez une production pour lancer l'évaluation IA automatique.");
+        return;
+    }
+
+    const int prodId = m_comboQualityProduction->currentData().toInt();
+    if (prodId <= 0) return;
+
+    m_qualityProductionId = prodId;
+
+    QSqlQuery q(QSqlDatabase::database("production_conn"));
+    q.prepare("SELECT QUALITE, CONFORMENORMES, REMARQUESQUALITE, RENDEMENT FROM PRODUCTION WHERE IDPRODUCTION = :id");
+    q.bindValue(":id", prodId);
+    if (q.exec() && q.next()) {
+        const QString qualite = q.value(0).toString();
+        const bool conforme = q.value(1).toInt() == 1;
+        const QString notes = q.value(2).toString();
+        const double rend = q.value(3).toDouble();
+
+        QSignalBlocker b1(ui->comboOilQuality);
+        QSignalBlocker b2(ui->checkConformity);
+        int idxQ = ui->comboOilQuality->findText(qualite, Qt::MatchContains);
+        if (idxQ >= 0) ui->comboOilQuality->setCurrentIndex(idxQ);
+        ui->checkConformity->setChecked(conforme);
+        if (!notes.trimmed().isEmpty()) ui->txtQualityNotes->setPlainText(notes);
+        ui->lblQualitySummary->setText(QString("ℹ  Production #%1 chargee. Rendement actuel: %2 %")
+                                       .arg(prodId)
+                                       .arg(rend, 0, 'f', 2));
+    }
+
+    QSqlQuery qa(QSqlDatabase::database("production_conn"));
+    qa.prepare("SELECT ACIDITE FROM PRODUCTION WHERE IDPRODUCTION = :id");
+    qa.bindValue(":id", prodId);
+    if (qa.exec() && qa.next() && m_spinAcidityPercent) {
+        const double acid = qa.value(0).toDouble();
+        if (acid > 0.0) m_spinAcidityPercent->setValue(acid);
+    }
+
+    // Automatic AI preview immediately after selection
+    autoEvaluateQuality(false, false);
+}
+
+bool Production::autoEvaluateQuality(bool persistToDb, bool showSuccessNotification)
+{
+    const int targetId = (m_qualityProductionId > 0) ? m_qualityProductionId : currentProductionId;
+    if (targetId == 0) {
+        if (m_lblAiQualityScore) {
+            m_lblAiQualityScore->setText("IA: score --/100 | confiance --%");
+        }
+        if (m_lblAiRecommendations) {
+            m_lblAiRecommendations->setText("Remarques IA: sélectionnez une production pour lancer l'analyse.");
+        }
+        return false;
+    }
+
+    QSqlQuery q(QSqlDatabase::database("production_conn"));
+    q.prepare("SELECT QUANTITEOLIVESKG, NVL(RENDEMENT,0) FROM PRODUCTION WHERE IDPRODUCTION = :id");
+    q.bindValue(":id", targetId);
+    int olives = 0;
+    double rendement = 0.0;
+    if (q.exec() && q.next()) {
+        olives = q.value(0).toInt();
+        rendement = q.value(1).toDouble();
+    }
+
+    QualityEvaluationInput input;
+    input.acidityPercent = m_spinAcidityPercent ? m_spinAcidityPercent->value() : 0.8;
+    input.rendementPercent = rendement;
+    input.olivesKg = olives;
+    input.selectedQuality = ui->comboOilQuality->currentText();
+    input.userConformity = ui->checkConformity->isChecked();
+    input.operatorNotes = ui->txtQualityNotes->toPlainText();
+
+    const QualityEvaluationResult result = QualityAIAgent::evaluate(input);
+
+    if (m_lblAiQualityScore) {
+        m_lblAiQualityScore->setText(
+            QString("IA: score %1/100 | confiance %2 % | risque %3")
+                .arg(QString::number(result.score, 'f', 1))
+                .arg(QString::number(result.confidence, 'f', 0))
+                .arg(result.riskLevel));
+    }
+    if (m_lblAiRecommendations) {
+        m_lblAiRecommendations->setText(result.smartRemarks);
+    }
+
+    ui->lblQualitySummary->setText(
+        QString("🤖 Évaluation automatique prête pour production #%1\n"
+                "Qualité IA: %2 | Risque: %3")
+            .arg(targetId)
+            .arg(result.qualityLabel)
+            .arg(result.riskLevel));
+
+    if (!persistToDb) {
+        return true;
+    }
+
+    QString remarks = ui->txtQualityNotes->toPlainText().trimmed();
+    if (!remarks.isEmpty()) remarks += "\n\n";
+    remarks += "[Analyse IA]\n" + result.smartRemarks;
+
+    QSqlQuery upd(QSqlDatabase::database("production_conn"));
+    upd.prepare("UPDATE PRODUCTION SET QUALITE=:q, CONFORMENORMES=:c, REMARQUESQUALITE=:r, "
+                "STATUT='Qualité validée', ACIDITE=:a, SCOREQUALITEIA=:s, CONFIANCEIA=:f "
+                "WHERE IDPRODUCTION=:id");
+    upd.bindValue(":q", result.qualityLabel);
+    upd.bindValue(":c", result.isConforme ? 1 : 0);
+    upd.bindValue(":r", remarks.left(500));
+    upd.bindValue(":a", input.acidityPercent);
+    upd.bindValue(":s", result.score);
+    upd.bindValue(":f", result.confidence);
+    upd.bindValue(":id", targetId);
+
+    bool ok = upd.exec();
+    if (!ok) {
+        QSqlQuery fallback(QSqlDatabase::database("production_conn"));
+        fallback.prepare("UPDATE PRODUCTION SET QUALITE=:q, CONFORMENORMES=:c, REMARQUESQUALITE=:r, "
+                         "STATUT='Qualité validée' WHERE IDPRODUCTION=:id");
+        fallback.bindValue(":q", result.qualityLabel);
+        fallback.bindValue(":c", result.isConforme ? 1 : 0);
+        fallback.bindValue(":r", remarks.left(500));
+        fallback.bindValue(":id", targetId);
+        ok = fallback.exec();
+    }
+
+    if (!ok) {
+        showErrorNotification("Échec de la validation qualité:\n" + upd.lastError().text());
+        return false;
+    }
+
+    ui->txtQualityNotes->setPlainText(remarks);
+
+    if (showSuccessNotification) {
+        this->showSuccessNotification(
+            QString("✓ Qualité validée avec IA\n\nProduction #%1\nQualité: %2\nAcidité: %3 %\n"
+                    "Score IA: %4/100\nConfiance: %5 %")
+                .arg(targetId)
+                .arg(result.qualityLabel)
+                .arg(QString::number(input.acidityPercent, 'f', 2))
+                .arg(QString::number(result.score, 'f', 1))
+                .arg(QString::number(result.confidence, 'f', 0)));
+    }
+
+    loadProductionHistory();
+    loadQualityEvaluableProductions();
+    refreshStatistics();
+    return true;
+}
+
+void Production::setupAdvancedReportsUI()
+{
+    auto *reportsLayout = qobject_cast<QVBoxLayout*>(ui->tabRapports->layout());
+    if (!reportsLayout) return;
+
+    auto *groupFilters = new QGroupBox("  Filtres du rapport", ui->tabRapports);
+    auto *filters = new QHBoxLayout(groupFilters);
+    filters->setSpacing(10);
+
+    m_comboReportPeriod = new QComboBox(groupFilters);
+    m_comboReportPeriod->addItems({"Ce mois", "Mois dernier", "Cette année", "Intervalle de dates"});
+    m_comboReportPeriod->setMinimumHeight(38);
+
+    m_dateReportFrom = new QDateEdit(QDate::currentDate().addDays(-30), groupFilters);
+    m_dateReportFrom->setCalendarPopup(true);
+    m_dateReportFrom->setDisplayFormat("dd/MM/yyyy");
+    m_dateReportFrom->setMinimumHeight(38);
+
+    m_dateReportTo = new QDateEdit(QDate::currentDate(), groupFilters);
+    m_dateReportTo->setCalendarPopup(true);
+    m_dateReportTo->setDisplayFormat("dd/MM/yyyy");
+    m_dateReportTo->setMinimumHeight(38);
+
+    m_comboReportQuality = new QComboBox(groupFilters);
+    m_comboReportQuality->addItems({"Toutes qualités", "Extra Vierge", "Vierge", "Lampante"});
+    m_comboReportQuality->setMinimumHeight(38);
+
+    m_btnApplyReportFilters = new QPushButton("Appliquer", groupFilters);
+    m_btnApplyReportFilters->setMinimumHeight(38);
+
+    filters->addWidget(new QLabel("Période:"), 0);
+    filters->addWidget(m_comboReportPeriod, 1);
+    filters->addWidget(new QLabel("Du:"), 0);
+    filters->addWidget(m_dateReportFrom, 0);
+    filters->addWidget(new QLabel("Au:"), 0);
+    filters->addWidget(m_dateReportTo, 0);
+    filters->addWidget(new QLabel("Qualité:"), 0);
+    filters->addWidget(m_comboReportQuality, 1);
+    filters->addWidget(m_btnApplyReportFilters, 0);
+
+    reportsLayout->insertWidget(0, groupFilters);
+
+    connect(m_comboReportPeriod, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &Production::onReportPeriodChanged);
+    connect(m_btnApplyReportFilters, &QPushButton::clicked,
+            this, &Production::onApplyReportFilters);
+
+    onReportPeriodChanged(m_comboReportPeriod->currentIndex());
+}
+
+void Production::onReportPeriodChanged(int index)
+{
+    const bool custom = (index == 3);
+    if (m_dateReportFrom) m_dateReportFrom->setEnabled(custom);
+    if (m_dateReportTo) m_dateReportTo->setEnabled(custom);
+}
+
+QString Production::buildReportWhereClause(QString *prettyPeriod) const
+{
+    QStringList clauses;
+    QString periodLabel;
+
+    const QDate today = QDate::currentDate();
+    if (m_comboReportPeriod) {
+        switch (m_comboReportPeriod->currentIndex()) {
+        case 0: {
+            QDate start(today.year(), today.month(), 1);
+            QDate end = start.addMonths(1).addDays(-1);
+            clauses << QString("DATEPRODUCTION BETWEEN TO_DATE('%1','YYYY-MM-DD') AND TO_DATE('%2','YYYY-MM-DD')")
+                           .arg(start.toString("yyyy-MM-dd"), end.toString("yyyy-MM-dd"));
+            periodLabel = "Ce mois";
+            break;
+        }
+        case 1: {
+            QDate start(today.year(), today.month(), 1);
+            start = start.addMonths(-1);
+            QDate end = start.addMonths(1).addDays(-1);
+            clauses << QString("DATEPRODUCTION BETWEEN TO_DATE('%1','YYYY-MM-DD') AND TO_DATE('%2','YYYY-MM-DD')")
+                           .arg(start.toString("yyyy-MM-dd"), end.toString("yyyy-MM-dd"));
+            periodLabel = "Mois dernier";
+            break;
+        }
+        case 2: {
+            QDate start(today.year(), 1, 1);
+            QDate end(today.year(), 12, 31);
+            clauses << QString("DATEPRODUCTION BETWEEN TO_DATE('%1','YYYY-MM-DD') AND TO_DATE('%2','YYYY-MM-DD')")
+                           .arg(start.toString("yyyy-MM-dd"), end.toString("yyyy-MM-dd"));
+            periodLabel = "Cette année";
+            break;
+        }
+        case 3: {
+            const QDate start = m_dateReportFrom ? m_dateReportFrom->date() : today.addDays(-30);
+            const QDate end = m_dateReportTo ? m_dateReportTo->date() : today;
+            clauses << QString("DATEPRODUCTION BETWEEN TO_DATE('%1','YYYY-MM-DD') AND TO_DATE('%2','YYYY-MM-DD')")
+                           .arg(start.toString("yyyy-MM-dd"), end.toString("yyyy-MM-dd"));
+            periodLabel = QString("%1 → %2").arg(start.toString("dd/MM/yyyy"), end.toString("dd/MM/yyyy"));
+            break;
+        }
+        default:
+            break;
+        }
+    }
+
+    if (m_comboReportQuality) {
+        const QString q = m_comboReportQuality->currentText();
+        if (!q.startsWith("Toutes")) {
+            clauses << QString("QUALITE = '%1'").arg(q);
+        }
+    }
+
+    if (prettyPeriod) {
+        *prettyPeriod = periodLabel;
+    }
+
+    if (clauses.isEmpty()) return QString();
+    return " WHERE " + clauses.join(" AND ");
+}
+
+void Production::updateReportPreview()
+{
+    QString periodLabel;
+    const QString whereClause = buildReportWhereClause(&periodLabel);
+
+    QSqlQuery q(QSqlDatabase::database("production_conn"));
+    q.exec("SELECT COUNT(*), NVL(SUM(QUANTITEOLIVESKG),0), NVL(SUM(HUILEPRODUITEL),0), NVL(AVG(RENDEMENT),0) "
+           "FROM PRODUCTION" + whereClause);
+
+    int count = 0;
+    double olives = 0.0;
+    double huile = 0.0;
+    double rend = 0.0;
+    if (q.next()) {
+        count = q.value(0).toInt();
+        olives = q.value(1).toDouble();
+        huile = q.value(2).toDouble();
+        rend = q.value(3).toDouble();
+    }
+
+    const QString qualityFilter = m_comboReportQuality ? m_comboReportQuality->currentText() : "Toutes qualités";
+    const QString html = QString(
+        "<h1>📋 Rapport de Production</h1>"
+        "<p><b>Période:</b> %1</p>"
+        "<p><b>Filtre qualité:</b> %2</p>"
+        "<ul>"
+        "<li>Productions: <b>%3</b></li>"
+        "<li>Olives traitées: <b>%4 kg</b></li>"
+        "<li>Huile produite: <b>%5 L</b></li>"
+        "<li>Rendement moyen: <b>%6 %%</b></li>"
+        "</ul>"
+        "<p style='color:#64748b'>Rapport enrichi avec indicateurs qualité et suivi opérationnel.</p>")
+            .arg(periodLabel.isEmpty() ? "Global" : periodLabel)
+            .arg(qualityFilter)
+            .arg(count)
+            .arg(QString::number(olives, 'f', 0))
+            .arg(QString::number(huile, 'f', 2))
+            .arg(QString::number(rend, 'f', 2));
+
+    ui->textReport->setHtml(html);
+    ui->lblProductionSummary->setText(
+        QString("📋 %1 productions | %2 kg olives | %3 L huile | Rendement moyen %4 %")
+            .arg(count)
+            .arg(QString::number(olives, 'f', 0))
+            .arg(QString::number(huile, 'f', 2))
+            .arg(QString::number(rend, 'f', 2)));
+    ui->lblReportDate->setText("📅  Dernière génération : " + QDateTime::currentDateTime().toString("dd/MM/yyyy HH:mm"));
+}
+
+void Production::onApplyReportFilters()
+{
+    updateReportPreview();
+}
+
+void Production::buildStatisticsTab()
+{
+    m_tabStatistiques = new QWidget(this);
+    auto *main = new QVBoxLayout(m_tabStatistiques);
+    main->setContentsMargins(15, 15, 15, 15);
+    main->setSpacing(12);
+
+    auto *kpiRow = new QHBoxLayout();
+    m_lblStatProdToday = new QLabel("Productions jour: --", m_tabStatistiques);
+    m_lblStatRendAvg = new QLabel("Rendement moyen: -- %", m_tabStatistiques);
+    m_lblStatAcidAvg = new QLabel("Acidité moyenne: -- %", m_tabStatistiques);
+    m_lblStatConformity = new QLabel("Conformité: -- %", m_tabStatistiques);
+    for (QLabel *lbl : {m_lblStatProdToday, m_lblStatRendAvg, m_lblStatAcidAvg, m_lblStatConformity}) {
+        lbl->setStyleSheet("background:#f8fafc; border:1px solid #dbeafe; border-radius:10px; padding:10px; font-weight:700;");
+        kpiRow->addWidget(lbl, 1);
+    }
+    main->addLayout(kpiRow);
+
+    auto *chartsRow = new QHBoxLayout();
+
+    m_seriesOlives = new QLineSeries(this);
+    m_seriesOlives->setName("Olives (kg)");
+    m_seriesHuile = new QLineSeries(this);
+    m_seriesHuile->setName("Huile (L)");
+    m_seriesRendement = new QLineSeries(this);
+    m_seriesRendement->setName("Rendement (%)");
+
+    m_seriesOlives->setPen(QPen(QColor("#2563eb"), 2));
+    m_seriesHuile->setPen(QPen(QColor("#16a34a"), 2));
+    m_seriesRendement->setPen(QPen(QColor("#f59e0b"), 3));
+    m_seriesOlives->setPointsVisible(true);
+    m_seriesHuile->setPointsVisible(true);
+    m_seriesRendement->setPointsVisible(true);
+
+    auto *lineChart = new QChart();
+    lineChart->addSeries(m_seriesOlives);
+    lineChart->addSeries(m_seriesHuile);
+    lineChart->addSeries(m_seriesRendement);
+    lineChart->setTitle("Statistiques temps réel");
+    lineChart->legend()->setVisible(true);
+    lineChart->setAnimationOptions(QChart::SeriesAnimations);
+
+    m_axisStatsX = new QValueAxis();
+    m_axisStatsX->setRange(0, 30);
+    m_axisStatsX->setTitleText("Ticks");
+
+    m_axisStatsYVolume = new QValueAxis();
+    m_axisStatsYVolume->setRange(0, 1000);
+    m_axisStatsYVolume->setTitleText("Volume (kg/L)");
+
+    m_axisStatsYRendement = new QValueAxis();
+    m_axisStatsYRendement->setRange(0, 30);
+    m_axisStatsYRendement->setTitleText("Rendement (%)");
+
+    lineChart->addAxis(m_axisStatsX, Qt::AlignBottom);
+    lineChart->addAxis(m_axisStatsYVolume, Qt::AlignLeft);
+    lineChart->addAxis(m_axisStatsYRendement, Qt::AlignRight);
+
+    m_seriesOlives->attachAxis(m_axisStatsX);
+    m_seriesOlives->attachAxis(m_axisStatsYVolume);
+    m_seriesHuile->attachAxis(m_axisStatsX);
+    m_seriesHuile->attachAxis(m_axisStatsYVolume);
+    m_seriesRendement->attachAxis(m_axisStatsX);
+    m_seriesRendement->attachAxis(m_axisStatsYRendement);
+
+    m_lineChartView = new QChartView(lineChart, m_tabStatistiques);
+    m_lineChartView->setRenderHint(QPainter::Antialiasing);
+    m_lineChartView->setRubberBand(QChartView::HorizontalRubberBand);
+
+    m_qualityPie = new QPieSeries(this);
+    auto *pieChart = new QChart();
+    pieChart->addSeries(m_qualityPie);
+    pieChart->setTitle("Répartition qualité");
+    pieChart->legend()->setVisible(true);
+
+    m_pieChartView = new QChartView(pieChart, m_tabStatistiques);
+    m_pieChartView->setRenderHint(QPainter::Antialiasing);
+
+    chartsRow->addWidget(m_lineChartView, 2);
+    chartsRow->addWidget(m_pieChartView, 1);
+    main->addLayout(chartsRow, 1);
+
+    ui->tabWidgetProduction->addTab(m_tabStatistiques, "📈  Statistiques");
+}
+
+void Production::refreshQualityPie()
+{
+    if (!m_qualityPie) return;
+
+    m_qualityPie->clear();
+    QSqlQuery q(QSqlDatabase::database("production_conn"));
+    q.exec("SELECT NVL(QUALITE, 'Non classée') AS Q, COUNT(*) "
+           "FROM PRODUCTION GROUP BY NVL(QUALITE, 'Non classée')");
+
+    while (q.next()) {
+        const QString label = q.value(0).toString();
+        const qreal count = q.value(1).toDouble();
+        if (count > 0.0) {
+            m_qualityPie->append(label, count);
+        }
+    }
+}
+
+void Production::refreshStatistics()
+{
+    QSqlQuery kpi(QSqlDatabase::database("production_conn"));
+    bool hasAcidity = kpi.exec(
+        "SELECT "
+        "NVL(SUM(CASE WHEN STATUT = 'En cours' THEN 1 ELSE 0 END),0), "
+        "NVL(SUM(CASE WHEN STATUT = 'Termine' OR STATUT = 'Qualité validée' THEN 1 ELSE 0 END),0), "
+        "NVL(AVG(RENDEMENT),0), "
+        "NVL(AVG(ACIDITE),0), "
+        "NVL(AVG(CASE WHEN CONFORMENORMES IS NOT NULL THEN CONFORMENORMES * 100 END),0) "
+        "FROM PRODUCTION");
+
+    if (!hasAcidity) {
+        kpi.exec(
+            "SELECT "
+            "NVL(SUM(CASE WHEN STATUT = 'En cours' THEN 1 ELSE 0 END),0), "
+            "NVL(SUM(CASE WHEN STATUT = 'Termine' OR STATUT = 'Qualité validée' THEN 1 ELSE 0 END),0), "
+            "NVL(AVG(RENDEMENT),0), "
+            "0, "
+            "NVL(AVG(CASE WHEN CONFORMENORMES IS NOT NULL THEN CONFORMENORMES * 100 END),0) "
+            "FROM PRODUCTION");
+    }
+
+    int runningCount = 0;
+    int finishedCount = 0;
+    double avgRend = 0.0;
+    double avgAcid = 0.0;
+    double conformityRate = 0.0;
+    if (kpi.next()) {
+        runningCount = kpi.value(0).toInt();
+        finishedCount = kpi.value(1).toInt();
+        avgRend = kpi.value(2).toDouble();
+        avgAcid = kpi.value(3).toDouble();
+        conformityRate = kpi.value(4).toDouble();
+    }
+
+    if (m_lblStatProdToday) {
+        m_lblStatProdToday->setText(
+            QString("Terminées: %1 | En cours: %2").arg(finishedCount).arg(runningCount));
+    }
+    if (m_lblStatRendAvg) m_lblStatRendAvg->setText(QString("Rendement moyen: %1 %").arg(avgRend, 0, 'f', 2));
+    if (m_lblStatAcidAvg) m_lblStatAcidAvg->setText(QString("Acidité moyenne: %1 %").arg(avgAcid, 0, 'f', 2));
+    if (m_lblStatConformity) m_lblStatConformity->setText(QString("Conformité: %1 %").arg(conformityRate, 0, 'f', 1));
+
+    QSqlQuery totals(QSqlDatabase::database("production_conn"));
+    bool hasToday = totals.exec(
+        "SELECT NVL(SUM(QUANTITEOLIVESKG),0), NVL(SUM(HUILEPRODUITEL),0), NVL(AVG(RENDEMENT),0) "
+        "FROM PRODUCTION WHERE TRUNC(DATEPRODUCTION) = TRUNC(SYSDATE)");
+
+    double olives = 0.0;
+    double huile = 0.0;
+    double rend = 0.0;
+    if (hasToday && totals.next()) {
+        olives = totals.value(0).toDouble();
+        huile = totals.value(1).toDouble();
+        rend = totals.value(2).toDouble();
+    }
+
+    if (olives <= 0.0 && huile <= 0.0 && rend <= 0.0) {
+        totals.exec("SELECT NVL(SUM(QUANTITEOLIVESKG),0), NVL(SUM(HUILEPRODUITEL),0), NVL(AVG(RENDEMENT),0) FROM PRODUCTION");
+        if (totals.next()) {
+            olives = totals.value(0).toDouble();
+            huile = totals.value(1).toDouble();
+            rend = totals.value(2).toDouble();
+        }
+    }
+
+    m_statsTick++;
+    if (m_seriesOlives && m_seriesHuile && m_seriesRendement) {
+        m_seriesOlives->append(m_statsTick, olives);
+        m_seriesHuile->append(m_statsTick, huile);
+        m_seriesRendement->append(m_statsTick, rend);
+
+        const int maxPoints = 60;
+        if (m_seriesOlives->count() > maxPoints) m_seriesOlives->removePoints(0, m_seriesOlives->count() - maxPoints);
+        if (m_seriesHuile->count() > maxPoints) m_seriesHuile->removePoints(0, m_seriesHuile->count() - maxPoints);
+        if (m_seriesRendement->count() > maxPoints) m_seriesRendement->removePoints(0, m_seriesRendement->count() - maxPoints);
+
+        if (m_axisStatsX) {
+            m_axisStatsX->setRange(qMax(0, m_statsTick - maxPoints), qMax(maxPoints, m_statsTick));
+        }
+        if (m_axisStatsYVolume) {
+            const double maxVolume = qMax(100.0, qMax(olives, huile));
+            m_axisStatsYVolume->setRange(0.0, maxVolume * 1.15);
+        }
+        if (m_axisStatsYRendement) {
+            const double maxRend = qMax(20.0, rend * 1.25);
+            m_axisStatsYRendement->setRange(0.0, maxRend);
+        }
+
+        if (m_lineChartView && m_lineChartView->chart()) {
+            m_lineChartView->chart()->update();
+        }
+    }
+
+    refreshQualityPie();
 }
 
 // ============================================================================
@@ -462,6 +1173,7 @@ void Production::applyTranslations()
     static const QStringList tab3t      = {"📊  Rendement",      "📊  Yield",           "📊  المردودية"};
     static const QStringList tab4t      = {"✓  Qualité",         "✓  Quality",          "✓  الجودة"};
     static const QStringList tab5t      = {"≡  Rapports",        "≡  Reports",          "≡  التقارير"};
+    static const QStringList tab6t      = {"📈  Statistiques",    "📈  Statistics",       "📈  الإحصائيات"};
     static const QStringList btnBack    = {"← Retour au menu",   "← Back to Menu",      "← القائمة"};
     static const QStringList btnPlan    = {"✚  Planifier",       "✚  Plan",             "✚  تخطيط"};
     static const QStringList btnStrt    = {"▶  Démarrer",        "▶  Start",            "▶  ابدأ"};
@@ -505,6 +1217,9 @@ void Production::applyTranslations()
     ui->tabWidgetProduction->setTabText(3, tab3t[L]);
     ui->tabWidgetProduction->setTabText(4, tab4t[L]);
     ui->tabWidgetProduction->setTabText(5, tab5t[L]);
+    if (ui->tabWidgetProduction->count() > 6) {
+        ui->tabWidgetProduction->setTabText(6, tab6t[L]);
+    }
 
     // Buttons
     ui->btnBackToMenu->setText(btnBack[L]);
@@ -726,6 +1441,7 @@ void Production::onSimTick()
         upd.bindValue(":id", m_simProductionId);
         upd.exec();
         loadProductionHistory();
+        refreshStatistics();
     }
 
     // Auto-finish at 100%
@@ -755,6 +1471,8 @@ void Production::onSimTick()
         loadProductionHistory();
         loadPlannedProductions();
         loadTerminatedProductions();
+        loadQualityEvaluableProductions();
+        refreshStatistics();
         ui->comboSelectProduction->setEnabled(true);
         ui->btnRefreshPlanned->setEnabled(true);
     }
@@ -920,6 +1638,8 @@ void Production::onFinishProductionClicked()
     loadProductionHistory();
     loadPlannedProductions();
     loadTerminatedProductions();
+    loadQualityEvaluableProductions();
+    refreshStatistics();
 }
 
 // ============================================================================
@@ -987,6 +1707,9 @@ void Production::onCalculateYieldClicked()
                 + evaluation);
             loadProductionHistory();
             loadTerminatedProductions();
+            loadQualityEvaluableProductions();
+            updateReportPreview();
+            refreshStatistics();
         } else {
             showErrorNotification("Calcul effectué mais échec de l'enregistrement:\n" + upd.lastError().text());
         }
@@ -1002,24 +1725,11 @@ void Production::onCalculateYieldClicked()
 
 void Production::onValidateQualityClicked()
 {
-    if (currentProductionId == 0) {
-        showErrorNotification("Aucune production à valider!\n\nPlanifiez d'abord une production.");
+    if ((m_qualityProductionId <= 0) && (currentProductionId <= 0)) {
+        showErrorNotification("Aucune production sélectionnée pour l'évaluation qualité.");
         return;
     }
-    
-    currentProduction.setIdProduction(currentProductionId);
-    currentProduction.setQualite("Extra Vierge");
-    currentProduction.setConformeNormes(true);
-    currentProduction.setStatut("Qualité validée");
-    
-    if (currentProduction.updateProduction()) {
-        showSuccessNotification("✓ Qualité validée avec succès!\n\n"
-                               "Classification: Extra Vierge\n"
-                               "Conforme aux normes: Oui\n"
-                               "Statut: Validé");
-    } else {
-        showErrorNotification("Échec de la validation qualité!");
-    }
+    autoEvaluateQuality(true, true);
 }
 
 // ============================================================================
@@ -1028,16 +1738,13 @@ void Production::onValidateQualityClicked()
 
 void Production::onGenerateReportClicked()
 {
-    if (currentProductionId == 0) {
-        showErrorNotification("Aucune production pour le rapport!\n\nPlanifiez d'abord une production.");
-        return;
-    }
+    QString periodLabel;
+    const QString whereClause = buildReportWhereClause(&periodLabel);
+    const QString filterText = QString("Période: %1 | Qualité: %2")
+        .arg(periodLabel.isEmpty() ? "Global" : periodLabel)
+        .arg(m_comboReportQuality ? m_comboReportQuality->currentText() : "Toutes qualités");
 
-    // Update DB: mark report generated and set status to Terminé
-    currentProduction.setIdProduction(currentProductionId);
-    currentProduction.setDateGenerationRapport(QDate::currentDate());
-    currentProduction.setStatut("Termine");
-    currentProduction.updateProduction();
+    updateReportPreview();
 
     // Ask where to save the PDF
     QString defaultName = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)
@@ -1051,13 +1758,11 @@ void Production::onGenerateReportClicked()
 
     if (filePath.isEmpty()) return;
 
-    generatePdf(filePath);
+    generatePdf(filePath, whereClause, filterText);
 
     showSuccessNotification("📄 Rapport PDF généré avec succès!\n\n"
                             "Fichier : " + filePath + "\n"
                             "Date  : " + QDate::currentDate().toString("dd/MM/yyyy"));
-
-    currentProductionId = 0;
     loadProductionHistory();
 }
 
@@ -1065,7 +1770,9 @@ void Production::onGenerateReportClicked()
 // GENERATE PROFESSIONAL PDF
 // ============================================================================
 
-void Production::generatePdf(const QString &filePath)
+void Production::generatePdf(const QString &filePath,
+                             const QString &whereClause,
+                             const QString &filterText)
 {
     QPrinter printer(QPrinter::HighResolution);
     printer.setOutputFormat(QPrinter::PdfFormat);
@@ -1133,6 +1840,15 @@ void Production::generatePdf(const QString &filePath)
     p.drawText(QRectF(lm + scale(6), y + scale(11), usableW * 0.65, hdrH * 0.5),
                Qt::AlignTop | Qt::AlignLeft, "MODULE DE PRODUCTION INTELLIGENT");
 
+    if (!filterText.trimmed().isEmpty()) {
+        QFont filtFont("Arial");
+        filtFont.setPixelSize(static_cast<int>(scale(3.2)));
+        p.setFont(filtFont);
+        p.setPen(QColor(191, 219, 254));
+        p.drawText(QRectF(lm + scale(6), y + scale(16), usableW * 0.70, hdrH * 0.5),
+                   Qt::AlignTop | Qt::AlignLeft, filterText);
+    }
+
     // Date badge (top right)
     QString reportDate = "Généré le " + QDate::currentDate().toString("dd/MM/yyyy");
     QRectF dateBadge(rm - scale(46), y + scale(7), scale(44), scale(12));
@@ -1157,7 +1873,7 @@ void Production::generatePdf(const QString &filePath)
     QSqlQuery totals(QSqlDatabase::database("production_conn"));
     totals.exec(
         "SELECT COUNT(*), SUM(QUANTITEOLIVESKG), SUM(HUILEPRODUITEL), AVG(RENDEMENT) "
-        "FROM PRODUCTION"
+        "FROM PRODUCTION" + whereClause
     );
     int    totalProds  = 0;
     double totalOlives = 0, totalHuile = 0, avgRend = 0;
@@ -1263,7 +1979,7 @@ void Production::generatePdf(const QString &filePath)
     QSqlQuery hist(QSqlDatabase::database("production_conn"));
     hist.exec(
         "SELECT IDPRODUCTION, DATEPRODUCTION, QUANTITEOLIVESKG, HUILEPRODUITEL, RENDEMENT, STATUT "
-        "FROM PRODUCTION ORDER BY IDPRODUCTION DESC"
+        "FROM PRODUCTION" + whereClause + " ORDER BY IDPRODUCTION DESC"
     );
 
     QFont rowFont("Arial");
