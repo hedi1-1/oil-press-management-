@@ -16,15 +16,17 @@
 #include <QMessageBox>
 #include <QPainter>
 #include <QPrinter>
+#include <QRegularExpression>
 #include <QSpacerItem>
 #include <QSpinBox>
+#include <QSet>
 #include <QSqlError>
 #include <QSqlQuery>
-#include <QStandardItemModel>
-#include <QTextDocument>
-#include <QVBoxLayout>
-
-// ============================================================================
+#include <QTextDocumentWriter>
+#include <QButtonGroup>
+#include <QRadioButton>
+#include <QFile>
+#include <QTextStream>// ============================================================================
 // NavigationBar Implementation
 // ============================================================================
 
@@ -228,11 +230,35 @@ machine::machine(QWidget *parent)
 
   // Initialize and load data
   setupMachineTable();
+  
+  // Initialize date filters to show all machines by default
+  ui->date_debut->setDate(QDate(2000, 1, 1));
+  ui->date_fin->setDate(QDate::currentDate().addYears(5));
+  // Explicit connection to guarantee button functionality
+  connect(ui->btnFiltrer, &QPushButton::clicked, this, &machine::appliquerFiltres);
+
+  // Connexion du bouton Actualiser 🔄
+  connect(ui->btnActualiserGlobal, &QPushButton::clicked, this, [this]() {
+    // Réinitialiser les champs du formulaire de filtrage
+    ui->filtre_type_machine->setCurrentIndex(0);
+    ui->filtre_etat_marche_machine->setCurrentIndex(0);
+    ui->filtre_type_alerte->setCurrentIndex(0);
+    ui->filtre_alerte_criticite->setCurrentIndex(0);
+    ui->tri_par->setCurrentIndex(0);
+    
+    // Réinitialiser les dates par défaut
+    ui->date_debut->setDate(QDate(2000, 1, 1));
+    ui->date_fin->setDate(QDate::currentDate().addYears(5));
+    
+    // Déclencher le rechargement du tableau complet sans filtres
+    appliquerFiltres();
+  });
+
   chargerMachines();
 
   // Export PDF button
   connect(ui->btnExporter_machine, &QPushButton::clicked, this,
-          [this]() { exporterPDF(); });
+          [this]() { afficherDialogExport(); });
 
   // Connect Historique toggle button
   ui->btnHistoriqueToggle_machine->setText(
@@ -758,27 +784,47 @@ void machine::showAddTodoDialog() {
   }
 }
 
-void machine::on_pushButton_enregistrer_machine_clicked() {
-  // 1. Retrieve information from the form
-  QString nom = ui->lineEdit_nom_machine->text().trimmed();
-  QString type = ui->comboBox_type_machine->currentText();
-  QString etatMarche = ui->comboBox_etat_marche_machine->currentText();
-  double temp = ui->doubleSpinBox_temperature_machine->value();
-  double charge = ui->doubleSpinBox_niveau_charge_machine->value();
-  QString etatFonct = ui->comboBox_etat_fonctionnement_machine->currentText();
-  QString typeAlerte = ui->comboBox_type_alerte_machine->currentText();
-  QString criticite = ui->comboBox_niveau_criticite_machine->currentText();
-  QDate maintenance = ui->dateEdit_derniere_maintenance_machine->date();
-  int scoreSante = ui->spinBox_score_sante_machine->value();
+machine::MachineFormData machine::collectMachineFormData() const {
+  MachineFormData data;
+  data.nom = ui->lineEdit_nom_machine->text().trimmed();
+  data.type = ui->comboBox_type_machine->currentText();
+  data.etatMarche = ui->comboBox_etat_marche_machine->currentText();
+  data.temperature = ui->doubleSpinBox_temperature_machine->value();
+  data.charge = ui->doubleSpinBox_niveau_charge_machine->value();
+  data.etatFonctionnement =
+      ui->comboBox_etat_fonctionnement_machine->currentText();
+  data.typeAlerte = ui->comboBox_type_alerte_machine->currentText();
+  data.criticite = ui->comboBox_niveau_criticite_machine->currentText();
+  data.derniereMaintenance = ui->dateEdit_derniere_maintenance_machine->date();
+  data.scoreSante = ui->spinBox_score_sante_machine->value();
+  return data;
+}
 
-  // 2. Simple validation
-  if (nom.isEmpty()) {
-    QMessageBox::warning(this, "Champs vides",
-                         "Veuillez remplir le nom de la machine.");
-    return;
+bool machine::isMachineNameAvailable(const QString &name) const {
+  const QString trimmed = name.trimmed();
+  if (trimmed.isEmpty()) {
+    return false;
   }
 
-  // 3. Database Insertion
+  QSqlQuery query(ConnectionMachine::getInstance().getDatabase());
+  query.prepare("SELECT COUNT(*) FROM MACHINE "
+                "WHERE UPPER(TRIM(NOM_MACHINE)) = UPPER(TRIM(:nom))");
+  query.bindValue(":nom", trimmed);
+
+  if (!query.exec()) {
+    qDebug() << "Erreur vérification unicité NOM_MACHINE :"
+             << query.lastError().text();
+    return false;
+  }
+
+  if (!query.next()) {
+    return false;
+  }
+
+  return query.value(0).toInt() == 0;
+}
+
+bool machine::insertMachine(const MachineFormData &data, QString *errorMessage) {
   QSqlQuery query(ConnectionMachine::getInstance().getDatabase());
   query.prepare(
       "INSERT INTO MACHINE (NOM_MACHINE, TYPE_MACHINE, ETAT_MARCHE, "
@@ -786,26 +832,45 @@ void machine::on_pushButton_enregistrer_machine_clicked() {
       "NIVEAU_CRITICITE, DATE_DERNIERE_MAINTENANCE, SCORE_SANTE) "
       "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-  query.addBindValue(nom);
-  query.addBindValue(type);
-  query.addBindValue(etatMarche);
-  query.addBindValue(temp);
-  query.addBindValue(charge);
-  query.addBindValue(etatFonct);
-  query.addBindValue(typeAlerte);
-  query.addBindValue(criticite);
-  query.addBindValue(maintenance); // SQL handle QDate automatically
-  query.addBindValue(scoreSante);
+  query.addBindValue(data.nom);
+  query.addBindValue(data.type);
+  query.addBindValue(data.etatMarche);
+  query.addBindValue(data.temperature);
+  query.addBindValue(data.charge);
+  query.addBindValue(data.etatFonctionnement);
+  query.addBindValue(data.typeAlerte);
+  query.addBindValue(data.criticite);
+  query.addBindValue(data.derniereMaintenance);
+  query.addBindValue(data.scoreSante);
 
-  if (query.exec()) {
-    // 4. Success Popup with Custom Green Theme
-    QMessageBox msgBox(this);
-    msgBox.setWindowTitle("Succès");
-    msgBox.setText("✅ Machine ajoutée avec succès !");
-    msgBox.setIcon(QMessageBox::Information);
+  if (!query.exec()) {
+    if (errorMessage) {
+      *errorMessage = query.lastError().text();
+    }
+    return false;
+  }
 
-    // Apply custom styling to match the theme (Green #1A3C2F)
-    msgBox.setStyleSheet(R"(
+  return true;
+}
+
+bool machine::saveMachineWithName(const QString &name,
+                                  const MachineFormData &baseData) {
+  MachineFormData finalData = baseData;
+  finalData.nom = name.trimmed();
+
+  QString errorMessage;
+  if (!insertMachine(finalData, &errorMessage)) {
+    QMessageBox::critical(this, "Erreur",
+                          "Échec de l'ajout dans la base de données : " +
+                              errorMessage);
+    return false;
+  }
+
+  QMessageBox msgBox(this);
+  msgBox.setWindowTitle("Succès");
+  msgBox.setText("✅ Machine ajoutée avec succès !");
+  msgBox.setIcon(QMessageBox::Information);
+  msgBox.setStyleSheet(R"(
             QMessageBox {
                 background-color: #f8f9fa;
                 border: 2px solid #1A3C2F;
@@ -829,16 +894,386 @@ void machine::on_pushButton_enregistrer_machine_clicked() {
                 background-color: #0F241E;
             }
         )");
+  msgBox.exec();
 
-    msgBox.exec();
+  chargerMachines();
+  return true;
+}
 
-    // Refresh table to show the new machine
-    chargerMachines();
-  } else {
-    QMessageBox::critical(this, "Erreur",
-                          "Échec de l'ajout dans la base de données : " +
-                              query.lastError().text());
+QStringList machine::buildAvailableNameSuggestions(
+    const QString &problematicName, int maxSuggestions) const {
+  QStringList available;
+  QSet<QString> tested;
+
+  auto addCandidateIfAvailable = [&](const QString &candidate) {
+    const QString normalized = candidate.trimmed();
+    if (normalized.isEmpty()) {
+      return;
+    }
+    if (normalized.compare(problematicName.trimmed(), Qt::CaseInsensitive) ==
+        0) {
+      return;
+    }
+    if (tested.contains(normalized.toLower())) {
+      return;
+    }
+
+    tested.insert(normalized.toLower());
+    if (isMachineNameAvailable(normalized)) {
+      available.append(normalized);
+    }
+  };
+
+  const QString base = problematicName.trimmed();
+  QRegularExpression trailingNumberRegex("^(.*?)(\\d+)$");
+  QRegularExpressionMatch match = trailingNumberRegex.match(base);
+  if (match.hasMatch()) {
+    const QString prefix = match.captured(1);
+    const QString digits = match.captured(2);
+    const int number = digits.toInt();
+    const int width = digits.length();
+
+    addCandidateIfAvailable(prefix +
+                            QString("%1").arg(number + 1, width, 10, QChar('0')));
+    addCandidateIfAvailable(prefix +
+                            QString("%1").arg(number + 2, width, 10, QChar('0')));
+    addCandidateIfAvailable(prefix + QString::number(number + 1));
+    addCandidateIfAvailable(prefix + "-" + QString::number(number + 1));
+    addCandidateIfAvailable(prefix + "_" + QString::number(number + 1));
+    addCandidateIfAvailable(prefix + "-A");
   }
+
+  addCandidateIfAvailable(base + "-001");
+  addCandidateIfAvailable(base + "-01");
+  addCandidateIfAvailable(base + "-1");
+  addCandidateIfAvailable(base + "_01-A");
+  addCandidateIfAvailable(base + "_A");
+  addCandidateIfAvailable(base + "_NEW");
+
+  for (int i = 1; i <= 200 && available.size() < maxSuggestions; ++i) {
+    addCandidateIfAvailable(base + "-" + QString::number(i));
+  }
+
+  if (available.size() > maxSuggestions) {
+    available = available.mid(0, maxSuggestions);
+  }
+
+  return available;
+}
+
+void machine::showRequiredNameDialog(const MachineFormData &baseData) {
+  QDialog dialog(this);
+  dialog.setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);
+  dialog.setModal(true);
+  dialog.setMinimumWidth(560);
+  dialog.setStyleSheet(R"(
+      QDialog {
+          background-color: #f8f9fa;
+          border: 2px solid #2d5a1b;
+          border-radius: 12px;
+      }
+      QLabel#titleLabel {
+          color: #2d5a1b;
+          font-size: 17px;
+          font-weight: 700;
+      }
+      QLabel#messageLabel {
+          color: #1f2a1f;
+          font-size: 13px;
+      }
+      QLabel#errorLabel {
+          color: #c62828;
+          font-size: 12px;
+          font-weight: 600;
+      }
+      QLineEdit {
+          border: 1px solid #b9c9bb;
+          border-radius: 7px;
+          padding: 10px 12px;
+          font-size: 13px;
+          background: white;
+      }
+      QLineEdit:focus {
+          border: 2px solid #2d5a1b;
+      }
+      QPushButton#btnValidate {
+          background-color: #2d5a1b;
+          color: white;
+          border: none;
+          border-radius: 7px;
+          padding: 10px 18px;
+          font-weight: 700;
+      }
+      QPushButton#btnValidate:hover {
+          background-color: #214213;
+      }
+      QPushButton#btnCancel {
+          background-color: #f0a500;
+          color: #1f1f1f;
+          border: none;
+          border-radius: 7px;
+          padding: 10px 18px;
+          font-weight: 700;
+      }
+      QPushButton#btnCancel:hover {
+          background-color: #d89200;
+      }
+  )");
+
+  QVBoxLayout *layout = new QVBoxLayout(&dialog);
+  layout->setContentsMargins(20, 20, 20, 16);
+  layout->setSpacing(10);
+
+  QLabel *title = new QLabel("Nom Machine obligatoire", &dialog);
+  title->setObjectName("titleLabel");
+  layout->addWidget(title);
+
+  QLabel *message = new QLabel(
+      "Le champ Nom Machine est obligatoire. Veuillez saisir un nom pour "
+      "continuer.",
+      &dialog);
+  message->setObjectName("messageLabel");
+  message->setWordWrap(true);
+  layout->addWidget(message);
+
+  QLineEdit *nameInput = new QLineEdit(&dialog);
+  nameInput->setPlaceholderText("Ex: Presse-01");
+  layout->addWidget(nameInput);
+
+  QLabel *errorLabel = new QLabel(&dialog);
+  errorLabel->setObjectName("errorLabel");
+  errorLabel->setVisible(false);
+  errorLabel->setWordWrap(true);
+  layout->addWidget(errorLabel);
+
+  QHBoxLayout *buttonsLayout = new QHBoxLayout();
+  buttonsLayout->addStretch();
+
+  QPushButton *btnValidate = new QPushButton("Valider", &dialog);
+  btnValidate->setObjectName("btnValidate");
+  QPushButton *btnCancel = new QPushButton("Annuler", &dialog);
+  btnCancel->setObjectName("btnCancel");
+
+  buttonsLayout->addWidget(btnValidate);
+  buttonsLayout->addWidget(btnCancel);
+  layout->addLayout(buttonsLayout);
+
+  connect(btnCancel, &QPushButton::clicked, &dialog, [this, &dialog]() {
+    on_btnReinitialiser_machine_clicked();
+    dialog.reject();
+  });
+
+  connect(btnValidate, &QPushButton::clicked, &dialog,
+          [this, &dialog, baseData, nameInput, errorLabel]() {
+            const QString enteredName = nameInput->text().trimmed();
+            if (enteredName.isEmpty()) {
+              errorLabel->setText("Veuillez saisir un nom avant de valider.");
+              errorLabel->setVisible(true);
+              return;
+            }
+
+            MachineFormData updatedData = baseData;
+            updatedData.nom = enteredName;
+
+            if (isMachineNameAvailable(enteredName)) {
+              if (saveMachineWithName(enteredName, updatedData)) {
+                dialog.accept();
+              }
+              return;
+            }
+
+            dialog.accept();
+            showDuplicateNameDialog(updatedData, enteredName);
+          });
+
+  nameInput->setFocus();
+  dialog.exec();
+}
+
+void machine::showDuplicateNameDialog(const MachineFormData &baseData,
+                                      const QString &problematicName) {
+  QDialog dialog(this);
+  dialog.setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);
+  dialog.setModal(true);
+  dialog.setMinimumWidth(620);
+  dialog.setStyleSheet(R"(
+      QDialog {
+          background-color: #f8f9fa;
+          border: 2px solid #2d5a1b;
+          border-radius: 12px;
+      }
+      QLabel#titleLabel {
+          color: #2d5a1b;
+          font-size: 17px;
+          font-weight: 700;
+      }
+      QLabel#messageLabel {
+          color: #1f2a1f;
+          font-size: 13px;
+      }
+      QLabel#errorLabel {
+          color: #c62828;
+          font-size: 12px;
+          font-weight: 600;
+      }
+      QLineEdit {
+          border: 1px solid #b9c9bb;
+          border-radius: 7px;
+          padding: 10px 12px;
+          font-size: 13px;
+          background: white;
+      }
+      QLineEdit:focus {
+          border: 2px solid #2d5a1b;
+      }
+      QPushButton#btnSuggestion {
+          background: #e9f2e7;
+          color: #2d5a1b;
+          border: 1px solid #2d5a1b;
+          border-radius: 6px;
+          padding: 8px 12px;
+          font-weight: 600;
+      }
+      QPushButton#btnSuggestion:hover {
+          background: #d9e9d5;
+      }
+      QPushButton#btnValidate {
+          background-color: #2d5a1b;
+          color: white;
+          border: none;
+          border-radius: 7px;
+          padding: 10px 18px;
+          font-weight: 700;
+      }
+      QPushButton#btnValidate:hover {
+          background-color: #214213;
+      }
+      QPushButton#btnCancel {
+          background-color: #f0a500;
+          color: #1f1f1f;
+          border: none;
+          border-radius: 7px;
+          padding: 10px 18px;
+          font-weight: 700;
+      }
+      QPushButton#btnCancel:hover {
+          background-color: #d89200;
+      }
+  )");
+
+  QVBoxLayout *layout = new QVBoxLayout(&dialog);
+  layout->setContentsMargins(20, 20, 20, 16);
+  layout->setSpacing(10);
+
+  QLabel *title = new QLabel("Nom Machine déjà utilisé", &dialog);
+  title->setObjectName("titleLabel");
+  layout->addWidget(title);
+
+  QLabel *message = new QLabel(
+      QString("Le nom '%1' existe déjà. Veuillez choisir un autre nom.")
+          .arg(problematicName),
+      &dialog);
+  message->setObjectName("messageLabel");
+  message->setWordWrap(true);
+  layout->addWidget(message);
+
+  QLabel *suggestionsLabel =
+      new QLabel("Suggestions disponibles :", &dialog);
+  suggestionsLabel->setObjectName("messageLabel");
+  layout->addWidget(suggestionsLabel);
+
+  QWidget *suggestionsWidget = new QWidget(&dialog);
+  QGridLayout *suggestionsLayout = new QGridLayout(suggestionsWidget);
+  suggestionsLayout->setContentsMargins(0, 0, 0, 0);
+  suggestionsLayout->setHorizontalSpacing(8);
+  suggestionsLayout->setVerticalSpacing(8);
+  layout->addWidget(suggestionsWidget);
+
+  QLineEdit *nameInput = new QLineEdit(&dialog);
+  nameInput->setText(problematicName);
+  layout->addWidget(nameInput);
+
+  QLabel *errorLabel = new QLabel(&dialog);
+  errorLabel->setObjectName("errorLabel");
+  errorLabel->setVisible(false);
+  errorLabel->setWordWrap(true);
+  layout->addWidget(errorLabel);
+
+  QStringList suggestions = buildAvailableNameSuggestions(problematicName, 8);
+  if (suggestions.isEmpty()) {
+    QLabel *noSuggestion =
+        new QLabel("Aucune suggestion libre trouvée automatiquement.", &dialog);
+    noSuggestion->setObjectName("messageLabel");
+    suggestionsLayout->addWidget(noSuggestion, 0, 0, 1, 2);
+  } else {
+    for (int i = 0; i < suggestions.size(); ++i) {
+      QPushButton *btn = new QPushButton(suggestions.at(i), &dialog);
+      btn->setObjectName("btnSuggestion");
+      const QString candidate = suggestions.at(i);
+      connect(btn, &QPushButton::clicked, &dialog,
+              [nameInput, candidate]() {
+                nameInput->setText(candidate);
+              });
+      suggestionsLayout->addWidget(btn, i / 2, i % 2);
+    }
+  }
+
+  QHBoxLayout *buttonsLayout = new QHBoxLayout();
+  buttonsLayout->addStretch();
+
+  QPushButton *btnValidate = new QPushButton("Valider", &dialog);
+  btnValidate->setObjectName("btnValidate");
+  QPushButton *btnCancel = new QPushButton("Annuler", &dialog);
+  btnCancel->setObjectName("btnCancel");
+
+  buttonsLayout->addWidget(btnValidate);
+  buttonsLayout->addWidget(btnCancel);
+  layout->addLayout(buttonsLayout);
+
+  connect(btnCancel, &QPushButton::clicked, &dialog, &QDialog::reject);
+
+  connect(btnValidate, &QPushButton::clicked, &dialog,
+          [this, &dialog, baseData, nameInput, errorLabel]() {
+            const QString candidateName = nameInput->text().trimmed();
+            if (candidateName.isEmpty()) {
+              errorLabel->setText("Veuillez saisir un nom avant de valider.");
+              errorLabel->setVisible(true);
+              return;
+            }
+
+            if (!isMachineNameAvailable(candidateName)) {
+              errorLabel->setText(
+                  "Ce nom est toujours utilisé. Choisissez une autre "
+                  "suggestion ou modifiez le nom.");
+              errorLabel->setVisible(true);
+              return;
+            }
+
+            MachineFormData updatedData = baseData;
+            updatedData.nom = candidateName;
+            if (saveMachineWithName(candidateName, updatedData)) {
+              dialog.accept();
+            }
+          });
+
+  nameInput->setFocus();
+  dialog.exec();
+}
+
+void machine::on_pushButton_enregistrer_machine_clicked() {
+  MachineFormData formData = collectMachineFormData();
+
+  if (formData.nom.isEmpty()) {
+    showRequiredNameDialog(formData);
+    return;
+  }
+
+  if (!isMachineNameAvailable(formData.nom)) {
+    showDuplicateNameDialog(formData, formData.nom);
+    return;
+  }
+
+  saveMachineWithName(formData.nom, formData);
 }
 
 void machine::on_btnReinitialiser_machine_clicked() {
@@ -874,16 +1309,11 @@ void machine::on_btnReinitialiser_machine_clicked() {
 }
 
 void machine::chargerMachines() {
-  // 1. Vider le tableau (remettre le nombre de lignes à 0)
-  machineTableModel->setRowCount(0);
+  m_allMachines.clear();
 
-  // 2. Préparer et exécuter la requête SQL pour récupérer les données dans
+  // 1. Préparer et exécuter la requête SQL pour récupérer les données dans
   // l'ordre exact de la base de données
   QSqlQuery query(ConnectionMachine::getInstance().getDatabase());
-  // Correction : DATE_MAJ -> DATE_MISE_A_JOUR
-  // Note : FABRICANT n'existe pas dans la BD image, on utilise "" ou
-  // SCORE_SANTE? On va utiliser SCORE_SANTE pour la colonne 12 comme dans
-  // l'image BD
   query.prepare("SELECT ID_MACHINE, NOM_MACHINE, TYPE_MACHINE, ETAT_MARCHE, "
                 "TEMPERATURE_ACTUELLE, NIVEAU_CHARGE, ETAT_FONCTIONNEMENT, "
                 "TYPE_ALERTE, NIVEAU_CRITICITE, DATE_DERNIERE_MAINTENANCE, "
@@ -896,86 +1326,172 @@ void machine::chargerMachines() {
     return;
   }
 
-  // Polices et couleurs communes
+  // 2. Parcourir les résultats et remplir notre QList en mémoire
+  while (query.next()) {
+    MachineData m;
+    m.id = query.value(0).toString();
+    m.nom = query.value(1).toString();
+    m.type = query.value(2).toString();
+    m.etatMarche = query.value(3).toString();
+    m.temperature = query.value(4).toDouble();
+    m.charge = query.value(5).toDouble();
+    m.fonctionnement = query.value(6).toString();
+    m.alerte = query.value(7).toString();
+    m.criticite = query.value(8).toString();
+    m.maintenance = query.value(9).toDate();
+    m.installation = query.value(10).toDate();
+    m.scoreSante = query.value(11).toInt();
+    m.miseAJour = query.value(12).toDate();
+
+    m_allMachines.append(m);
+  }
+
+  // 3. Appliquer le filtrage initial avec les valeurs par défaut (tout afficher)
+  appliquerFiltres();
+}
+
+void machine::appliquerFiltres() {
+  // 1. Vider le tableau
+  machineTableModel->setRowCount(0);
+
+  // 2. Lire les valeurs des filtres de l'interface
+  QString fType = ui->filtre_type_machine->currentText();
+  QString fEtat = ui->filtre_etat_marche_machine->currentText();
+  QString fAlerte = ui->filtre_type_alerte->currentText();
+  QString fCriticite = ui->filtre_alerte_criticite->currentText();
+  
+  QDate dateDu = ui->date_debut->date();
+  QDate dateAu = ui->date_fin->date();
+  QString triPar = ui->tri_par->currentText();
+
+  // 3. Filtrer la liste des machines avec une logique ET (AND)
+  QList<MachineData> filteredMachines;
+  for (const MachineData &m : m_allMachines) {
+      if (fType != "-- Type machine --" && m.type != fType) continue;
+      if (fEtat != "-- État marche --" && m.etatMarche != fEtat) continue;
+      if (fAlerte != "-- Type alerte --" && m.alerte != fAlerte) continue;
+      if (fCriticite != "-- Criticité --" && m.criticite != fCriticite) continue;
+      
+      // Filtre sur la date de mise à jour (inclusivement entre dateDu et dateAu)
+      // Ne filtrer que si la date est valide
+      if (m.miseAJour.isValid() && (m.miseAJour < dateDu || m.miseAJour > dateAu)) continue;
+
+      filteredMachines.append(m);
+  }
+
+  // 4. Trier la liste filtrée
+  if (triPar == "nom_machine") {
+      std::sort(filteredMachines.begin(), filteredMachines.end(), [](const MachineData &a, const MachineData &b){ return a.nom < b.nom; });
+  } else if (triPar == "type_machine") {
+      std::sort(filteredMachines.begin(), filteredMachines.end(), [](const MachineData &a, const MachineData &b){ return a.type < b.type; });
+  } else if (triPar == "etat_fonctionnement") {
+      std::sort(filteredMachines.begin(), filteredMachines.end(), [](const MachineData &a, const MachineData &b){ return a.fonctionnement < b.fonctionnement; });
+  } else if (triPar == "temperature_actuelle") {
+      std::sort(filteredMachines.begin(), filteredMachines.end(), [](const MachineData &a, const MachineData &b){ return a.temperature < b.temperature; });
+  } else if (triPar == "date_derniere_maintenance") {
+      std::sort(filteredMachines.begin(), filteredMachines.end(), [](const MachineData &a, const MachineData &b){ return a.maintenance < b.maintenance; });
+  } else if (triPar == "niveau_criticite") {
+      std::sort(filteredMachines.begin(), filteredMachines.end(), [](const MachineData &a, const MachineData &b){ return a.criticite < b.criticite; });
+  }
+
+  // Polices communes
   QFont boldFont;
   boldFont.setBold(true);
 
-  // 3. Parcourir les résultats de la requête ligne par ligne
-  while (query.next()) {
+  // 5. Parcourir et afficher les machines filtrées et triées
+  for (const MachineData &m : filteredMachines) {
     QList<QStandardItem *> row;
 
-    // Récupérer les valeurs colonnes par colonnes
-    QString id = query.value(0).toString();
-    QString nom = query.value(1).toString();
-    QString type = query.value(2).toString();
-    QString etatMarche = query.value(3).toString();
-    QString temp = query.value(4).toString();
-    QString charge = query.value(5).toString();
-    QString fonction = query.value(6).toString();
-    QString alerte = query.value(7).toString();
-    QString criticite = query.value(8).toString();
-    QString maintenance = query.value(9).toDate().toString("yyyy-MM-dd");
-    QString install = query.value(10).toDate().toString("yyyy-MM-dd");
-    QString scoreSante =
-        query.value(11)
-            .toString(); // Utilisation de SCORE_SANTE à la place de FABRICANT
-    QString maj = query.value(12).toDate().toString("yyyy-MM-dd");
+    QString tempStr = QString::number(m.temperature, 'f', 2);
+    QString chargeStr = QString::number(m.charge, 'f', 2);
+    QString scoreStr = QString::number(m.scoreSante);
 
-    QStringList values = {id,      nom,        type,   etatMarche, temp,
-                          charge,  fonction,   alerte, criticite,  maintenance,
-                          install, scoreSante, maj};
+    QStringList values = {
+        m.id, m.nom, m.type, m.etatMarche, 
+        tempStr, chargeStr, m.fonctionnement, 
+        m.alerte, m.criticite, 
+        m.maintenance.toString("yyyy-MM-dd"),
+        m.installation.toString("yyyy-MM-dd"), 
+        scoreStr, 
+        m.miseAJour.toString("yyyy-MM-dd")
+    };
 
     // Créer les items pour chaque cellule de la ligne
     for (int i = 0; i < values.size(); ++i) {
       auto *item = new QStandardItem(values[i]);
       item->setEditable(false);
       item->setTextAlignment(Qt::AlignCenter);
-      item->setForeground(
-          QColor("#333333")); // Force la couleur sombre pour la visibilité
+      item->setForeground(QColor("#333333")); // Force sombre
       row.append(item);
     }
 
-    // 4. Coloration conditionnelle selon les règles métier
+    // -------------------------------------------------------------------------
+    // Désactivation conditionnelle : OFF ou VEILLE → griser les colonnes
+    // métier (temp, charge, fonctionnement, alerte, criticité, score santé)
+    // Colonnes concernées : 4, 5, 6, 7, 8, 11
+    // -------------------------------------------------------------------------
+    const bool machineInactive = (m.etatMarche == "OFF" || m.etatMarche == "VEILLE");
+    const QList<int> colsADesactiver = {4, 5, 6, 7, 8, 11};
 
-    // -- État Marche (Colonne 3)
+    if (machineInactive) {
+      const QColor bgGrise("#E8E8E8");     // fond gris clair
+      const QColor fgGrise("#AAAAAA");     // texte gris
+      const QColor fgBoldGrise("#999999"); // texte gras grisé
+
+      for (int col : colsADesactiver) {
+        // Retirer Qt::ItemIsEnabled pour le grisage natif Qt
+        row[col]->setFlags(row[col]->flags() & ~Qt::ItemIsEnabled);
+        row[col]->setBackground(bgGrise);
+        row[col]->setForeground(fgBoldGrise);
+      }
+    }
+
+    // Coloration conditionnelle (seulement si la machine est ON)
+
+    // -- État Marche (Colonne 3) — toujours coloré pour indiquer l'état
     row[3]->setFont(boldFont);
-    if (etatMarche == "ON")
+    if (m.etatMarche == "ON")
       row[3]->setForeground(QColor("#2E7D32")); // Vert
-    else if (etatMarche == "VEILLE")
+    else if (m.etatMarche == "VEILLE")
       row[3]->setForeground(QColor("#E65100")); // Orange
-    else if (etatMarche == "OFF")
+    else if (m.etatMarche == "OFF")
       row[3]->setForeground(QColor("#C62828")); // Rouge
 
-    // -- Etat Fonctionnement (Colonne 6)
-    row[6]->setFont(boldFont);
-    if (fonction == "Normal")
-      row[6]->setForeground(QColor("#2E7D32")); // Vert
-    else if (fonction == "Alerte")
-      row[6]->setForeground(QColor("#E65100")); // Orange
-    else if (fonction == "Panne")
-      row[6]->setForeground(QColor("#C62828")); // Rouge
+    if (!machineInactive) {
+      // -- Etat Fonctionnement (Colonne 6)
+      row[6]->setFont(boldFont);
+      if (m.fonctionnement == "Normal")
+        row[6]->setForeground(QColor("#2E7D32")); // Vert
+      else if (m.fonctionnement == "Alerte")
+        row[6]->setForeground(QColor("#E65100")); // Orange
+      else if (m.fonctionnement == "Panne")
+        row[6]->setForeground(QColor("#C62828")); // Rouge
 
-    // -- Type Alerte (Colonne 7)
-    row[7]->setFont(boldFont);
-    if (alerte == "Aucune")
-      row[7]->setForeground(QColor("#2E7D32")); // Vert
-    else if (alerte == "Panne")
-      row[7]->setForeground(QColor("#E65100")); // Orange
-    else if (alerte == "Surcharge")
-      row[7]->setForeground(QColor("#C62828")); // Rouge
+      // -- Type Alerte (Colonne 7)
+      row[7]->setFont(boldFont);
+      if (m.alerte == "Aucune")
+        row[7]->setForeground(QColor("#2E7D32")); // Vert
+      else if (m.alerte == "Panne")
+        row[7]->setForeground(QColor("#E65100")); // Orange
+      else if (m.alerte == "Surcharge")
+        row[7]->setForeground(QColor("#C62828")); // Rouge
 
-    // -- Niveau Criticité (Colonne 8)
-    row[8]->setFont(boldFont);
-    if (criticite == "Faible")
-      row[8]->setForeground(QColor("#2E7D32")); // Vert
-    else if (criticite == "Élevé")
-      row[8]->setForeground(QColor("#E65100")); // Orange
-    else if (criticite == "Critique")
-      row[8]->setForeground(QColor("#C62828")); // Rouge
+      // -- Niveau Criticité (Colonne 8)
+      row[8]->setFont(boldFont);
+      if (m.criticite == "Faible")
+        row[8]->setForeground(QColor("#2E7D32")); // Vert
+      else if (m.criticite == QString::fromUtf8("Élevé"))
+        row[8]->setForeground(QColor("#E65100")); // Orange
+      else if (m.criticite == "Critique")
+        row[8]->setForeground(QColor("#C62828")); // Rouge
+    }
 
-    // Ajouter la ligne complète au modèle
     machineTableModel->appendRow(row);
   }
+}
+
+void machine::on_btnFiltrer_clicked() {
+    appliquerFiltres();
 }
 
 void machine::on_tableMachines_machine_doubleClicked(const QModelIndex &index) {
@@ -1330,6 +1846,322 @@ bool machine::eventFilter(QObject *obj, QEvent *event) {
     }
   }
   return QMainWindow::eventFilter(obj, event);
+}
+
+// ============================================================================
+// ExportDialog Implementation
+// ============================================================================
+
+ExportDialog::ExportDialog(QWidget *parent)
+    : QDialog(parent), selectedFormat("PDF") {
+    setupUi();
+}
+
+void ExportDialog::setupUi() {
+    setWindowTitle("Exporter la fiche machine");
+    setFixedSize(350, 250);
+    setStyleSheet("QDialog { background-color: #f8f9fa; }"
+                  "QLabel { font-size: 14px; font-weight: bold; color: #1B4D3E; }"
+                  "QRadioButton { font-size: 13px; color: #333; padding: 5px; }"
+                  "QRadioButton::indicator { width: 16px; height: 16px; }"
+                  "QRadioButton::indicator::unchecked { border: 2px solid #ccc; border-radius: 9px; }"
+                  "QRadioButton::indicator::checked { border: 2px solid #1B4D3E; border-radius: 9px; background-color: #1B4D3E; }");
+
+    QVBoxLayout *mainLayout = new QVBoxLayout(this);
+    mainLayout->setContentsMargins(20, 20, 20, 20);
+
+    QLabel *lblTitle = new QLabel("Choisissez le format d'export :");
+    mainLayout->addWidget(lblTitle);
+
+    buttonGroup = new QButtonGroup(this);
+
+    QStringList formats = {"PDF", "Word (.odt)", "Excel (.csv)", "Texte brut (.txt)"};
+    QStringList values = {"PDF", "Word", "Excel", "TXT"};
+
+    for (int i = 0; i < formats.size(); ++i) {
+        QRadioButton *rb = new QRadioButton(formats[i]);
+        if (i == 0) rb->setChecked(true); // default option
+        buttonGroup->addButton(rb, i);
+        mainLayout->addWidget(rb);
+    }
+
+    QHBoxLayout *btnLayout = new QHBoxLayout();
+    QPushButton *btnCancel = new QPushButton("Annuler");
+    QPushButton *btnExport = new QPushButton("Exporter");
+
+    btnCancel->setStyleSheet("QPushButton { background-color: #ddd; color: #333; border: none; padding: 8px 15px; border-radius: 4px; font-weight: bold; }"
+                             "QPushButton:hover { background-color: #ccc; }");
+    btnExport->setStyleSheet("QPushButton { background-color: #1A3C2F; color: white; border: none; padding: 8px 15px; border-radius: 4px; font-weight: bold; }"
+                             "QPushButton:hover { background-color: #0F241E; }");
+
+    btnLayout->addStretch();
+    btnLayout->addWidget(btnCancel);
+    btnLayout->addWidget(btnExport);
+
+    mainLayout->addSpacing(10);
+    mainLayout->addLayout(btnLayout);
+
+    connect(btnCancel, &QPushButton::clicked, this, &QDialog::reject);
+    connect(btnExport, &QPushButton::clicked, this, &QDialog::accept);
+}
+
+QString ExportDialog::getSelectedFormat() const {
+    int id = buttonGroup->checkedId();
+    if (id == 0) return "PDF";
+    if (id == 1) return "Word";
+    if (id == 2) return "Excel";
+    if (id == 3) return "TXT";
+    return "PDF";
+}
+
+// ============================================================================
+// Multi-Format Export Methods
+// ============================================================================
+
+void machine::afficherDialogExport() {
+  if (m_selectedRow < 0) {
+    QMessageBox::warning(this, "Aucune machine sélectionnée",
+                         "Veuillez double-cliquer sur une machine dans le "
+                         "tableau avant d'exporter.");
+    return;
+  }
+
+  ExportDialog dialog(this);
+  if (dialog.exec() != QDialog::Accepted) {
+      return;
+  }
+
+  QString format = dialog.getSelectedFormat();
+
+  if (format == "PDF") {
+      exporterPDF();
+      return;
+  }
+
+  QString machineId = machineTableModel->item(m_selectedRow, 0)->text();
+
+  QSqlQuery query(ConnectionMachine::getInstance().getDatabase());
+  query.prepare("SELECT ID_MACHINE, NOM_MACHINE, TYPE_MACHINE, ETAT_MARCHE, "
+                "TEMPERATURE_ACTUELLE, NIVEAU_CHARGE, ETAT_FONCTIONNEMENT, "
+                "TYPE_ALERTE, NIVEAU_CRITICITE, DATE_DERNIERE_MAINTENANCE, "
+                "DATE_INSTALLATION, SCORE_SANTE, DATE_MISE_A_JOUR "
+                "FROM MACHINE WHERE ID_MACHINE = ?");
+  query.addBindValue(machineId);
+
+  if (!query.exec() || !query.next()) {
+    QMessageBox::critical(this, "Erreur",
+                          "Impossible de récupérer les données de la machine.");
+    return;
+  }
+
+  QString id = query.value(0).toString();
+  QString nom = query.value(1).toString();
+  QString type = query.value(2).toString();
+  QString etatMarche = query.value(3).toString();
+  QString temperature = query.value(4).toString();
+  QString charge = query.value(5).toString();
+  QString fonctionnement = query.value(6).toString();
+  QString alerte = query.value(7).toString();
+  QString criticite = query.value(8).toString();
+  QString maintenance = query.value(9).toDate().toString("yyyy-MM-dd");
+  QString installation = query.value(10).toDate().toString("yyyy-MM-dd");
+  QString scoreSante = query.value(11).toString();
+  QString miseAJour = query.value(12).toDate().toString("yyyy-MM-dd");
+
+  QDateTime now = QDateTime::currentDateTime();
+  QString genDate = now.toString("dd/MM/yyyy") + QString::fromUtf8(" à ") + now.toString("HH:mm:ss");
+
+  QString defaultName, filter, ext;
+  if (format == "Word") {
+      defaultName = QString("Fiche_Machine_%1_%2.odt").arg(id, nom);
+      filter = "Word/ODF Document (*.odt)";
+      ext = "odt";
+  } else if (format == "Excel") {
+      defaultName = QString("Fiche_Machine_%1_%2.csv").arg(id, nom);
+      filter = "Excel CSV (*.csv)";
+      ext = "csv";
+  } else {
+      defaultName = QString("Fiche_Machine_%1_%2.txt").arg(id, nom);
+      filter = "Texte brut (*.txt)";
+      ext = "txt";
+  }
+
+  QString filePath = QFileDialog::getSaveFileName(
+      this, "Enregistrer la fiche machine",
+      QDir::homePath() + "/Desktop/" + defaultName, filter);
+
+  if (filePath.isEmpty()) return;
+
+  bool success = false;
+
+  if (format == "Word") {
+      // Create HTML exactly like PDF to retain styles
+      QString etatColor = (etatMarche == "ON") ? "#2E7D32" : "#C62828";
+      QString criticiteColor;
+      if (criticite == "Faible") criticiteColor = "#2E7D32";
+      else if (criticite == QString::fromUtf8("Élevé")) criticiteColor = "#E65100";
+      else criticiteColor = "#C62828";
+
+      QString html =
+          QString::fromUtf8(
+              "<html>"
+              "<head>"
+              "<meta charset='UTF-8'>"
+              "<style>"
+              "  body { font-family: 'Segoe UI', Arial, sans-serif; color: #333; margin: 0; padding: 0; }"
+              "  .header { background-color: #1B4D3E; border-left: 8px solid #C9A227; "
+              "            padding: 18px 30px; border-radius: 6px; margin-bottom: 30px; }"
+              "  .header h1 { color: white; font-size: 26px; font-weight: bold; margin: 0; text-align: center; }"
+              "  .section { margin-bottom: 22px; margin-left: 10px; }"
+              "  .section-title { color: #1B4D3E; font-size: 18px; font-weight: bold; "
+              "                    margin-bottom: 8px; border-bottom: 2px solid #D5E8D4; padding-bottom: 6px; }"
+              "  .field { font-size: 13px; line-height: 2.0; margin-left: 5px; }"
+              "  .field-label { color: #555; }"
+              "  .field-value { color: #222; font-weight: bold; }"
+              "  .footer { margin-top: 30px; font-size: 11px; color: #777; margin-left: 10px; }"
+              "  .footer-brand { color: #1B4D3E; font-size: 11px; margin-top: 4px; }"
+              "</style>"
+              "</head>"
+              "<body>"
+              "<div class='header'><h1>🏭  Fiche Machine</h1></div>"
+              "<div class='section'>"
+              "  <div class='section-title'>📋  Informations générales</div>"
+              "  <div class='field'>🔢 <span class='field-label'>ID Machine</span>&nbsp;&nbsp;&nbsp;"
+              "    <span class='field-value'>%1</span></div>"
+              "  <div class='field'>📝 <span class='field-label'>Nom</span>&nbsp;&nbsp;&nbsp;"
+              "    <span class='field-value'>%2</span></div>"
+              "  <div class='field'>⚙️ <span class='field-label'>Type</span>&nbsp;&nbsp;&nbsp;"
+              "    <span class='field-value'>%3</span></div>"
+              "  <div class='field'>🔌 <span class='field-label'>État de marche</span>&nbsp;"
+              "    <span style='color:%4; font-weight:bold;'>%5</span></div>"
+              "</div>"
+              "<div class='section'>"
+              "  <div class='section-title'>📊  Paramètres techniques</div>"
+              "  <div class='field'>🌡 <span class='field-label'>Température (°C)</span>&nbsp;"
+              "    <span class='field-value'>%6</span></div>"
+              "  <div class='field'>⚡ <span class='field-label'>Charge (%)</span>&nbsp;&nbsp;&nbsp;"
+              "    <span class='field-value'>%7</span></div>"
+              "  <div class='field'>🔧 <span class='field-label'>Fonctionnement</span>&nbsp;"
+              "    <span class='field-value'>%8</span></div>"
+              "  <div class='field'>⚠️ <span class='field-label'>Alerte</span>&nbsp;&nbsp;&nbsp;"
+              "    <span class='field-value'>%9</span></div>"
+              "  <div class='field'>🚨 <span class='field-label'>Criticité</span>&nbsp;&nbsp;&nbsp;"
+              "    <span style='color:%10; font-weight:bold;'>%11</span></div>"
+              "  <div class='field'>💯 <span class='field-label'>Score Santé</span>&nbsp;&nbsp;&nbsp;"
+              "    <span class='field-value'>%12</span></div>"
+              "</div>"
+              "<div class='section'>"
+              "  <div class='section-title'>📅  Dates</div>"
+              "  <div class='field'>🔧 <span class='field-label'>Dernière maintenance</span>&nbsp;"
+              "    <span class='field-value'>%13</span></div>"
+              "  <div class='field'>📋 <span class='field-label'>Date d'installation</span>&nbsp;&nbsp;&nbsp;"
+              "    <span class='field-value'>%14</span></div>"
+              "  <div class='field'>📅 <span class='field-label'>Date mise à jour</span>&nbsp;&nbsp;&nbsp;"
+              "    <span class='field-value'>%15</span></div>"
+              "</div>"
+              "<div class='footer'>"
+              "  <div>Document généré le %16</div>"
+              "  <div class='footer-brand'>🏭  Système de Gestion des Machines — Zitouna</div>"
+              "</div>"
+              "</body></html>")
+              .arg(id, nom, type, etatColor, etatMarche, temperature, charge, fonctionnement, alerte)
+              .arg(criticiteColor, criticite, scoreSante, maintenance, installation, miseAJour, genDate);
+
+      QTextDocument doc;
+      doc.setHtml(html);
+      QTextDocumentWriter writer(filePath);
+      writer.setFormat("odf");
+      success = writer.write(&doc);
+
+  } else if (format == "Excel") {
+      QFile csvFile(filePath);
+      if (csvFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+          QTextStream out(&csvFile);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+          out.setEncoding(QStringConverter::Utf8);
+#else
+          out.setCodec("UTF-8");
+#endif
+          out.setGenerateByteOrderMark(true); // Excel needs UTF-8 BOM to read accents
+          
+          out << "Attribut;Valeur\n";
+          out << "ID Machine;" << id << "\n";
+          out << "Nom;" << nom << "\n";
+          out << "Type;" << type << "\n";
+          out << QString::fromUtf8("État de marche;") << etatMarche << "\n";
+          out << QString::fromUtf8("Température (°C);") << temperature << "\n";
+          out << "Charge (%);" << charge << "\n";
+          out << "Fonctionnement;" << fonctionnement << "\n";
+          out << "Alerte;" << alerte << "\n";
+          out << QString::fromUtf8("Criticité;") << criticite << "\n";
+          out << QString::fromUtf8("Score Santé;") << scoreSante << "\n";
+          out << QString::fromUtf8("Dernière maintenance;") << maintenance << "\n";
+          out << "Date d'installation;" << installation << "\n";
+          out << QString::fromUtf8("Date mise à jour;") << miseAJour << "\n";
+          out << QString::fromUtf8("Document généré le;") << genDate << "\n";
+          csvFile.close();
+          success = true;
+      }
+  } else if (format == "TXT") {
+      QFile txtFile(filePath);
+      if (txtFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+          QTextStream out(&txtFile);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+          out.setEncoding(QStringConverter::Utf8);
+#else
+          out.setCodec("UTF-8");
+#endif
+          int w = 30;
+          out << "============================================================\n";
+          out << QString("FICHE MACHINE: %1").arg(nom).rightJustified(40, ' ') << "\n";
+          out << "============================================================\n\n";
+
+          out << "--- INFORMATIONS GENERALES ---\n";
+          out << QString("ID Machine:").leftJustified(w, ' ') << id << "\n";
+          out << QString("Nom:").leftJustified(w, ' ') << nom << "\n";
+          out << QString("Type:").leftJustified(w, ' ') << type << "\n";
+          out << QString::fromUtf8("État de marche:").leftJustified(w, ' ') << etatMarche << "\n\n";
+
+          out << "--- PARAMETRES TECHNIQUES ---\n";
+          out << QString::fromUtf8("Température (°C):").leftJustified(w, ' ') << temperature << "\n";
+          out << QString("Charge (%):").leftJustified(w, ' ') << charge << "\n";
+          out << QString("Fonctionnement:").leftJustified(w, ' ') << fonctionnement << "\n";
+          out << QString("Alerte:").leftJustified(w, ' ') << alerte << "\n";
+          out << QString::fromUtf8("Criticité:").leftJustified(w, ' ') << criticite << "\n";
+          out << QString::fromUtf8("Score Santé:").leftJustified(w, ' ') << scoreSante << "\n\n";
+
+          out << "--- DATES ---\n";
+          out << QString::fromUtf8("Dernière maintenance:").leftJustified(w, ' ') << maintenance << "\n";
+          out << QString("Date d'installation:").leftJustified(w, ' ') << installation << "\n";
+          out << QString::fromUtf8("Date mise à jour:").leftJustified(w, ' ') << miseAJour << "\n\n";
+
+          out << "============================================================\n";
+          out << QString::fromUtf8("Document généré le ") << genDate << "\n";
+          out << QString::fromUtf8("Système de Gestion des Machines — Zitouna\n");
+          
+          txtFile.close();
+          success = true;
+      }
+  }
+
+  if (success) {
+      QMessageBox msgBox(this);
+      msgBox.setWindowTitle(QString::fromUtf8("Succès"));
+      msgBox.setText(QString::fromUtf8("✅ Fiche machine exportée avec succès en ") + format + " !");
+      msgBox.setIcon(QMessageBox::Information);
+      msgBox.setStyleSheet(R"(
+        QMessageBox { background-color: #f8f9fa; border: 2px solid #1A3C2F; }
+        QLabel { color: #1A3C2F; font-size: 14px; font-weight: bold; padding: 10px; }
+        QPushButton { background-color: #1A3C2F; color: white; border: none;
+          border-radius: 5px; padding: 8px 20px; font-weight: bold; min-width: 100px; }
+        QPushButton:hover { background-color: #0F241E; }
+      )");
+      msgBox.exec();
+
+      QDesktopServices::openUrl(QUrl::fromLocalFile(filePath));
+  } else {
+      QMessageBox::critical(this, "Erreur", "L'export a échoué. Vérifiez vos permissions de fichiers.");
+  }
 }
 
 void machine::exporterPDF() {
