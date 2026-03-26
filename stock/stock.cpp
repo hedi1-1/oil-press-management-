@@ -18,11 +18,18 @@
 #include <QVBoxLayout>
 #include <QTabWidget>
 #include <QFrame>
+#include <QTextCharFormat>
+#include <QBrush>
+#include <QGraphicsOpacityEffect>
+#include <QPropertyAnimation>
+#include <QEasingCurve>
+#include <algorithm>
 
 Stock::Stock(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::Stock)
     , dateTimeTimer(nullptr)
+    , calendarRefreshTimer(nullptr)
     , connexion(nullptr)
 {
     ui->setupUi(this);
@@ -82,6 +89,7 @@ Stock::Stock(QWidget *parent)
     connect(ui->btnVerifierAlertes, &QPushButton::clicked, this, &Stock::onVerifierAlertesClicked);
     connect(ui->btnAfficherHistorique, &QPushButton::clicked, this, &Stock::onAfficherHistoriqueClicked);
     connect(ui->btnAnalyserTendances, &QPushButton::clicked, this, &Stock::onAnalyserTendancesClicked);
+    connect(ui->btnAnalyserPredictifHuile, &QPushButton::clicked, this, &Stock::onAnalyserPredictifHuileClicked);
     
     // Connect rapport buttons
     connect(ui->btnGenererRapport, &QPushButton::clicked, this, &Stock::onGenererRapportClicked);
@@ -89,6 +97,19 @@ Stock::Stock(QWidget *parent)
     
     // Connect synchronisation button
     connect(ui->btnSynchroniser, &QPushButton::clicked, this, &Stock::onSynchroniserClicked);
+
+    // Connect calendrier interactif
+    connect(ui->calendarWidgetStock, &QCalendarWidget::selectionChanged, this, [this]() {
+        onCalendarDateSelected(ui->calendarWidgetStock->selectedDate());
+    });
+    connect(ui->calendarWidgetStock, &QCalendarWidget::currentPageChanged,
+            this, &Stock::onCalendarShowMonth);
+    connect(ui->btnTodayCalendar, &QPushButton::clicked, this, [this]() {
+        const QDate today = QDate::currentDate();
+        ui->calendarWidgetStock->setSelectedDate(today);
+        ui->calendarWidgetStock->showSelectedDate();
+        onCalendarDateSelected(today);
+    });
     
     // Connect table selection
     connect(ui->tableStocks, &QTableWidget::itemSelectionChanged, this, &Stock::onTableStockSelectionChanged);
@@ -98,6 +119,13 @@ Stock::Stock(QWidget *parent)
     connect(dateTimeTimer, &QTimer::timeout, this, &Stock::updateDateTime);
     dateTimeTimer->start(1000);
     updateDateTime();
+
+    // Actualisation automatique du calendrier
+    calendarRefreshTimer = new QTimer(this);
+    connect(calendarRefreshTimer, &QTimer::timeout, this, &Stock::chargerDatesStockCalendrier);
+    calendarRefreshTimer->start(30000);
+
+    initialiserCalendrier();
 }
 
 Stock::~Stock()
@@ -105,6 +133,10 @@ Stock::~Stock()
     if (dateTimeTimer) {
         dateTimeTimer->stop();
         delete dateTimeTimer;
+    }
+    if (calendarRefreshTimer) {
+        calendarRefreshTimer->stop();
+        delete calendarRefreshTimer;
     }
     delete ui;
 }
@@ -161,6 +193,13 @@ void Stock::initialiserInterface()
     ui->comboPeriode->addItem("7 derniers jours");
     ui->comboPeriode->addItem("30 derniers jours");
     ui->comboPeriode->addItem("90 derniers jours");
+
+    if (ui->comboPeriodePredictifHuile) {
+        ui->comboPeriodePredictifHuile->clear();
+        ui->comboPeriodePredictifHuile->addItem("7 derniers jours");
+        ui->comboPeriodePredictifHuile->addItem("30 derniers jours");
+        ui->comboPeriodePredictifHuile->addItem("90 derniers jours");
+    }
     
     // Configurer la table
     configurerTableStocks();
@@ -323,6 +362,229 @@ void Stock::chargerDonneesTable()
     }
     
     qDebug() << "Données chargées:" << row << "lignes";
+    chargerDatesStockCalendrier();
+}
+
+void Stock::initialiserCalendrier()
+{
+    if (!ui->calendarWidgetStock || !ui->tableCalendarDetails) {
+        return;
+    }
+
+    ui->calendarWidgetStock->setGridVisible(true);
+    ui->calendarWidgetStock->setVerticalHeaderFormat(QCalendarWidget::NoVerticalHeader);
+
+    ui->tableCalendarDetails->setColumnCount(6);
+    ui->tableCalendarDetails->setHorizontalHeaderLabels({"Type d'huile", "Quantite (L)", "Seuil (L)", "Emplacement", "Etat", "Date MAJ"});
+    ui->tableCalendarDetails->horizontalHeader()->setStretchLastSection(true);
+    ui->tableCalendarDetails->setSelectionBehavior(QAbstractItemView::SelectRows);
+    ui->tableCalendarDetails->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
+    chargerDatesStockCalendrier();
+    onCalendarDateSelected(ui->calendarWidgetStock->selectedDate());
+}
+
+void Stock::chargerDatesStockCalendrier()
+{
+    if (!connexion || !connexion->isOpen() || !ui->calendarWidgetStock) {
+        return;
+    }
+
+    dateStatutMap.clear();
+
+    QSqlQuery query(connexion->getDatabase());
+    query.prepare("SELECT TRUNC(DATE_DERNIERE_MISE_A_JOUR), QUANTITE_ACTUELLE, SEUIL_ALERTE "
+                  "FROM STOCK WHERE DATE_DERNIERE_MISE_A_JOUR IS NOT NULL");
+
+    if (!query.exec()) {
+        qDebug() << "Erreur chargement dates calendrier:" << query.lastError().text();
+        return;
+    }
+
+    while (query.next()) {
+        QDate date = query.value(0).toDate();
+        double quantite = query.value(1).toDouble();
+        double seuil = query.value(2).toDouble();
+
+        QString statut = "disponible";
+        if (seuil > 0 && quantite <= (seuil * 0.5)) {
+            statut = "critique";
+        } else if (seuil > 0 && quantite <= seuil) {
+            statut = "alerte";
+        }
+
+        const QString current = dateStatutMap.value(date);
+        if (current == "critique") {
+            continue;
+        }
+        if (current == "alerte" && statut == "disponible") {
+            continue;
+        }
+
+        dateStatutMap.insert(date, statut);
+    }
+
+    mettreEnCouleurCalendrier();
+    mettreAJourKpiCalendrier();
+}
+
+void Stock::mettreAJourKpiCalendrier()
+{
+    int alertDates = 0;
+    int criticalDates = 0;
+
+    for (auto it = dateStatutMap.constBegin(); it != dateStatutMap.constEnd(); ++it) {
+        if (it.value() == "critique") {
+            criticalDates++;
+        } else if (it.value() == "alerte") {
+            alertDates++;
+        }
+    }
+
+    if (ui->labelKpiDatesActivesValue) {
+        ui->labelKpiDatesActivesValue->setText(QString::number(dateStatutMap.size()));
+    }
+    if (ui->labelKpiAlertesValue) {
+        ui->labelKpiAlertesValue->setText(QString::number(alertDates));
+    }
+    if (ui->labelKpiCritiquesValue) {
+        ui->labelKpiCritiquesValue->setText(QString::number(criticalDates));
+    }
+}
+
+void Stock::mettreEnCouleurCalendrier()
+{
+    if (!ui->calendarWidgetStock) {
+        return;
+    }
+
+    ui->calendarWidgetStock->setDateTextFormat(QDate(), QTextCharFormat());
+
+    for (auto it = dateStatutMap.constBegin(); it != dateStatutMap.constEnd(); ++it) {
+        QTextCharFormat fmt;
+
+        if (it.value() == "critique") {
+            fmt.setBackground(QBrush(QColor("#ef4444")));
+            fmt.setForeground(QBrush(Qt::white));
+        } else if (it.value() == "alerte") {
+            fmt.setBackground(QBrush(QColor("#f59e0b")));
+            fmt.setForeground(QBrush(Qt::black));
+        } else {
+            fmt.setBackground(QBrush(QColor("#22c55e")));
+            fmt.setForeground(QBrush(Qt::white));
+        }
+
+        fmt.setFontWeight(QFont::DemiBold);
+        ui->calendarWidgetStock->setDateTextFormat(it.key(), fmt);
+    }
+}
+
+void Stock::onCalendarDateSelected(const QDate &date)
+{
+    afficherStocksParDate(date);
+}
+
+void Stock::onCalendarShowMonth(int year, int month)
+{
+    Q_UNUSED(year);
+    Q_UNUSED(month);
+    mettreEnCouleurCalendrier();
+}
+
+void Stock::afficherStocksParDate(const QDate &date)
+{
+    if (!connexion || !connexion->isOpen() || !ui->tableCalendarDetails) {
+        return;
+    }
+
+    QSqlQuery query(connexion->getDatabase());
+    query.prepare("SELECT TYPE_HUILE, QUANTITE_ACTUELLE, SEUIL_ALERTE, EMPLACEMENT_STOCKAGE, ETAT_STOCK, DATE_DERNIERE_MISE_A_JOUR "
+                  "FROM STOCK "
+                  "WHERE TRUNC(DATE_DERNIERE_MISE_A_JOUR) = TO_DATE(:dateValue, 'YYYY-MM-DD') "
+                  "ORDER BY TYPE_HUILE");
+    query.bindValue(":dateValue", date.toString("yyyy-MM-dd"));
+
+    if (!query.exec()) {
+        qDebug() << "Erreur afficherStocksParDate:" << query.lastError().text();
+        return;
+    }
+
+    ui->tableCalendarDetails->setRowCount(0);
+
+    int row = 0;
+    int countDisponible = 0;
+    int countAlerte = 0;
+    int countCritique = 0;
+    while (query.next()) {
+        const double quantite = query.value(1).toDouble();
+        const double seuil = query.value(2).toDouble();
+
+        ui->tableCalendarDetails->insertRow(row);
+        ui->tableCalendarDetails->setItem(row, 0, new QTableWidgetItem(query.value(0).toString()));
+        ui->tableCalendarDetails->setItem(row, 1, new QTableWidgetItem(QString::number(quantite, 'f', 2)));
+        ui->tableCalendarDetails->setItem(row, 2, new QTableWidgetItem(QString::number(seuil, 'f', 2)));
+        ui->tableCalendarDetails->setItem(row, 3, new QTableWidgetItem(query.value(3).toString()));
+        ui->tableCalendarDetails->setItem(row, 4, new QTableWidgetItem(query.value(4).toString()));
+        ui->tableCalendarDetails->setItem(row, 5, new QTableWidgetItem(query.value(5).toDate().toString("dd/MM/yyyy")));
+
+        QColor rowColor("#dcfce7");
+        QColor textColor("#14532d");
+        if (seuil > 0 && quantite <= (seuil * 0.5)) {
+            rowColor = QColor("#fee2e2");
+            textColor = QColor("#991b1b");
+            countCritique++;
+        } else if (seuil > 0 && quantite <= seuil) {
+            rowColor = QColor("#ffedd5");
+            textColor = QColor("#92400e");
+            countAlerte++;
+        } else {
+            countDisponible++;
+        }
+
+        for (int col = 0; col < ui->tableCalendarDetails->columnCount(); ++col) {
+            QTableWidgetItem *item = ui->tableCalendarDetails->item(row, col);
+            if (item) {
+                item->setBackground(QBrush(rowColor));
+                item->setForeground(QBrush(textColor));
+            }
+        }
+
+        row++;
+    }
+
+    if (ui->labelCalendarSummary) {
+        ui->labelCalendarSummary->setText(
+            QString("📌 Date selectionnee : %1 | %2 enregistrement(s) | "
+                    "<span style='color:#14532d;'>🟢 %3</span> "
+                    "<span style='color:#92400e;'>🟡 %4</span> "
+                    "<span style='color:#991b1b;'>🔴 %5</span>")
+                .arg(date.toString("dd/MM/yyyy"))
+                .arg(row)
+                .arg(countDisponible)
+                .arg(countAlerte)
+                .arg(countCritique));
+        animerResumeCalendrier();
+    }
+}
+
+void Stock::animerResumeCalendrier()
+{
+    if (!ui->labelCalendarSummary) {
+        return;
+    }
+
+    QGraphicsOpacityEffect *effect = qobject_cast<QGraphicsOpacityEffect*>(ui->labelCalendarSummary->graphicsEffect());
+    if (!effect) {
+        effect = new QGraphicsOpacityEffect(ui->labelCalendarSummary);
+        ui->labelCalendarSummary->setGraphicsEffect(effect);
+    }
+
+    QPropertyAnimation *animation = new QPropertyAnimation(effect, "opacity", ui->labelCalendarSummary);
+    animation->setDuration(280);
+    animation->setStartValue(0.35);
+    animation->setEndValue(1.0);
+    animation->setEasingCurve(QEasingCurve::OutCubic);
+    animation->start(QAbstractAnimation::DeleteWhenStopped);
 }
 
 void Stock::viderChamps()
@@ -772,29 +1034,324 @@ void Stock::onAfficherHistoriqueClicked()
 
 void Stock::onAnalyserTendancesClicked()
 {
-    if (!connexion || !connexion->isOpen()) return;
-    
+    if (!connexion || !connexion->isOpen()) {
+        afficherMessage("Erreur", "Pas de connexion à la base de données", true);
+        return;
+    }
+
+    int periodDays = 30;
+    const QString periode = ui->comboPeriode->currentText();
+    if (periode.contains("7")) {
+        periodDays = 7;
+    } else if (periode.contains("90") || periode.contains("3")) {
+        periodDays = 90;
+    }
+
+    const QDate startDate = QDate::currentDate().addDays(-periodDays);
+
     QSqlQuery query(connexion->getDatabase());
-    query.exec("SELECT TYPE_HUILE, AVG(QUANTITE_ACTUELLE) as MOY, "
-               "MIN(QUANTITE_ACTUELLE) as MIN, MAX(QUANTITE_ACTUELLE) as MAX "
-               "FROM STOCK GROUP BY TYPE_HUILE ORDER BY MOY DESC");
-    
-    ui->tableResultatsCombined->clear();
-    ui->tableResultatsCombined->setColumnCount(4);
-    ui->tableResultatsCombined->setHorizontalHeaderLabels({"Type d'huile", "Moyenne (L)", "Min (L)", "Max (L)"});
-    ui->tableResultatsCombined->setRowCount(0);
-    
-    int row = 0;
+    query.prepare(
+        "SELECT s.TYPE_HUILE, s.QUANTITE_ACTUELLE, s.SEUIL_ALERTE, "
+        "       NVL(SUM(CASE WHEN p.DATEPRODUCTION >= :startDate THEN p.HUILEPRODUITEL ELSE 0 END), 0) AS PROD_PERIODE, "
+        "       NVL(COUNT(CASE WHEN p.DATEPRODUCTION >= :startDate THEN 1 END), 0) AS NB_OPERATIONS "
+        "FROM STOCK s "
+        "LEFT JOIN PRODUCTION p ON p.ID_STOCK = s.ID_STOCK "
+        "GROUP BY s.TYPE_HUILE, s.QUANTITE_ACTUELLE, s.SEUIL_ALERTE "
+        "ORDER BY PROD_PERIODE DESC, s.TYPE_HUILE");
+    query.bindValue(":startDate", startDate);
+
+    if (!query.exec()) {
+        afficherMessage("Erreur", "Erreur d'analyse prédictive : " + query.lastError().text(), true);
+        return;
+    }
+
+    struct OilAnalysis {
+        QString type;
+        double stockCurrent;
+        double threshold;
+        double producedPeriod;
+        int operations;
+        double popularityPct;
+        double predicted7;
+        double predicted30;
+        int riskPct;
+        int reorderQty;
+        int productionQty;
+        QString priority;
+    };
+
+    QList<OilAnalysis> analyses;
+    double totalProduced = 0.0;
+
     while (query.next()) {
+        OilAnalysis item;
+        item.type = query.value(0).toString();
+        item.stockCurrent = query.value(1).toDouble();
+        item.threshold = query.value(2).toDouble();
+        item.producedPeriod = query.value(3).toDouble();
+        item.operations = query.value(4).toInt();
+        item.popularityPct = 0.0;
+        item.predicted7 = 0.0;
+        item.predicted30 = 0.0;
+        item.riskPct = 0;
+        item.reorderQty = 0;
+        item.productionQty = 0;
+        item.priority = "Basse";
+
+        totalProduced += item.producedPeriod;
+        analyses.append(item);
+    }
+
+    if (analyses.isEmpty()) {
+        afficherMessage("Analyse", "Aucune donnée disponible pour l'analyse.", true);
+        return;
+    }
+
+    for (OilAnalysis &item : analyses) {
+        const double avgDailyFromProd = item.producedPeriod / qMax(1, periodDays);
+        const double baselineDemand = qMax(1.0, item.threshold / 30.0);
+        const double estimatedDailyDemand = qMax(avgDailyFromProd, baselineDemand);
+
+        item.popularityPct = (totalProduced > 0.0)
+            ? (item.producedPeriod / totalProduced) * 100.0
+            : (100.0 / analyses.size());
+
+        item.predicted7 = estimatedDailyDemand * 7.0;
+        item.predicted30 = estimatedDailyDemand * 30.0;
+
+        double stockCoverageDays = item.stockCurrent / estimatedDailyDemand;
+        int risk = 15;
+        if (stockCoverageDays <= 3.0) {
+            risk = 90;
+        } else if (stockCoverageDays <= 7.0) {
+            risk = 70;
+        } else if (stockCoverageDays <= 14.0) {
+            risk = 45;
+        }
+
+        if (item.threshold > 0.0 && item.stockCurrent <= (item.threshold * 0.5)) {
+            risk = qMax(risk, 95);
+        } else if (item.threshold > 0.0 && item.stockCurrent <= item.threshold) {
+            risk = qMax(risk, 75);
+        }
+
+        item.riskPct = risk;
+
+        const double securityStock = qMax(10.0, item.threshold * 0.6);
+        item.reorderQty = qMax(0, static_cast<int>(item.predicted30 + securityStock - item.stockCurrent));
+        item.productionQty = qMax(0, static_cast<int>(item.predicted7 + (item.popularityPct > 35.0 ? item.predicted7 * 0.2 : 0.0) - item.stockCurrent * 0.25));
+
+        if (item.riskPct >= 80 || item.popularityPct >= 40.0) {
+            item.priority = "Haute";
+        } else if (item.riskPct >= 50 || item.popularityPct >= 20.0) {
+            item.priority = "Moyenne";
+        }
+    }
+
+    std::sort(analyses.begin(), analyses.end(), [](const OilAnalysis &a, const OilAnalysis &b) {
+        if (a.priority != b.priority) {
+            if (a.priority == "Haute") return true;
+            if (b.priority == "Haute") return false;
+            if (a.priority == "Moyenne") return true;
+            if (b.priority == "Moyenne") return false;
+        }
+        if (a.riskPct != b.riskPct) {
+            return a.riskPct > b.riskPct;
+        }
+        return a.popularityPct > b.popularityPct;
+    });
+
+    double totalRisk = 0.0;
+    int totalReorder = 0;
+    for (const OilAnalysis &item : analyses) {
+        totalRisk += item.riskPct;
+        totalReorder += item.reorderQty;
+    }
+
+    const double avgRisk = analyses.isEmpty() ? 0.0 : totalRisk / analyses.size();
+    const QString topStrategic = analyses.isEmpty()
+        ? QString("--")
+        : QString("%1 (%2%)")
+              .arg(analyses.first().type)
+              .arg(QString::number(analyses.first().popularityPct, 'f', 1));
+
+    if (ui->labelTopStrategiqueValue) {
+        ui->labelTopStrategiqueValue->setText(topStrategic);
+    }
+    if (ui->labelRisqueMoyenGlobalValue) {
+        ui->labelRisqueMoyenGlobalValue->setText(QString("%1 %").arg(QString::number(avgRisk, 'f', 1)));
+    }
+    if (ui->labelBesoinReapproTotalValue) {
+        ui->labelBesoinReapproTotalValue->setText(QString("%1 L").arg(totalReorder));
+    }
+
+    ui->tableResultatsCombined->clear();
+    ui->tableResultatsCombined->setColumnCount(10);
+    ui->tableResultatsCombined->setHorizontalHeaderLabels({
+        "Type d'huile", "Stock (L)", "Popularité (%)", "Prévision J+7 (L)",
+        "Prévision J+30 (L)", "Risque (%)", "Réappro (L)",
+        "Production (L)", "Opérations", "Priorité"
+    });
+    ui->tableResultatsCombined->setRowCount(0);
+    ui->tableResultatsCombined->setWordWrap(false);
+    ui->tableResultatsCombined->setAlternatingRowColors(true);
+    ui->tableResultatsCombined->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
+    ui->tableResultatsCombined->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
+    ui->tableResultatsCombined->verticalHeader()->setDefaultSectionSize(32);
+
+    const QList<int> predictiveColumnWidths = {190, 100, 120, 130, 140, 95, 110, 115, 95, 100};
+    for (int col = 0; col < predictiveColumnWidths.size() && col < ui->tableResultatsCombined->columnCount(); ++col) {
+        ui->tableResultatsCombined->setColumnWidth(col, predictiveColumnWidths[col]);
+    }
+
+    for (int col = 0; col < ui->tableResultatsCombined->columnCount(); ++col) {
+        QTableWidgetItem* headerItem = ui->tableResultatsCombined->horizontalHeaderItem(col);
+        if (headerItem) {
+            headerItem->setTextAlignment(Qt::AlignCenter);
+        }
+    }
+
+    int row = 0;
+    for (const OilAnalysis &item : analyses) {
         ui->tableResultatsCombined->insertRow(row);
-        ui->tableResultatsCombined->setItem(row, 0, new QTableWidgetItem(query.value(0).toString()));
-        ui->tableResultatsCombined->setItem(row, 1, new QTableWidgetItem(QString::number(query.value(1).toDouble(), 'f', 2)));
-        ui->tableResultatsCombined->setItem(row, 2, new QTableWidgetItem(QString::number(query.value(2).toDouble(), 'f', 2)));
-        ui->tableResultatsCombined->setItem(row, 3, new QTableWidgetItem(QString::number(query.value(3).toDouble(), 'f', 2)));
+        ui->tableResultatsCombined->setItem(row, 0, new QTableWidgetItem(item.type));
+        ui->tableResultatsCombined->setItem(row, 1, new QTableWidgetItem(QString::number(item.stockCurrent, 'f', 2)));
+        ui->tableResultatsCombined->setItem(row, 2, new QTableWidgetItem(QString::number(item.popularityPct, 'f', 1)));
+        ui->tableResultatsCombined->setItem(row, 3, new QTableWidgetItem(QString::number(item.predicted7, 'f', 1)));
+        ui->tableResultatsCombined->setItem(row, 4, new QTableWidgetItem(QString::number(item.predicted30, 'f', 1)));
+        ui->tableResultatsCombined->setItem(row, 5, new QTableWidgetItem(QString::number(item.riskPct)));
+        ui->tableResultatsCombined->setItem(row, 6, new QTableWidgetItem(QString::number(item.reorderQty)));
+        ui->tableResultatsCombined->setItem(row, 7, new QTableWidgetItem(QString::number(item.productionQty)));
+        ui->tableResultatsCombined->setItem(row, 8, new QTableWidgetItem(QString::number(item.operations)));
+        ui->tableResultatsCombined->setItem(row, 9, new QTableWidgetItem(item.priority));
+
+        QColor bgColor("#dcfce7");
+        QColor fgColor("#14532d");
+        if (item.priority == "Haute") {
+            bgColor = QColor("#fee2e2");
+            fgColor = QColor("#991b1b");
+        } else if (item.priority == "Moyenne") {
+            bgColor = QColor("#ffedd5");
+            fgColor = QColor("#92400e");
+        }
+
+        for (int col = 0; col < ui->tableResultatsCombined->columnCount(); ++col) {
+            QTableWidgetItem *cell = ui->tableResultatsCombined->item(row, col);
+            if (cell) {
+                cell->setBackground(QBrush(bgColor));
+                cell->setForeground(QBrush(fgColor));
+                if (col == 0) {
+                    cell->setTextAlignment(Qt::AlignVCenter | Qt::AlignLeft);
+                } else {
+                    cell->setTextAlignment(Qt::AlignCenter);
+                }
+            }
+        }
+
         row++;
     }
-    
-    afficherMessage("Tendances", "Analyse des tendances terminée !");
+
+    ui->tableResultatsCombined->horizontalHeader()->setStretchLastSection(false);
+    ui->tableResultatsCombined->setSelectionBehavior(QAbstractItemView::SelectRows);
+    ui->tableResultatsCombined->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
+    QString recommendations;
+    recommendations += "ANALYSE PREDICTIVE & PRESCRIPTIVE DES TYPES D'HUILE\n";
+    recommendations += "Periode: " + periode + "\n";
+    recommendations += "Total production analysee: " + QString::number(totalProduced, 'f', 2) + " L\n\n";
+    recommendations += "TOP RECOMMANDATIONS:\n";
+
+    const int topN = qMin(3, analyses.size());
+    for (int i = 0; i < topN; ++i) {
+        const OilAnalysis &item = analyses[i];
+        recommendations += QString("%1) %2\n")
+            .arg(i + 1)
+            .arg(item.type);
+        recommendations += QString("   - Popularite: %1% | Risque rupture: %2%\n")
+            .arg(QString::number(item.popularityPct, 'f', 1))
+            .arg(item.riskPct);
+        recommendations += QString("   - Produire: %1 L | Reappro: %2 L\n")
+            .arg(item.productionQty)
+            .arg(item.reorderQty);
+        recommendations += QString("   - Priorite: %1\n\n")
+            .arg(item.priority);
+    }
+
+    recommendations += "INTERPRETATION:\n";
+    recommendations += "- Priorite Haute: action immediate recommandee.\n";
+    recommendations += "- Priorite Moyenne: planifier cette semaine.\n";
+    recommendations += "- Priorite Basse: suivi normal.\n";
+
+    if (ui->textAnalyseTendances) {
+        ui->textAnalyseTendances->setPlainText(recommendations);
+    }
+
+    afficherMessage("Analyse", "Analyse prédictive et recommandations générées avec succès !");
+}
+
+void Stock::onAnalyserPredictifHuileClicked()
+{
+    if (ui->comboPeriodePredictifHuile && ui->comboPeriode) {
+        ui->comboPeriode->setCurrentText(ui->comboPeriodePredictifHuile->currentText());
+    }
+
+    onAnalyserTendancesClicked();
+
+    if (ui->tableResultatsPredictifHuile && ui->tableResultatsCombined) {
+        ui->tableResultatsPredictifHuile->clear();
+        ui->tableResultatsPredictifHuile->setColumnCount(ui->tableResultatsCombined->columnCount());
+
+        QStringList headers;
+        for (int col = 0; col < ui->tableResultatsCombined->columnCount(); ++col) {
+            QTableWidgetItem* headerItem = ui->tableResultatsCombined->horizontalHeaderItem(col);
+            headers << (headerItem ? headerItem->text() : QString("Colonne %1").arg(col + 1));
+        }
+        ui->tableResultatsPredictifHuile->setHorizontalHeaderLabels(headers);
+        ui->tableResultatsPredictifHuile->setRowCount(0);
+        ui->tableResultatsPredictifHuile->setWordWrap(false);
+        ui->tableResultatsPredictifHuile->setAlternatingRowColors(true);
+        ui->tableResultatsPredictifHuile->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
+        ui->tableResultatsPredictifHuile->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
+        ui->tableResultatsPredictifHuile->verticalHeader()->setDefaultSectionSize(32);
+
+        for (int row = 0; row < ui->tableResultatsCombined->rowCount(); ++row) {
+            ui->tableResultatsPredictifHuile->insertRow(row);
+            for (int col = 0; col < ui->tableResultatsCombined->columnCount(); ++col) {
+                QTableWidgetItem* source = ui->tableResultatsCombined->item(row, col);
+                if (!source) {
+                    continue;
+                }
+                QTableWidgetItem* cloned = source->clone();
+                ui->tableResultatsPredictifHuile->setItem(row, col, cloned);
+            }
+        }
+
+        for (int col = 0; col < ui->tableResultatsPredictifHuile->columnCount(); ++col) {
+            ui->tableResultatsPredictifHuile->setColumnWidth(col, ui->tableResultatsCombined->columnWidth(col));
+            QTableWidgetItem* headerItem = ui->tableResultatsPredictifHuile->horizontalHeaderItem(col);
+            if (headerItem) {
+                headerItem->setTextAlignment(Qt::AlignCenter);
+            }
+        }
+
+        ui->tableResultatsPredictifHuile->horizontalHeader()->setStretchLastSection(false);
+        ui->tableResultatsPredictifHuile->setSelectionBehavior(QAbstractItemView::SelectRows);
+        ui->tableResultatsPredictifHuile->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    }
+
+    if (ui->textAnalysePredictifHuile && ui->textAnalyseTendances) {
+        ui->textAnalysePredictifHuile->setPlainText(ui->textAnalyseTendances->toPlainText());
+    }
+
+    if (ui->labelTopStrategiqueValue2 && ui->labelTopStrategiqueValue) {
+        ui->labelTopStrategiqueValue2->setText(ui->labelTopStrategiqueValue->text());
+    }
+    if (ui->labelRisqueMoyenGlobalValue2 && ui->labelRisqueMoyenGlobalValue) {
+        ui->labelRisqueMoyenGlobalValue2->setText(ui->labelRisqueMoyenGlobalValue->text());
+    }
+    if (ui->labelBesoinReapproTotalValue2 && ui->labelBesoinReapproTotalValue) {
+        ui->labelBesoinReapproTotalValue2->setText(ui->labelBesoinReapproTotalValue->text());
+    }
 }
 
 // ==================== RAPPORTS ====================
@@ -831,6 +1388,7 @@ void Stock::onExportRapportPDFClicked()
 void Stock::onSynchroniserClicked()
 {
     chargerDonneesTable();
+    onCalendarDateSelected(ui->calendarWidgetStock->selectedDate());
     afficherMessage("Synchronisation", "Données synchronisées avec la base de données !");
 }
 

@@ -251,15 +251,15 @@ QTabBar::tab:hover:!selected {
            <string notr="true">QGroupBox {
     font-weight: bold;
     border: 2px solid #1B4332;
-    border-radius: 8px;
+    border-radius: 12px;
     margin-top: 10px;
-    padding-top: 10px;
-    background-color: #fafafa;
+    padding-top: 12px;
+    background-color: #f8faf9;
 }
 QGroupBox::title {
     subcontrol-origin: margin;
-    left: 10px;
-    padding: 0 5px;
+    left: 14px;
+    padding: 0 8px;
     color: #1B4332;
 }</string>
           </property>
@@ -2255,6 +2255,133 @@ QGroupBox::title {
              </widget>
             </item>
             <item>
+             <widget class="QGroupBox" name="groupKpiTendances">
+              <property name="styleSheet">
+               <string notr="true">QGroupBox {
+    font-weight: bold;
+    border: 2px solid #1B4332;
+    border-radius: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    background-color: #fafafa;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px;
+    color: #1B4332;
+}</string>
+              </property>
+              <property name="title">
+               <string>📌 KPI stratégiques (IA)</string>
+              </property>
+              <layout class="QHBoxLayout" name="layoutKpiTendances">
+               <item>
+                <widget class="QFrame" name="cardTopStrategique">
+                 <property name="styleSheet">
+                  <string notr="true">QFrame {
+    background-color: #e8f4ee;
+    border: 1px solid #b7dbc5;
+    border-radius: 10px;
+    padding: 8px;
+}</string>
+                 </property>
+                 <layout class="QVBoxLayout" name="layoutTopStrategique">
+                  <item>
+                   <widget class="QLabel" name="labelTopStrategiqueTitle">
+                    <property name="styleSheet">
+                     <string notr="true">color: #1f3f33; font-size: 11px; font-weight: 600;</string>
+                    </property>
+                    <property name="text">
+                     <string>Top huile stratégique</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLabel" name="labelTopStrategiqueValue">
+                    <property name="styleSheet">
+                     <string notr="true">color: #14532d; font-size: 16px; font-weight: 800;</string>
+                    </property>
+                    <property name="text">
+                     <string>--</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item>
+                <widget class="QFrame" name="cardRisqueMoyenGlobal">
+                 <property name="styleSheet">
+                  <string notr="true">QFrame {
+    background-color: #fff3e6;
+    border: 1px solid #fdba74;
+    border-radius: 10px;
+    padding: 8px;
+}</string>
+                 </property>
+                 <layout class="QVBoxLayout" name="layoutRisqueMoyenGlobal">
+                  <item>
+                   <widget class="QLabel" name="labelRisqueMoyenGlobalTitle">
+                    <property name="styleSheet">
+                     <string notr="true">color: #7c2d12; font-size: 11px; font-weight: 600;</string>
+                    </property>
+                    <property name="text">
+                     <string>Risque moyen global</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLabel" name="labelRisqueMoyenGlobalValue">
+                    <property name="styleSheet">
+                     <string notr="true">color: #b45309; font-size: 16px; font-weight: 800;</string>
+                    </property>
+                    <property name="text">
+                     <string>0 %</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item>
+                <widget class="QFrame" name="cardBesoinReapproTotal">
+                 <property name="styleSheet">
+                  <string notr="true">QFrame {
+    background-color: #eaf2ff;
+    border: 1px solid #9fc1ff;
+    border-radius: 10px;
+    padding: 8px;
+}</string>
+                 </property>
+                 <layout class="QVBoxLayout" name="layoutBesoinReapproTotal">
+                  <item>
+                   <widget class="QLabel" name="labelBesoinReapproTotalTitle">
+                    <property name="styleSheet">
+                     <string notr="true">color: #1e3a8a; font-size: 11px; font-weight: 600;</string>
+                    </property>
+                    <property name="text">
+                     <string>Besoin total de réappro</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLabel" name="labelBesoinReapproTotalValue">
+                    <property name="styleSheet">
+                     <string notr="true">color: #1d4ed8; font-size: 16px; font-weight: 800;</string>
+                    </property>
+                    <property name="text">
+                     <string>0 L</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
              <widget class="QGroupBox" name="groupAnalyseAuto">
               <property name="styleSheet">
                <string notr="true">QGroupBox {
@@ -2473,6 +2600,636 @@ QGroupBox::title {
             </item>
            </layout>
           </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tabAnalysePredictiveHuile">
+       <attribute name="title">
+        <string>🧠 Analyse IA Huiles</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayoutPredictiveTab">
+        <property name="leftMargin">
+         <number>20</number>
+        </property>
+        <property name="topMargin">
+         <number>20</number>
+        </property>
+        <property name="rightMargin">
+         <number>20</number>
+        </property>
+        <property name="bottomMargin">
+         <number>20</number>
+        </property>
+        <item>
+         <widget class="QGroupBox" name="groupPredictiveControls">
+          <property name="styleSheet">
+           <string notr="true">QGroupBox {
+    font-weight: bold;
+    border: 2px solid #1B4332;
+    border-radius: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    background-color: #fafafa;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px;
+    color: #1B4332;
+}</string>
+          </property>
+          <property name="title">
+           <string>⚙️ Paramètres d'analyse prédictive</string>
+          </property>
+          <layout class="QHBoxLayout" name="layoutPredictiveControls">
+           <item>
+            <widget class="QLabel" name="labelPeriodePredictiveHuile">
+             <property name="styleSheet">
+              <string notr="true">color: #2c3e50; font-size: 13px; font-weight: 600;</string>
+             </property>
+             <property name="text">
+              <string>Période :</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="comboPeriodePredictifHuile">
+             <property name="styleSheet">
+              <string notr="true">QComboBox {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 6px;
+    background: white;
+    color: #2c3e50;
+    font-size: 13px;
+    min-width: 180px;
+}</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="btnAnalyserPredictifHuile">
+             <property name="styleSheet">
+              <string notr="true">QPushButton {
+    background-color: #1B4332;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+QPushButton:hover {
+    background-color: #234E3E;
+}</string>
+             </property>
+             <property name="text">
+              <string>📊 Analyser (IA)</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacerPredictive">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupKpiPredictiveHuile">
+          <property name="styleSheet">
+           <string notr="true">QGroupBox {
+    font-weight: bold;
+    border: 2px solid #1B4332;
+    border-radius: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    background-color: #fafafa;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px;
+    color: #1B4332;
+}</string>
+          </property>
+          <property name="title">
+           <string>📌 KPI stratégiques (onglet dédié)</string>
+          </property>
+          <layout class="QHBoxLayout" name="layoutKpiPredictiveHuile">
+           <item>
+            <widget class="QLabel" name="labelTopStrategiqueValue2">
+             <property name="styleSheet">
+              <string notr="true">color: #14532d; font-size: 13px; font-weight: 700; background: #e8f4ee; border: 1px solid #b7dbc5; border-radius: 8px; padding: 8px;</string>
+             </property>
+             <property name="text">
+              <string>Top huile stratégique: --</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="labelRisqueMoyenGlobalValue2">
+             <property name="styleSheet">
+              <string notr="true">color: #b45309; font-size: 13px; font-weight: 700; background: #fff3e6; border: 1px solid #fdba74; border-radius: 8px; padding: 8px;</string>
+             </property>
+             <property name="text">
+              <string>Risque moyen global: 0 %</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="labelBesoinReapproTotalValue2">
+             <property name="styleSheet">
+              <string notr="true">color: #1d4ed8; font-size: 13px; font-weight: 700; background: #eaf2ff; border: 1px solid #9fc1ff; border-radius: 8px; padding: 8px;</string>
+             </property>
+             <property name="text">
+              <string>Besoin total de réappro: 0 L</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupResultatsPredictiveHuile">
+          <property name="styleSheet">
+           <string notr="true">QGroupBox {
+    font-weight: bold;
+    border: 2px solid #1B4332;
+    border-radius: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    background-color: #fafafa;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px;
+    color: #1B4332;
+}</string>
+          </property>
+          <property name="title">
+           <string>📋 Résultats prédictifs par type d'huile</string>
+          </property>
+          <layout class="QVBoxLayout" name="layoutResultatsPredictiveHuile">
+           <item>
+            <widget class="QTableWidget" name="tableResultatsPredictifHuile">
+             <property name="styleSheet">
+              <string notr="true">QTableWidget {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    gridline-color: #e0e0e0;
+}
+QHeaderView::section {
+    background-color: #1B4332;
+    color: white;
+    padding: 8px;
+    border: none;
+    font-weight: bold;
+}</string>
+             </property>
+             <property name="alternatingRowColors">
+              <bool>true</bool>
+             </property>
+             <property name="selectionBehavior">
+              <enum>QAbstractItemView::SelectRows</enum>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupAnalysePredictiveHuile">
+          <property name="styleSheet">
+           <string notr="true">QGroupBox {
+    font-weight: bold;
+    border: 2px solid #1B4332;
+    border-radius: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    background-color: #fafafa;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px;
+    color: #1B4332;
+}</string>
+          </property>
+          <property name="title">
+           <string>📝 Recommandations IA dédiées</string>
+          </property>
+          <layout class="QVBoxLayout" name="layoutAnalysePredictiveHuile">
+           <item>
+            <widget class="QTextEdit" name="textAnalysePredictifHuile">
+             <property name="styleSheet">
+              <string notr="true">color: #2c3e50; font-size: 13px;</string>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tabCalendrierStock">
+       <attribute name="title">
+        <string>📅 Calendrier Stock</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayoutCalendarTab">
+        <property name="leftMargin">
+         <number>20</number>
+        </property>
+        <property name="topMargin">
+         <number>20</number>
+        </property>
+        <property name="rightMargin">
+         <number>20</number>
+        </property>
+        <property name="bottomMargin">
+         <number>20</number>
+        </property>
+        <item>
+         <widget class="QGroupBox" name="groupCalendrierInteractif">
+          <property name="styleSheet">
+           <string notr="true">QGroupBox {
+    font-weight: bold;
+    border: 2px solid #1B4332;
+    border-radius: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    background-color: #fafafa;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px;
+    color: #1B4332;
+}</string>
+          </property>
+          <property name="title">
+           <string>📅 Calendrier interactif des mises à jour</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayoutCalendarContent">
+           <item>
+            <layout class="QHBoxLayout" name="layoutCalendarTopBar">
+             <item>
+              <layout class="QHBoxLayout" name="layoutKpiCards">
+               <item>
+                <widget class="QFrame" name="cardKpiDatesActives">
+                 <property name="styleSheet">
+                  <string notr="true">QFrame {
+    background-color: #e8f4ee;
+    border: 1px solid #b7dbc5;
+    border-radius: 10px;
+    padding: 6px;
+}</string>
+                 </property>
+                 <layout class="QVBoxLayout" name="layoutCardKpiDatesActives">
+                  <item>
+                   <widget class="QLabel" name="labelKpiDatesActivesTitle">
+                    <property name="styleSheet">
+                     <string notr="true">color: #1f3f33; font-size: 11px; font-weight: 600;</string>
+                    </property>
+                    <property name="text">
+                     <string>Dates actives</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLabel" name="labelKpiDatesActivesValue">
+                    <property name="styleSheet">
+                     <string notr="true">color: #14532d; font-size: 20px; font-weight: 800;</string>
+                    </property>
+                    <property name="text">
+                     <string>0</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item>
+                <widget class="QFrame" name="cardKpiAlertes">
+                 <property name="styleSheet">
+                  <string notr="true">QFrame {
+    background-color: #fff3e6;
+    border: 1px solid #fdba74;
+    border-radius: 10px;
+    padding: 6px;
+}</string>
+                 </property>
+                 <layout class="QVBoxLayout" name="layoutCardKpiAlertes">
+                  <item>
+                   <widget class="QLabel" name="labelKpiAlertesTitle">
+                    <property name="styleSheet">
+                     <string notr="true">color: #7c2d12; font-size: 11px; font-weight: 600;</string>
+                    </property>
+                    <property name="text">
+                     <string>Alertes</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLabel" name="labelKpiAlertesValue">
+                    <property name="styleSheet">
+                     <string notr="true">color: #b45309; font-size: 20px; font-weight: 800;</string>
+                    </property>
+                    <property name="text">
+                     <string>0</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item>
+                <widget class="QFrame" name="cardKpiCritiques">
+                 <property name="styleSheet">
+                  <string notr="true">QFrame {
+    background-color: #feecec;
+    border: 1px solid #fca5a5;
+    border-radius: 10px;
+    padding: 6px;
+}</string>
+                 </property>
+                 <layout class="QVBoxLayout" name="layoutCardKpiCritiques">
+                  <item>
+                   <widget class="QLabel" name="labelKpiCritiquesTitle">
+                    <property name="styleSheet">
+                     <string notr="true">color: #7f1d1d; font-size: 11px; font-weight: 600;</string>
+                    </property>
+                    <property name="text">
+                     <string>Critiques</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLabel" name="labelKpiCritiquesValue">
+                    <property name="styleSheet">
+                     <string notr="true">color: #991b1b; font-size: 20px; font-weight: 800;</string>
+                    </property>
+                    <property name="text">
+                     <string>0</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <spacer name="horizontalSpacerKpiPush">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QPushButton" name="btnTodayCalendar">
+               <property name="minimumSize">
+                <size>
+                 <width>120</width>
+                 <height>34</height>
+                </size>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">QPushButton {
+    background-color: #0b79d0;
+    color: white;
+    border: 1px solid #0b79d0;
+    border-radius: 8px;
+    font-weight: 700;
+    padding: 6px 14px;
+}
+QPushButton:hover {
+    background-color: #1687de;
+    border: 1px solid #1687de;
+}
+QPushButton:pressed {
+    background-color: #0768b4;
+}</string>
+               </property>
+               <property name="text">
+                <string>📍 Aujourd'hui</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <widget class="QLabel" name="labelCalendarSummary">
+             <property name="styleSheet">
+                            <string notr="true">QLabel {
+        color: #123a2d;
+        font-size: 13px;
+        font-weight: 700;
+        padding: 8px 12px;
+        background-color: #e7f4ec;
+        border: 1px solid #b7dbc5;
+        border-radius: 8px;
+}</string>
+             </property>
+             <property name="text">
+                            <string>📌 Date selectionnee : --/--/---- | 0 enregistrement(s)</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCalendarWidget" name="calendarWidgetStock">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>280</height>
+              </size>
+             </property>
+             <property name="gridVisible">
+              <bool>true</bool>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">QCalendarWidget QWidget {
+    alternate-background-color: #f3f7f5;
+}
+QCalendarWidget QToolButton {
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 13px;
+    height: 28px;
+    width: 100px;
+    border-radius: 6px;
+    background-color: #0b79d0;
+    border: 1px solid #0b79d0;
+}
+QCalendarWidget QToolButton:hover {
+    background-color: #1687de;
+    border: 1px solid #1687de;
+}
+QCalendarWidget QMenu {
+    background-color: #ffffff;
+    border: 1px solid #cbded2;
+}
+QCalendarWidget QSpinBox {
+    font-size: 13px;
+    color: #1B4332;
+    background: #ffffff;
+    selection-background-color: #2d6a4f;
+    selection-color: #ffffff;
+}
+QCalendarWidget QAbstractItemView:enabled {
+    color: #243b33;
+    selection-background-color: #1B4332;
+    selection-color: #ffffff;
+    border-radius: 4px;
+}</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="layoutCalendarLegend">
+             <item>
+              <widget class="QLabel" name="labelLegendGreen">
+               <property name="styleSheet">
+                <string notr="true">QLabel {
+    color: #14532d;
+    font-weight: 700;
+    background-color: #dcfce7;
+    border: 1px solid #86efac;
+    border-radius: 999px;
+    padding: 6px 12px;
+}</string>
+               </property>
+               <property name="text">
+                <string>🟢 Vert : Stock disponible</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="labelLegendOrange">
+               <property name="styleSheet">
+                <string notr="true">QLabel {
+    color: #92400e;
+    font-weight: 700;
+    background-color: #ffedd5;
+    border: 1px solid #fdba74;
+    border-radius: 999px;
+    padding: 6px 12px;
+}</string>
+               </property>
+               <property name="text">
+                <string>🟡 Orange : Stock en alerte (≤ seuil)</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="labelLegendRed">
+               <property name="styleSheet">
+                <string notr="true">QLabel {
+    color: #991b1b;
+    font-weight: 700;
+    background-color: #fee2e2;
+    border: 1px solid #fca5a5;
+    border-radius: 999px;
+    padding: 6px 12px;
+}</string>
+               </property>
+               <property name="text">
+                <string>🔴 Rouge : Stock critique (≤ 50 % du seuil)</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="horizontalSpacerCalendarLegend">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupCalendarDetails">
+          <property name="styleSheet">
+           <string notr="true">QGroupBox {
+    font-weight: bold;
+    border: 2px solid #1B4332;
+    border-radius: 12px;
+    margin-top: 10px;
+    padding-top: 12px;
+    background-color: #f8faf9;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 14px;
+    padding: 0 8px;
+    color: #1B4332;
+}</string>
+          </property>
+          <property name="title">
+           <string>📋 Stocks modifies le jour selectionne</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayoutCalendarDetails">
+           <item>
+            <widget class="QTableWidget" name="tableCalendarDetails">
+             <property name="styleSheet">
+              <string notr="true">QTableWidget {
+    border: 1px solid #d6e5dc;
+    border-radius: 8px;
+    gridline-color: #e0eae4;
+    background-color: #ffffff;
+    alternate-background-color: #f6faf8;
+    color: #1f2937;
+    selection-background-color: #1B4332;
+    selection-color: #ffffff;
+}
+QHeaderView::section {
+    background-color: #234E3E;
+    color: white;
+    padding: 8px;
+    border: none;
+    font-weight: bold;
+}
+QTableWidget::item {
+    padding: 6px;
+}</string>
+             </property>
+             <property name="alternatingRowColors">
+              <bool>true</bool>
+             </property>
+             <property name="selectionBehavior">
+              <enum>QAbstractItemView::SelectRows</enum>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </widget>
         </item>
        </layout>
