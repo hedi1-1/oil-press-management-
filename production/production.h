@@ -125,6 +125,8 @@ private:
     QDateEdit      *m_dateReportTo;
     QComboBox      *m_comboReportQuality;
     QPushButton    *m_btnApplyReportFilters;
+    QPushButton    *m_btnFullscreen;
+    void onToggleFullscreen();
 
     // ── Statistics tab widgets ─────────────────────────────────────────────
     QWidget                 *m_tabStatistiques;
