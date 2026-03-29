@@ -287,13 +287,18 @@ protected:
 
 private slots:
     void updateDateTime();
+    void toggleTheme();
 
 private:
     void initializeUI();
     void applyStyles();
+    QString getLightModeStylesheet();
+    QString getDarkModeStylesheet();
+    void applyTheme();
 
     Ui::Finance *ui;
     QTabWidget *mainTabWidget;
+    bool isDarkMode;
     
     // User
     int currentUserId;
@@ -306,6 +311,9 @@ private:
     // DateTime Timer
     QTimer *dateTimeTimer;
     QLabel *lblDateTime;
+    
+    // Theme Button
+    QPushButton *btnTheme;
 };
 
 #endif // FINANCE_H

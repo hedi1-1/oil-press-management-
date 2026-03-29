@@ -1050,10 +1050,11 @@ QGroupBox* StatsTab::createChartSection()
     chartLayout->setSpacing(4);
 
     chartView = new QChartView();
-    chartView->setMinimumHeight(300);
+    chartView->setMinimumHeight(320);
+    chartView->setMaximumHeight(400);
     chartView->setRenderHint(QPainter::Antialiasing);
     chartView->setRenderHint(QPainter::SmoothPixmapTransform);
-    chartView->setStyleSheet("background-color: #fbfbfb; border: 2px solid #999; border-radius: 5px; margin: 0px;");
+    chartView->setStyleSheet("background-color: #fbfbfb; border: 2px solid #999; border-radius: 5px; margin: 0px; padding: 0px;");
 
     chartLayout->addWidget(chartView);
 
@@ -1125,11 +1126,14 @@ void StatsTab::afficherGraphique()
     QChart *chart = new QChart();
     chart->setAnimationOptions(QChart::AllAnimations);
     chart->setTheme(QChart::ChartThemeLight);
-    chart->setMargins(QMargins(5, 10, 5, 5));
+    chart->setMargins(QMargins(10, 15, 10, 10));
+    chart->setBackgroundBrush(QBrush(QColor("#fbfbfb")));
+    chart->setPlotAreaBackgroundBrush(QBrush(QColor("#ffffff")));
+    chart->setPlotAreaBackgroundVisible(true);
     
     // Styliser le titre du graphique
     QFont titleFont;
-    titleFont.setPointSize(9);
+    titleFont.setPointSize(12);
     titleFont.setBold(true);
     chart->setTitleFont(titleFont);
 
@@ -1150,27 +1154,31 @@ void StatsTab::afficherGraphique()
         QPieSlice *sliceRev = series->slices().at(0);
         sliceRev->setBrush(QColor("#27ae60"));
         sliceRev->setExploded();
-        sliceRev->setExplodeDistanceFactor(0.25);
+        sliceRev->setExplodeDistanceFactor(0.15);
         sliceRev->setLabel(QString("Revenus: %1%").arg(QString::number(percRev, 'f', 1)));
         sliceRev->setLabelVisible();
-        sliceRev->setLabelColor(QColor("#ffffff"));
+        sliceRev->setLabelColor(QColor("#000000"));
         QFont labelFont;
-        labelFont.setPointSize(10);
+        labelFont.setPointSize(12);
         labelFont.setBold(true);
         sliceRev->setLabelFont(labelFont);
         
         QPieSlice *sliceDep = series->slices().at(1);
         sliceDep->setBrush(QColor("#e74c3c"));
-        sliceDep->setExplodeDistanceFactor(0.25);
+        sliceDep->setExplodeDistanceFactor(0.15);
         sliceDep->setLabel(QString::fromUtf8("Dépenses: %1%").arg(QString::number(percDep, 'f', 1)));
         sliceDep->setLabelVisible();
-        sliceDep->setLabelColor(QColor("#ffffff"));
+        sliceDep->setLabelColor(QColor("#000000"));
         sliceDep->setLabelFont(labelFont);
         
+        // Améliorer la légende
         chart->addSeries(series);
-        chart->setTitle(QString::fromUtf8("Répartition Revenus vs Dépenses"));
+        chart->setTitle(QString::fromUtf8("📊 Répartition Revenus vs Dépenses"));
         chart->legend()->setVisible(true);
-        chart->legend()->setAlignment(Qt::AlignTop);
+        chart->legend()->setAlignment(Qt::AlignBottom);
+        QFont legendFont;
+        legendFont.setPointSize(11);
+        chart->legend()->setFont(legendFont);
     } 
     else if (typeGraph.contains("Histogramme")) {
         QBarSeries *series = new QBarSeries();
@@ -1239,7 +1247,7 @@ void StatsTab::afficherGraphique()
     else if (typeGraph.contains("Courbe")) {
         QLineSeries *seriesBalance = new QLineSeries();
         seriesBalance->setName(QString::fromUtf8("Bénéfice Net"));
-        seriesBalance->setPen(QPen(QColor("#1B4332"), 3));
+        seriesBalance->setPen(QPen(QColor("#1B4332"), 2.5));
         
         QSqlDatabase db = dbConn->getDatabase();
         QSqlQuery q(db);
@@ -1258,11 +1266,33 @@ void StatsTab::afficherGraphique()
         }
         
         chart->addSeries(seriesBalance);
+        
         // Ajouter le pourcentage de variation au titre
         double tendanceVariation = (minBalance != 0) ? ((maxBalance - minBalance) / fabs(minBalance)) * 100.0 : 0.0;
         if(minBalance == 0) tendanceVariation = (maxBalance > 0) ? 100.0 : 0.0;
         chart->setTitle(QString::fromUtf8("Tendance de la Trésorerie - Variation: %1%").arg(QString::number(tendanceVariation, 'f', 1)));
-        chart->createDefaultAxes();
+        
+        // Axes correctement configurés pour éviter les carreaux mal alignés
+        QValueAxis *axisX = new QValueAxis();
+        axisX->setRange(0, i - 1);
+        axisX->setLabelFormat("%i");
+        QFont axisXFont;
+        axisXFont.setPointSize(8);
+        axisX->setLabelsFont(axisXFont);
+        axisX->setGridLineVisible(true);
+        
+        QValueAxis *axisY = new QValueAxis();
+        axisY->setRange(minBalance * 0.9, maxBalance * 1.1);
+        axisY->setLabelFormat("%.0f");
+        QFont axisYFont;
+        axisYFont.setPointSize(8);
+        axisY->setLabelsFont(axisYFont);
+        axisY->setGridLineVisible(true);
+        
+        chart->addAxis(axisX, Qt::AlignBottom);
+        chart->addAxis(axisY, Qt::AlignLeft);
+        seriesBalance->attachAxis(axisX);
+        seriesBalance->attachAxis(axisY);
     }
     else { // Comparatif Catégories
         QBarSeries *categoriesSeries = new QBarSeries();
@@ -1306,6 +1336,9 @@ void StatsTab::afficherGraphique()
     }
 
     chartView->setChart(chart);
+    chart->setBackgroundBrush(QBrush(QColor("#fbfbfb")));
+    chart->setPlotAreaBackgroundBrush(QBrush(QColor("#ffffff")));
+    chart->setPlotAreaBackgroundVisible(true);
 }
 
 // ========================================================================
@@ -2050,6 +2083,7 @@ Finance::Finance(int userId, QWidget *parent)
     : QMainWindow(parent)
     , currentUserId(userId)
     , ui(new Ui::Finance)
+    , isDarkMode(false)
 {
     ui->setupUi(this);
     initializeUI();
@@ -2128,6 +2162,31 @@ void Finance::initializeUI()
     // Connect return button to close/back signal
     connect(btnReturn, &QPushButton::clicked, this, &Finance::close);
 
+    // Bouton Basculer le thème
+    QPushButton *btnTheme = new QPushButton(QString::fromUtf8("☀️ Mode Clair"));
+    btnTheme->setMinimumWidth(130);
+    btnTheme->setStyleSheet(
+        "QPushButton { "
+        "background-color: rgba(255, 255, 255, 0.15); "
+        "color: white; "
+        "font-size: 13px; "
+        "font-weight: 600; "
+        "padding: 10px 20px; "
+        "border-radius: 8px; "
+        "border: 1px solid rgba(255, 255, 255, 0.3); "
+        "min-width: 130px; "
+        "} "
+        "QPushButton:hover { "
+        "background-color: rgba(255, 255, 255, 0.25); "
+        "border: 1px solid rgba(255, 255, 255, 0.5); "
+        "} "
+        "QPushButton:pressed { "
+        "background-color: rgba(255, 255, 255, 0.1); "
+        "}"
+    );
+    this->btnTheme = btnTheme;  // Stocker la référence
+    connect(btnTheme, &QPushButton::clicked, this, &Finance::toggleTheme);
+
     // Titre principal
     QVBoxLayout *titleLayout = new QVBoxLayout();
     titleLayout->setSpacing(2);
@@ -2167,6 +2226,7 @@ void Finance::initializeUI()
 
     // Assembler le header
     headerLayout->addWidget(btnReturn);
+    headerLayout->addWidget(btnTheme);
     headerLayout->addWidget(lblIcon);
     headerLayout->addLayout(titleLayout);
     headerLayout->addStretch();
@@ -2512,4 +2572,419 @@ void Finance::applyStyles()
 
     qApp->setStyle("Fusion");
     qApp->setStyleSheet(stylesheet);
+}
+
+void Finance::toggleTheme()
+{
+    isDarkMode = !isDarkMode;
+    applyTheme();
+    
+    // Mettre à jour le texte du bouton
+    if (btnTheme) {
+        if (isDarkMode) {
+            btnTheme->setText(QString::fromUtf8("🌙 Mode Sombre"));
+        } else {
+            btnTheme->setText(QString::fromUtf8("☀️ Mode Clair"));
+        }
+    }
+}
+
+void Finance::applyTheme()
+{
+    QString stylesheet = isDarkMode ? getDarkModeStylesheet() : getLightModeStylesheet();
+    qApp->setStyleSheet(stylesheet);
+}
+
+QString Finance::getLightModeStylesheet()
+{
+    return R"(
+        /* ========================================================================
+           PRESSIQ LIGHT THEME - MODE CLAIR
+        ======================================================================== */
+
+        QMainWindow {
+            background: qlineargradient(x1:0, y1:0, x2:1, y2:1, 
+                        stop:0 #f0f2f5, stop:1 #e4e7eb);
+        }
+
+        /* TAB WIDGET - MODERN DESIGN */
+        QTabWidget::pane {
+            border: none;
+            background-color: transparent;
+            border-radius: 12px;
+            margin-top: 5px;
+        }
+
+        QTabBar {
+            background: transparent;
+        }
+
+        QTabBar::tab {
+            background-color: white;
+            color: #666;
+            padding: 12px 24px;
+            margin-right: 4px;
+            border: none;
+            border-radius: 8px 8px 0 0;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            min-width: 120px;
+        }
+
+        QTabBar::tab:selected {
+            background-color: #1B4332;
+            color: white;
+            font-weight: 700;
+        }
+
+        QTabBar::tab:hover:!selected {
+            background-color: #f0f0f0;
+            color: #1B4332;
+        }
+
+        /* GROUP BOX - CARD STYLE */
+        QGroupBox {
+            font-weight: bold;
+            border: 2px solid #1B4332;
+            border-radius: 8px;
+            margin-top: 10px;
+            padding-top: 10px;
+            background-color: #fafafa;
+            color: #1B4332;
+        }
+
+        QGroupBox::title {
+            subcontrol-origin: margin;
+            left: 10px;
+            padding: 0 5px;
+            color: #1B4332;
+        }
+
+        /* INPUT FIELDS - MODERN STYLE */
+        QLineEdit, QSpinBox, QDoubleSpinBox, QDateEdit, QComboBox {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 6px;
+            background: white;
+            color: #2c3e50;
+            font-size: 13px;
+        }
+
+        QLineEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus, QDateEdit:focus, QComboBox:focus {
+            border: 2px solid #1B4332;
+        }
+
+        QComboBox::drop-down {
+            border: none;
+            padding-right: 15px;
+            width: 30px;
+        }
+
+        QComboBox QAbstractItemView {
+            border: 2px solid #1B4332;
+            border-radius: 8px;
+            background-color: white;
+            selection-background-color: #1B4332;
+            selection-color: white;
+            padding: 5px;
+        }
+
+        QTextEdit, QTextBrowser {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 6px;
+            background: white;
+            color: #2c3e50;
+            font-size: 13px;
+        }
+
+        QTextEdit:focus {
+            border: 2px solid #1B4332;
+        }
+
+        /* LABELS */
+        QLabel {
+            color: #333;
+        }
+
+        /* PUSHBUTTON - MODERN STYLE */
+        QPushButton {
+            background-color: #1B4332;
+            color: white;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+        }
+
+        QPushButton:hover {
+            background-color: #234E3E;
+        }
+
+        QPushButton:pressed {
+            background-color: #0F241A;
+        }
+
+        QPushButton:disabled {
+            background-color: #ccc;
+            color: #999;
+        }
+
+        /* TABLES */
+        QTableWidget {
+            background-color: white;
+            color: #333;
+            gridline-color: #e0e0e0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        QTableWidget::item:selected {
+            background-color: #1B4332;
+            color: white;
+        }
+
+        QHeaderView::section {
+            background-color: #1B4332;
+            color: white;
+            padding: 5px;
+            border: none;
+            font-weight: bold;
+        }
+
+        /* SCROLLBAR */
+        QScrollBar:vertical {
+            width: 12px;
+            background-color: #f0f0f0;
+            border-radius: 6px;
+        }
+
+        QScrollBar::handle:vertical {
+            background: #c0c0c0;
+            border-radius: 6px;
+            min-height: 30px;
+        }
+
+        QScrollBar::handle:vertical:hover {
+            background: #1B4332;
+        }
+
+        QScrollBar:horizontal {
+            height: 12px;
+            background-color: #f0f0f0;
+            border-radius: 6px;
+        }
+
+        QScrollBar::handle:horizontal {
+            background: #c0c0c0;
+            border-radius: 6px;
+            min-width: 30px;
+        }
+
+        QScrollBar::handle:horizontal:hover {
+            background: #1B4332;
+        }
+    )";
+}
+
+QString Finance::getDarkModeStylesheet()
+{
+    return R"(
+        /* ========================================================================
+           PRESSIQ DARK THEME - MODE SOMBRE
+        ======================================================================== */
+
+        QMainWindow {
+            background: qlineargradient(x1:0, y1:0, x2:1, y2:1, 
+                        stop:0 #1e1e1e, stop:1 #2d2d2d);
+        }
+
+        /* TAB WIDGET - MODERN DESIGN */
+        QTabWidget::pane {
+            border: none;
+            background-color: transparent;
+            border-radius: 12px;
+            margin-top: 5px;
+        }
+
+        QTabBar {
+            background: transparent;
+        }
+
+        QTabBar::tab {
+            background-color: #2d2d2d;
+            color: #aaa;
+            padding: 12px 24px;
+            margin-right: 4px;
+            border: none;
+            border-radius: 8px 8px 0 0;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            min-width: 120px;
+        }
+
+        QTabBar::tab:selected {
+            background-color: #1B4332;
+            color: #C9A227;
+            font-weight: 700;
+        }
+
+        QTabBar::tab:hover:!selected {
+            background-color: #3d3d3d;
+            color: #C9A227;
+        }
+
+        /* GROUP BOX - CARD STYLE */
+        QGroupBox {
+            font-weight: bold;
+            border: 2px solid #1B4332;
+            border-radius: 8px;
+            margin-top: 10px;
+            padding-top: 10px;
+            background-color: #2d2d2d;
+            color: #C9A227;
+        }
+
+        QGroupBox::title {
+            subcontrol-origin: margin;
+            left: 10px;
+            padding: 0 5px;
+            color: #C9A227;
+        }
+
+        /* INPUT FIELDS - MODERN STYLE */
+        QLineEdit, QSpinBox, QDoubleSpinBox, QDateEdit, QComboBox {
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 6px;
+            background: #3d3d3d;
+            color: #e0e0e0;
+            font-size: 13px;
+        }
+
+        QLineEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus, QDateEdit:focus, QComboBox:focus {
+            border: 2px solid #1B4332;
+            background: #4d4d4d;
+        }
+
+        QComboBox::drop-down {
+            border: none;
+            padding-right: 15px;
+            width: 30px;
+        }
+
+        QComboBox QAbstractItemView {
+            border: 2px solid #1B4332;
+            border-radius: 8px;
+            background-color: #3d3d3d;
+            color: #e0e0e0;
+            selection-background-color: #1B4332;
+            selection-color: #C9A227;
+            padding: 5px;
+        }
+
+        /* TEXT EDIT */
+        QTextEdit, QTextBrowser {
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 6px;
+            background: #3d3d3d;
+            color: #e0e0e0;
+            font-size: 13px;
+        }
+
+        QTextEdit:focus {
+            border: 2px solid #1B4332;
+            background: #4d4d4d;
+        }
+
+        /* LABELS */
+        QLabel {
+            color: #e0e0e0;
+        }
+
+        /* PUSHBUTTON - MODERN STYLE */
+        QPushButton {
+            background-color: #1B4332;
+            color: #C9A227;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+        }
+
+        QPushButton:hover {
+            background-color: #234E3E;
+            color: #D4B84F;
+        }
+
+        QPushButton:pressed {
+            background-color: #0F241A;
+            color: #C9A227;
+        }
+
+        QPushButton:disabled {
+            background-color: #444;
+            color: #666;
+        }
+
+        /* TABLES */
+        QTableWidget {
+            background-color: #2d2d2d;
+            color: #e0e0e0;
+            gridline-color: #444;
+            border: 1px solid #444;
+            border-radius: 4px;
+        }
+
+        QTableWidget::item:selected {
+            background-color: #1B4332;
+            color: #C9A227;
+        }
+
+        QHeaderView::section {
+            background-color: #1B4332;
+            color: #C9A227;
+            padding: 5px;
+            border: none;
+            font-weight: bold;
+        }
+
+        /* SCROLLBAR */
+        QScrollBar:vertical {
+            width: 12px;
+            background-color: #2d2d2d;
+            border-radius: 6px;
+        }
+
+        QScrollBar::handle:vertical {
+            background: #555;
+            border-radius: 6px;
+            min-height: 30px;
+        }
+
+        QScrollBar::handle:vertical:hover {
+            background: #1B4332;
+        }
+
+        QScrollBar:horizontal {
+            height: 12px;
+            background-color: #2d2d2d;
+            border-radius: 6px;
+        }
+
+        QScrollBar::handle:horizontal {
+            background: #555;
+            border-radius: 6px;
+            min-width: 30px;
+        }
+
+        QScrollBar::handle:horizontal:hover {
+            background: #1B4332;
+        }
+    )";
 }
