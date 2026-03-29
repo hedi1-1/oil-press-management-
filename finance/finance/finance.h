@@ -21,6 +21,7 @@
 #include <QScrollArea>
 #include <QFormLayout>
 #include <QtSql>
+#include <QShowEvent>
 
 // QtCharts
 #include <QtCharts/QChartView>
@@ -64,7 +65,7 @@ class TransactionTab : public QWidget
     Q_OBJECT
 
 public:
-    explicit TransactionTab(QWidget *parent = nullptr);
+    explicit TransactionTab(int userId = 1, QWidget *parent = nullptr);
     ~TransactionTab();
 
 signals:
@@ -78,6 +79,9 @@ private slots:
     void effacerFormulaire();
     void chargerData();
     void onTypeChanged(const QString &type);
+    void rechercher();
+    void trier();
+    void exporter(const QString &format);
 
 private:
     void initializeUI();
@@ -90,8 +94,8 @@ private:
     QDoubleSpinBox *spinMontant;
     QDateEdit *dateEdit;
     
-    QLabel *lblClient;
-    QComboBox *cbClient;
+    QLabel *lblEmployee;  // Afficher l'employee qui enregistre
+    QLineEdit *txtEmployee;
     
     QLabel *lblMachine;
     QComboBox *cbMachine;
@@ -107,7 +111,18 @@ private:
     // Widgets - Zone Tableau
     QTableWidget *tableTransaction;
 
+    // Widgets - Zone Recherche (Côté droit)
+    QComboBox *cbSearchType;
+    QComboBox *cbSearchCategory;
+    QPushButton *btnSearch;
+    QComboBox *cbSortBy;
+    QPushButton *btnSort;
+    QPushButton *btnExportPDF;
+    QPushButton *btnExportExcel;
+    QPushButton *btnExportTXT;
+
     ConnexionFinance *dbConn;
+    int currentUserId;
 };
 
 // ========================================================================
@@ -174,6 +189,9 @@ public:
 public slots:
     void calculerStats();
     void afficherGraphique();
+
+protected:
+    void showEvent(QShowEvent *event) override;
 
 private:
     void initializeUI();
@@ -265,6 +283,9 @@ protected:
         QMainWindow::closeEvent(event);
     }
 
+private slots:
+    void updateDateTime();
+
 private:
     void initializeUI();
     void applyStyles();
@@ -274,9 +295,12 @@ private:
 
     // Tabs
     TransactionTab *transactionTab;
-    SearchTab *searchTab;
     StatsTab *statsTab;
     AdvancedTab *advancedTab;
+
+    // DateTime
+    QTimer *dateTimeTimer;
+    QLabel *lblDateTime;
 };
 
 #endif // FINANCE_H
