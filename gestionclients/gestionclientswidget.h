@@ -52,6 +52,18 @@ private:
     Client getFormData();
     void validateAndCalculateStatut(Client &client);
     void displayClientInfo(const Client &client);
+    bool idExists(int id) const;
+    bool validateForm(bool isAdd, bool isModify);
+    void setupValidators();
+    void validateRealtime();
+    bool isNameValid(const QString &value) const;
+    bool isTelValid(const QString &value) const;
+    bool isEmailValid(const QString &value) const;
+    bool isAddressValid(const QString &value) const;
+    bool isIdFormatValid(const QString &value) const;
+    bool isTotalValid(const QString &value) const;
+    void setFieldState(QWidget *widget, bool valid);
+    void setErrorHint(const QString &message);
 };
 
 #endif // GESTIONCLIENTSWIDGET_H

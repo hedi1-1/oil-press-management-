@@ -3,6 +3,7 @@
 #include <QMessageBox>
 #include <QTableWidgetItem>
 #include <QBrush>
+#include <QRegularExpression>
 
 GestionClientsWidget::GestionClientsWidget(QWidget *parent)
     : QWidget(parent)
@@ -22,8 +23,20 @@ GestionClientsWidget::GestionClientsWidget(QWidget *parent)
     // Connecter le signal textChanged de lineEdit_total à calculerStatutEnTempsReel
     connect(ui->lineEdit_total, &QLineEdit::textChanged, this, &GestionClientsWidget::calculerStatutEnTempsReel);
 
+    setupValidators();
+    connect(ui->lineEdit_id, &QLineEdit::textChanged, this, &GestionClientsWidget::validateRealtime);
+    connect(ui->lineEdit_nom, &QLineEdit::textChanged, this, &GestionClientsWidget::validateRealtime);
+    connect(ui->lineEdit_prenom, &QLineEdit::textChanged, this, &GestionClientsWidget::validateRealtime);
+    connect(ui->lineEdit_tel, &QLineEdit::textChanged, this, &GestionClientsWidget::validateRealtime);
+    connect(ui->lineEdit_adresse, &QLineEdit::textChanged, this, &GestionClientsWidget::validateRealtime);
+    connect(ui->lineEdit_email, &QLineEdit::textChanged, this, &GestionClientsWidget::validateRealtime);
+    connect(ui->lineEdit_total, &QLineEdit::textChanged, this, &GestionClientsWidget::validateRealtime);
+    connect(ui->comboBox_type, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &GestionClientsWidget::validateRealtime);
+
     // Charger les clients depuis la base de données au démarrage
     afficherClients();
+    validateRealtime();
 }
 
 GestionClientsWidget::~GestionClientsWidget()
@@ -171,6 +184,195 @@ void GestionClientsWidget::clearForm()
     currentSelectedClient.id_client = -1;
     idClientSelectionne = -1;
     desactiverBoutons();
+    validateRealtime();
+}
+
+bool GestionClientsWidget::idExists(int id) const
+{
+    for (const Client &client : clients) {
+        if (client.id_client == id) return true;
+    }
+    return false;
+}
+
+void GestionClientsWidget::setupValidators()
+{
+    ui->lineEdit_nom->setMaxLength(50);
+    ui->lineEdit_prenom->setMaxLength(50);
+    ui->lineEdit_tel->setMaxLength(8);
+    ui->lineEdit_adresse->setMaxLength(100);
+}
+
+void GestionClientsWidget::setFieldState(QWidget *widget, bool valid)
+{
+    if (!widget) return;
+    widget->setStyleSheet(valid ? "" : "border: 2px solid #d32f2f;");
+}
+
+void GestionClientsWidget::setErrorHint(const QString &message)
+{
+    ui->label_error_hint->setText(message);
+}
+
+bool GestionClientsWidget::isIdFormatValid(const QString &value) const
+{
+    return QRegularExpression("^\\d+$").match(value).hasMatch();
+}
+
+bool GestionClientsWidget::isNameValid(const QString &value) const
+{
+    return QRegularExpression("^[\\p{L} ]{2,50}$").match(value).hasMatch();
+}
+
+bool GestionClientsWidget::isTelValid(const QString &value) const
+{
+    return QRegularExpression("^\\d{8}$").match(value).hasMatch();
+}
+
+bool GestionClientsWidget::isEmailValid(const QString &value) const
+{
+    return QRegularExpression("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$").match(value).hasMatch();
+}
+
+bool GestionClientsWidget::isAddressValid(const QString &value) const
+{
+    return value.length() >= 5 && value.length() <= 100;
+}
+
+bool GestionClientsWidget::isTotalValid(const QString &value) const
+{
+    if (value.isEmpty()) return false;
+    bool ok = false;
+    int total = value.toInt(&ok);
+    return ok && total >= 0 && total <= 99999999;
+}
+
+void GestionClientsWidget::validateRealtime()
+{
+    QString id = ui->lineEdit_id->text().trimmed();
+    QString nom = ui->lineEdit_nom->text().trimmed();
+    QString prenom = ui->lineEdit_prenom->text().trimmed();
+    QString tel = ui->lineEdit_tel->text().trimmed();
+    QString adresse = ui->lineEdit_adresse->text().trimmed();
+    QString email = ui->lineEdit_email->text().trimmed();
+    QString total = ui->lineEdit_total->text().trimmed();
+    QString type = ui->comboBox_type->currentText();
+
+    bool idOk = id.isEmpty() || isIdFormatValid(id);
+    bool nomOk = nom.isEmpty() || isNameValid(nom);
+    bool prenomOk = prenom.isEmpty() || isNameValid(prenom);
+    bool telOk = tel.isEmpty() || isTelValid(tel);
+    bool adresseOk = adresse.isEmpty() || isAddressValid(adresse);
+    bool emailOk = email.isEmpty() || isEmailValid(email);
+    bool totalOk = total.isEmpty() || isTotalValid(total);
+    bool typeOk = (type == "Particulier" || type == "Société");
+
+    setFieldState(ui->lineEdit_id, idOk);
+    setFieldState(ui->lineEdit_nom, nomOk);
+    setFieldState(ui->lineEdit_prenom, prenomOk);
+    setFieldState(ui->lineEdit_tel, telOk);
+    setFieldState(ui->lineEdit_adresse, adresseOk);
+    setFieldState(ui->lineEdit_email, emailOk);
+    setFieldState(ui->lineEdit_total, totalOk);
+    setFieldState(ui->comboBox_type, typeOk);
+
+    if (!idOk) {
+        setErrorHint("ID: uniquement des chiffres.");
+    } else if (!nomOk) {
+        setErrorHint("Nom: 2 à 50 lettres, espaces autorisés.");
+    } else if (!prenomOk) {
+        setErrorHint("Prénom: 2 à 50 lettres, espaces autorisés.");
+    } else if (!telOk) {
+        setErrorHint("Téléphone: exactement 8 chiffres.");
+    } else if (!adresseOk) {
+        setErrorHint("Adresse: 5 à 100 caractères.");
+    } else if (!emailOk) {
+        setErrorHint("Email: format valide (nom@domaine.com).");
+    } else if (!typeOk) {
+        setErrorHint("Type: Particulier ou Société.");
+    } else if (!totalOk) {
+        setErrorHint("Total olives: entier positif.");
+    } else {
+        setErrorHint("");
+    }
+}
+
+bool GestionClientsWidget::validateForm(bool isAdd, bool isModify)
+{
+
+    QString idText = ui->lineEdit_id->text().trimmed();
+    if (idText.isEmpty()) {
+        QMessageBox::warning(this, "Erreur", "ID obligatoire.");
+        return false;
+    }
+
+    bool okId = false;
+    int id = idText.toInt(&okId);
+    if (!okId || id <= 0) {
+        QMessageBox::warning(this, "Erreur", "ID doit être un entier positif.");
+        return false;
+    }
+
+    if (isAdd && idExists(id)) {
+        QMessageBox::warning(this, "Erreur", "ID existe déjà. Utilisez un autre ID.");
+        return false;
+    }
+
+    if (isModify && !idExists(id)) {
+        QMessageBox::warning(this, "Erreur", "ID introuvable pour modification.");
+        return false;
+    }
+
+    QString nom = ui->lineEdit_nom->text().trimmed();
+    QString prenom = ui->lineEdit_prenom->text().trimmed();
+    QRegularExpression nameRegex("^[\\p{L} ]{2,50}$");
+    if (nom.isEmpty() || !nameRegex.match(nom).hasMatch()) {
+        QMessageBox::warning(this, "Erreur", "Nom invalide (2-50 lettres, espaces autorisés).");
+        return false;
+    }
+    if (prenom.isEmpty() || !nameRegex.match(prenom).hasMatch()) {
+        QMessageBox::warning(this, "Erreur", "Prénom invalide (2-50 lettres, espaces autorisés).");
+        return false;
+    }
+
+    QString tel = ui->lineEdit_tel->text().trimmed();
+    QRegularExpression telRegex("^\\d{8}$");
+    if (tel.isEmpty() || !telRegex.match(tel).hasMatch()) {
+        QMessageBox::warning(this, "Erreur", "Téléphone invalide (8 chiffres).");
+        return false;
+    }
+
+    QString adresse = ui->lineEdit_adresse->text().trimmed();
+    if (adresse.length() < 5 || adresse.length() > 100) {
+        QMessageBox::warning(this, "Erreur", "Adresse invalide (5 à 100 caractères).");
+        return false;
+    }
+
+    QString email = ui->lineEdit_email->text().trimmed();
+    QRegularExpression emailRegex("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+    if (email.isEmpty() || !emailRegex.match(email).hasMatch()) {
+        QMessageBox::warning(this, "Erreur", "Email invalide (ex: nom@domaine.com).");
+        return false;
+    }
+
+    QString type = ui->comboBox_type->currentText();
+    if (type != "Particulier" && type != "Société") {
+        QMessageBox::warning(this, "Erreur", "Type doit être Particulier ou Société.");
+        return false;
+    }
+
+    bool okTotal = false;
+    int totalOlives = ui->lineEdit_total->text().toInt(&okTotal);
+    if (!okTotal || totalOlives < 0) {
+        QMessageBox::warning(this, "Erreur", "Total olives invalide (entier positif).");
+        return false;
+    }
+    if (totalOlives > 99999999) {
+        QMessageBox::warning(this, "Erreur", "Total olives ne peut pas dépasser 99 999 999 kg.");
+        return false;
+    }
+
+    return true;
 }
 
 void GestionClientsWidget::desactiverBoutons()
@@ -247,42 +449,10 @@ void GestionClientsWidget::displayClientInfo(const Client &client)
 
 void GestionClientsWidget::on_pushButton_ajouter_clicked()
 {
-    // === Validations ===
-    if (ui->lineEdit_id->text().trimmed().isEmpty()) {
-        QMessageBox::warning(this, "Erreur", "L'ID est obligatoire !");
-        return;
-    }
-    if (ui->lineEdit_nom->text().trimmed().isEmpty()) {
-        QMessageBox::warning(this, "Erreur", "Le nom est obligatoire !");
-        return;
-    }
-    if (ui->lineEdit_prenom->text().trimmed().isEmpty()) {
-        QMessageBox::warning(this, "Erreur", "Le prénom est obligatoire !");
-        return;
-    }
-    if (ui->lineEdit_email->text().trimmed().isEmpty()) {
-        QMessageBox::warning(this, "Erreur", "L'email est obligatoire !");
-        return;
-    }
+    if (!validateForm(true, false)) return;
 
-    // Validation du format email
-    QRegularExpression emailRegex("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
-    if (!emailRegex.match(ui->lineEdit_email->text().trimmed()).hasMatch()) {
-        QMessageBox::warning(this, "Erreur", "Le format de l'email est invalide !");
-        return;
-    }
-
-    // Validation du total olives (entier positif)
     bool ok;
     int totalOlives = ui->lineEdit_total->text().toInt(&ok);
-    if (!ok || totalOlives < 0) {
-        QMessageBox::warning(this, "Erreur", "Le total olives doit être un nombre entier positif !");
-        return;
-    }
-    if (totalOlives > 99999999) {
-        QMessageBox::warning(this, "Erreur", "Le total olives ne peut pas dépasser 99 999 999 kg !");
-        return;
-    }
 
     // === Calcul automatique du STATUT ===
     QString statut = (totalOlives > 5000) ? "Important" : "Standard";
@@ -322,39 +492,10 @@ void GestionClientsWidget::on_pushButton_modifier_clicked()
         QMessageBox::warning(this, "Erreur", "Veuillez sélectionner un client à modifier !");
         return;
     }
+    if (!validateForm(false, true)) return;
 
-    // === Validations ===
-    if (ui->lineEdit_nom->text().trimmed().isEmpty()) {
-        QMessageBox::warning(this, "Erreur", "Le nom est obligatoire !");
-        return;
-    }
-    if (ui->lineEdit_prenom->text().trimmed().isEmpty()) {
-        QMessageBox::warning(this, "Erreur", "Le prénom est obligatoire !");
-        return;
-    }
-    if (ui->lineEdit_email->text().trimmed().isEmpty()) {
-        QMessageBox::warning(this, "Erreur", "L'email est obligatoire !");
-        return;
-    }
-
-    // Validation du format email
-    QRegularExpression emailRegex("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
-    if (!emailRegex.match(ui->lineEdit_email->text().trimmed()).hasMatch()) {
-        QMessageBox::warning(this, "Erreur", "Le format de l'email est invalide !");
-        return;
-    }
-
-    // Validation du total olives (entier positif)
     bool ok;
     int totalOlives = ui->lineEdit_total->text().toInt(&ok);
-    if (!ok || totalOlives < 0) {
-        QMessageBox::warning(this, "Erreur", "Le total olives doit être un nombre entier positif !");
-        return;
-    }
-    if (totalOlives > 99999999) {
-        QMessageBox::warning(this, "Erreur", "Le total olives ne peut pas dépasser 99 999 999 kg !");
-        return;
-    }
 
     // === Calcul automatique du STATUT ===
     QString statut = (totalOlives > 5000) ? "Important" : "Standard";
@@ -390,20 +531,23 @@ void GestionClientsWidget::on_pushButton_modifier_clicked()
 
 void GestionClientsWidget::on_pushButton_supprimer_clicked()
 {
-    if (idClientSelectionne == -1) {
+    QString idText = ui->lineEdit_id->text().trimmed();
+    bool okId = false;
+    int id = idText.toInt(&okId);
+    if (idText.isEmpty() || !okId || id <= 0 || !idExists(id)) {
         QMessageBox::warning(this, "Erreur", "Veuillez sélectionner un client à supprimer !");
         return;
     }
 
     // Demander confirmation
     QMessageBox::StandardButton reply = QMessageBox::question(this, "Confirmation",
-        "Voulez-vous vraiment supprimer ce client (ID: " + QString::number(idClientSelectionne) + ") ?",
+        "Voulez-vous vraiment supprimer ce client (ID: " + QString::number(id) + ") ?",
         QMessageBox::Yes | QMessageBox::No);
 
     if (reply == QMessageBox::Yes) {
         QSqlQuery query(ClientConnection::getInstance().getDatabase());
         query.prepare("DELETE FROM CLIENT WHERE ID_CLIENT = :id");
-        query.bindValue(":id", idClientSelectionne);
+        query.bindValue(":id", id);
 
         if (query.exec()) {
             // Commit explicite

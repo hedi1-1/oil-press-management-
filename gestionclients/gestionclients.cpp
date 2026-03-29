@@ -47,6 +47,8 @@ GestionClients::GestionClients(QWidget *parent)
     // ── Update stat cards when clients change ──
     connect(gestionClientsWidget, &GestionClientsWidget::clientsUpdated,
             this, &GestionClients::updateStatCards);
+        connect(gestionClientsWidget, &GestionClientsWidget::clientsUpdated,
+            metiersWidget, &MetiersWidget::refreshFromClients);
 
     // Initial stats update
     updateStatCards();

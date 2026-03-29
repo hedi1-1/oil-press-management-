@@ -210,6 +210,99 @@
          </property>
         </widget>
        </item>
+             <item>
+                <widget class="QGroupBox" name="groupBox_graphique">
+                 <property name="title">
+                    <string>Configuration Graphique</string>
+                 </property>
+                 <layout class="QHBoxLayout" name="horizontalLayout_graphique">
+                    <item>
+                     <widget class="QLabel" name="label_chartType">
+                        <property name="text">
+                         <string>Type de graphique:</string>
+                        </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QComboBox" name="comboBox_chartType">
+                        <item>
+                         <property name="text">
+                            <string>Camembert</string>
+                         </property>
+                        </item>
+                        <item>
+                         <property name="text">
+                            <string>Barres (horizontales)</string>
+                         </property>
+                        </item>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QLabel" name="label_statData">
+                        <property name="text">
+                         <string>Données:</string>
+                        </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QComboBox" name="comboBox_statData">
+                        <item>
+                         <property name="text">
+                            <string>Type client</string>
+                         </property>
+                        </item>
+                        <item>
+                         <property name="text">
+                            <string>Total olives (Standard/Moyen/Important)</string>
+                         </property>
+                        </item>
+                        <item>
+                         <property name="text">
+                            <string>Date création (par mois)</string>
+                         </property>
+                        </item>
+                     </widget>
+                    </item>
+                    <item>
+                     <spacer name="horizontalSpacer_stats">
+                        <property name="orientation">
+                         <enum>Qt::Horizontal</enum>
+                        </property>
+                        <property name="sizeHint" stdset="0">
+                         <size>
+                            <width>40</width>
+                            <height>20</height>
+                         </size>
+                        </property>
+                     </spacer>
+                    </item>
+                 </layout>
+                </widget>
+             </item>
+             <item>
+                <widget class="QWidget" name="statsChartContainer">
+                 <property name="minimumSize">
+                    <size>
+                     <width>0</width>
+                     <height>220</height>
+                    </size>
+                 </property>
+                 <layout class="QVBoxLayout" name="statsChartLayout">
+                    <property name="leftMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>0</number>
+                    </property>
+                 </layout>
+                </widget>
+             </item>
        <item>
         <widget class="QTextEdit" name="textEdit_stats">
          <property name="readOnly">
@@ -231,9 +324,176 @@
          </property>
         </widget>
        </item>
-       <item>
-        <widget class="QTableWidget" name="tableView_fidelite"/>
-       </item>
+         <item>
+          <widget class="QGroupBox" name="groupBox_fideliteResume">
+           <property name="title">
+            <string>Résumé Fidélité</string>
+           </property>
+           <layout class="QHBoxLayout" name="horizontalLayout_fideliteCards">
+            <item>
+             <widget class="QFrame" name="cardBronze">
+              <property name="styleSheet">
+            <string notr="true">QFrame#cardBronze{background:#fff6ec;border:1px solid #CD7F32;border-radius:10px;} QLabel{color:#5c3b1b;}</string>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_cardBronze">
+            <item>
+             <widget class="QLabel" name="labelBronzeTitle">
+              <property name="text">
+               <string>Bronze</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="lblFidBronzeCount">
+              <property name="text">
+               <string>0</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">font-size:18px;font-weight:700;</string>
+              </property>
+             </widget>
+            </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QFrame" name="cardSilver">
+              <property name="styleSheet">
+            <string notr="true">QFrame#cardSilver{background:#f2f2f2;border:1px solid #C0C0C0;border-radius:10px;} QLabel{color:#3a3a3a;}</string>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_cardSilver">
+            <item>
+             <widget class="QLabel" name="labelSilverTitle">
+              <property name="text">
+               <string>Silver</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="lblFidSilverCount">
+              <property name="text">
+               <string>0</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">font-size:18px;font-weight:700;</string>
+              </property>
+             </widget>
+            </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QFrame" name="cardGold">
+              <property name="styleSheet">
+            <string notr="true">QFrame#cardGold{background:#fff7d6;border:1px solid #D4AF37;border-radius:10px;} QLabel{color:#5c4a1a;}</string>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_cardGold">
+            <item>
+             <widget class="QLabel" name="labelGoldTitle">
+              <property name="text">
+               <string>Gold</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="lblFidGoldCount">
+              <property name="text">
+               <string>0</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">font-size:18px;font-weight:700;</string>
+              </property>
+             </widget>
+            </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QFrame" name="cardPremium">
+              <property name="styleSheet">
+            <string notr="true">QFrame#cardPremium{background:#eef8f2;border:1px solid #1B4332;border-radius:10px;} QLabel{color:#1B4332;}</string>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_cardPremium">
+            <item>
+             <widget class="QLabel" name="labelPremiumTitle">
+              <property name="text">
+               <string>Premium</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="lblFidPremiumCount">
+              <property name="text">
+               <string>0</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">font-size:18px;font-weight:700;</string>
+              </property>
+             </widget>
+            </item>
+              </layout>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QSplitter" name="splitterFidelite">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="childrenCollapsible">
+            <bool>false</bool>
+           </property>
+           <widget class="QWidget" name="fideliteChartContainer">
+            <property name="minimumSize">
+             <size>
+              <width>280</width>
+              <height>220</height>
+             </size>
+            </property>
+            <layout class="QVBoxLayout" name="fideliteChartLayout">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+            </layout>
+           </widget>
+           <widget class="QTableWidget" name="tableView_fidelite"/>
+          </widget>
+         </item>
       </layout>
      </widget>
      <widget class="QWidget" name="tab_rapport">
@@ -241,6 +501,40 @@
        <string>Rapport</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_5">
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_rapportSelect">
+            <item>
+             <widget class="QLabel" name="label_rapportSelect">
+               <property name="text">
+                <string>Client:</string>
+               </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="comboBox_rapportClient">
+               <property name="minimumSize">
+                <size>
+                  <width>220</width>
+                  <height>0</height>
+                </size>
+               </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer_rapportSelect">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                  <width>40</width>
+                  <height>20</height>
+                </size>
+               </property>
+             </spacer>
+            </item>
+          </layout>
+         </item>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_4">
          <item>

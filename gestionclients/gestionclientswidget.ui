@@ -150,6 +150,26 @@
           </property>
          </widget>
         </item>
+                <item row="10" column="0">
+                 <widget class="QLabel" name="label_error_spacer">
+                    <property name="text">
+                     <string/>
+                    </property>
+                 </widget>
+                </item>
+                <item row="10" column="1">
+                 <widget class="QLabel" name="label_error_hint">
+                    <property name="text">
+                     <string/>
+                    </property>
+                    <property name="styleSheet">
+                     <string notr="true">color:#d32f2f;font-weight:600;font-size:11px;</string>
+                    </property>
+                    <property name="wordWrap">
+                     <bool>true</bool>
+                    </property>
+                 </widget>
+                </item>
        </layout>
       </widget>
      </item>
