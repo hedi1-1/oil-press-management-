@@ -8,9 +8,21 @@
 #include <QDate>
 #include <QLocale>
 #include <QPainter>
+#include <QPdfWriter>
 #include <QLabel>
 #include <QFont>
+#include <QItemSelectionModel>
+#include <QPageSize>
+#include <QSet>
+#include <QStringConverter>
+#include <QTextDocument>
 #include <algorithm>
+
+static QString csvEscape(QString value)
+{
+    value.replace('"', "\"\"");
+    return '"' + value + '"';
+}
 
 MetiersWidget::MetiersWidget(QWidget *parent)
     : QWidget(parent)
@@ -249,28 +261,192 @@ void MetiersWidget::exportToTxt(const QList<Client> &data)
     QMessageBox::information(this, "Succès", "Export TXT réussi!");
 }
 
+QList<Client> MetiersWidget::collectExportClients() const
+{
+    QList<Client> exportData;
+    if (!clients || clients->isEmpty()) {
+        return exportData;
+    }
+
+    QSet<int> idsToExport;
+    const QItemSelectionModel *selectionModel = ui->tableView_resultats->selectionModel();
+
+    if (selectionModel) {
+        const QModelIndexList selectedRows = selectionModel->selectedRows();
+        for (const QModelIndex &index : selectedRows) {
+            QTableWidgetItem *idItem = ui->tableView_resultats->item(index.row(), 0);
+            if (!idItem) continue;
+            bool ok = false;
+            const int id = idItem->text().toInt(&ok);
+            if (ok) idsToExport.insert(id);
+        }
+    }
+
+    if (idsToExport.isEmpty() && ui->tableView_resultats->rowCount() > 0) {
+        for (int row = 0; row < ui->tableView_resultats->rowCount(); ++row) {
+            QTableWidgetItem *idItem = ui->tableView_resultats->item(row, 0);
+            if (!idItem) continue;
+            bool ok = false;
+            const int id = idItem->text().toInt(&ok);
+            if (ok) idsToExport.insert(id);
+        }
+    }
+
+    if (idsToExport.isEmpty()) {
+        return *clients;
+    }
+
+    for (const Client &client : *clients) {
+        if (idsToExport.contains(client.id_client)) {
+            exportData.append(client);
+        }
+    }
+
+    return exportData;
+}
+
+QString MetiersWidget::buildClientsPlainText(const QList<Client> &data) const
+{
+    QString text;
+    text += "========================================\n";
+    text += "    LISTE DES CLIENTS\n";
+    text += "========================================\n\n";
+
+    for (const Client &client : data) {
+        text += "ID: " + QString::number(client.id_client) + "\n";
+        text += "Nom: " + client.nom + "\n";
+        text += "Prénom: " + client.prenom + "\n";
+        text += "Téléphone: " + client.telephone + "\n";
+        text += "Email: " + client.email + "\n";
+        text += "Type: " + client.type_client + "\n";
+        text += "Total Olives: " + QString::number(client.total_olives_livrees, 'f', 0) + " kg\n";
+        text += "Statut: " + client.statut + "\n";
+        text += "----------------------------------------\n\n";
+    }
+
+    text += "Total exporté: " + QString::number(data.size()) + " client(s)\n";
+    return text;
+}
+
+QString MetiersWidget::buildClientsHtmlTable(const QList<Client> &data) const
+{
+    QString html;
+    html += "<html><head><meta charset=\"UTF-8\"></head><body>";
+    html += "<h2>Liste des clients</h2>";
+    html += "<table border=\"1\" cellspacing=\"0\" cellpadding=\"4\">";
+    html += "<tr><th>ID</th><th>Nom</th><th>Prénom</th><th>Téléphone</th><th>Email</th><th>Type</th><th>Total Olives (kg)</th><th>Statut</th></tr>";
+
+    for (const Client &client : data) {
+        html += "<tr>";
+        html += "<td>" + QString::number(client.id_client).toHtmlEscaped() + "</td>";
+        html += "<td>" + client.nom.toHtmlEscaped() + "</td>";
+        html += "<td>" + client.prenom.toHtmlEscaped() + "</td>";
+        html += "<td>" + client.telephone.toHtmlEscaped() + "</td>";
+        html += "<td>" + client.email.toHtmlEscaped() + "</td>";
+        html += "<td>" + client.type_client.toHtmlEscaped() + "</td>";
+        html += "<td>" + QString::number(client.total_olives_livrees, 'f', 0).toHtmlEscaped() + "</td>";
+        html += "<td>" + client.statut.toHtmlEscaped() + "</td>";
+        html += "</tr>";
+    }
+
+    html += "</table>";
+    html += "<p><b>Total exporté:</b> " + QString::number(data.size()) + " client(s)</p>";
+    html += "</body></html>";
+    return html;
+}
+
 void MetiersWidget::on_pushButton_txt_clicked()
 {
-    if (!clients || clients->isEmpty()) {
+    const QList<Client> data = collectExportClients();
+    if (data.isEmpty()) {
         QMessageBox::warning(this, "Erreur", "Aucune donnée à exporter!");
         return;
     }
-    exportToTxt(*clients);
+    exportToTxt(data);
 }
 
 void MetiersWidget::on_pushButton_pdf_clicked()
 {
-    QMessageBox::information(this, "Export PDF", "Fonctionnalité d'export PDF à implémenter!");
+    const QList<Client> data = collectExportClients();
+    if (data.isEmpty()) {
+        QMessageBox::warning(this, "Erreur", "Aucune donnée à exporter!");
+        return;
+    }
+
+    QString fileName = QFileDialog::getSaveFileName(this, "Exporter en PDF", "", "PDF Files (*.pdf)");
+    if (fileName.isEmpty()) return;
+
+    QPdfWriter writer(fileName);
+    writer.setPageSize(QPageSize(QPageSize::A4));
+    writer.setResolution(300);
+
+    QTextDocument document;
+    document.setHtml(buildClientsHtmlTable(data));
+    document.print(&writer);
+
+    QMessageBox::information(this, "Succès", "Export PDF réussi!");
 }
 
 void MetiersWidget::on_pushButton_excel_clicked()
 {
-    QMessageBox::information(this, "Export Excel", "Fonctionnalité d'export Excel à implémenter!");
+    const QList<Client> data = collectExportClients();
+    if (data.isEmpty()) {
+        QMessageBox::warning(this, "Erreur", "Aucune donnée à exporter!");
+        return;
+    }
+
+    QString fileName = QFileDialog::getSaveFileName(this, "Exporter en Excel", "", "Excel CSV (*.csv)");
+    if (fileName.isEmpty()) return;
+
+    QFile file(fileName);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QMessageBox::critical(this, "Erreur", "Impossible de créer le fichier!");
+        return;
+    }
+
+    QTextStream out(&file);
+    out.setEncoding(QStringConverter::Utf8);
+    out << "\uFEFF";
+    out << "ID;Nom;Prénom;Téléphone;Email;Type;Total Olives (kg);Statut\n";
+
+    for (const Client &client : data) {
+        out << csvEscape(QString::number(client.id_client)) << ';'
+            << csvEscape(client.nom) << ';'
+            << csvEscape(client.prenom) << ';'
+            << csvEscape(client.telephone) << ';'
+            << csvEscape(client.email) << ';'
+            << csvEscape(client.type_client) << ';'
+            << csvEscape(QString::number(client.total_olives_livrees, 'f', 0)) << ';'
+            << csvEscape(client.statut) << '\n';
+    }
+
+    file.close();
+    QMessageBox::information(this, "Succès", "Export Excel (CSV) réussi!");
 }
 
 void MetiersWidget::on_pushButton_word_clicked()
 {
-    QMessageBox::information(this, "Export Word", "Fonctionnalité d'export Word à implémenter!");
+    const QList<Client> data = collectExportClients();
+    if (data.isEmpty()) {
+        QMessageBox::warning(this, "Erreur", "Aucune donnée à exporter!");
+        return;
+    }
+
+    QString fileName = QFileDialog::getSaveFileName(this, "Exporter en Word", "", "Word Document (*.doc)");
+    if (fileName.isEmpty()) return;
+
+    QFile file(fileName);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QMessageBox::critical(this, "Erreur", "Impossible de créer le fichier!");
+        return;
+    }
+
+    QTextStream out(&file);
+    out.setEncoding(QStringConverter::Utf8);
+    out << buildClientsHtmlTable(data);
+    file.close();
+
+    QMessageBox::information(this, "Succès", "Export Word réussi!");
 }
 
 void MetiersWidget::on_pushButton_stat_clicked()

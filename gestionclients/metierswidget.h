@@ -73,6 +73,9 @@ private:
     void displayClientInfo(const Client &client);
     void generateReport(const Client &client);
     void exportToTxt(const QList<Client> &data);
+    QList<Client> collectExportClients() const;
+    QString buildClientsPlainText(const QList<Client> &data) const;
+    QString buildClientsHtmlTable(const QList<Client> &data) const;
     void initializeStatsChart();
     void updateStatsChart();
     void initializeFideliteChart();
