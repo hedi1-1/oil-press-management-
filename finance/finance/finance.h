@@ -185,6 +185,7 @@ class StatsTab : public QWidget
 
 public:
     explicit StatsTab(QWidget *parent = nullptr);
+    void setDarkMode(bool isDark);
 
 public slots:
     void calculerStats();
@@ -196,6 +197,7 @@ protected:
 private:
     void initializeUI();
     void setupConnections();
+    void applyDarkModeStyles();
     QGroupBox* createSummarySection();
     QGroupBox* createChartControlSection();
     QGroupBox* createChartSection();
@@ -204,6 +206,18 @@ private:
     QLabel *lblTotalRevenus;
     QLabel *lblTotalDepenses;
     QLabel *lblBenefice;
+
+    // Dark mode
+    bool m_isDarkMode{false};
+    QGroupBox *summaryGroup = nullptr;
+    QGroupBox *controlGroup = nullptr;
+    QGroupBox *chartGroup = nullptr;
+    QWidget *revCard = nullptr;
+    QWidget *depCard = nullptr;
+    QWidget *benCard = nullptr;
+    QLabel *lblRevenuTitle = nullptr;
+    QLabel *lblDepenseTitle = nullptr;
+    QLabel *lblBeneficeTitle = nullptr;
 
     // Graphiques
     QComboBox *cbChartType;
@@ -285,10 +299,12 @@ protected:
 
 private slots:
     void updateDateTime();
+    void onToggleDarkMode();
 
 private:
     void initializeUI();
     void applyStyles();
+    void applyTheme();
 
     Ui::Finance *ui;
     QTabWidget *mainTabWidget;
@@ -301,6 +317,11 @@ private:
     // DateTime
     QTimer *dateTimeTimer;
     QLabel *lblDateTime;
+
+    // Dark Mode
+    bool m_isDarkMode;
+    QString m_lightStyleSheet;
+    QPushButton *btnDarkMode;
 };
 
 #endif // FINANCE_H
