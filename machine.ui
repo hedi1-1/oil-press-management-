@@ -876,6 +876,15 @@ QPushButton:pressed {
                                   </item>
                                 </widget>
                               </item>
+                              <item>
+                                <widget class="QComboBox" name="filtre_responsable">
+                                  <item>
+                                    <property name="text">
+                                      <string>-- Responsable --</string>
+                                    </property>
+                                  </item>
+                                </widget>
+                              </item>
                             </layout>
                           </item>
                           <item>
@@ -2780,17 +2789,54 @@ QFrame#cardMachine3:hover { border-color: #4CAF50; }</string>
                       </layout>
                     </item>
                     <item>
-                      <spacer name="horizontalSpacer_actions">
-                        <property name="orientation">
-                          <enum>Qt::Orientation::Horizontal</enum>
+                      <widget class="QGroupBox" name="groupEmployeesActions">
+                        <property name="title">
+                          <string>Employés enregistrés</string>
                         </property>
-                        <property name="sizeHint" stdset="0">
-                          <size>
-                            <width>40</width>
-                            <height>20</height>
-                          </size>
-                        </property>
-                      </spacer>
+                        <layout class="QVBoxLayout" name="layoutEmployeesActions">
+                          <property name="leftMargin">
+                            <number>14</number>
+                          </property>
+                          <property name="topMargin">
+                            <number>22</number>
+                          </property>
+                          <property name="rightMargin">
+                            <number>14</number>
+                          </property>
+                          <property name="bottomMargin">
+                            <number>14</number>
+                          </property>
+                          <item>
+                            <widget class="QLabel" name="labelEmployeesHint">
+                              <property name="text">
+                                <string>Liste synchronisée depuis la table EMPLOYEES</string>
+                              </property>
+                              <property name="styleSheet">
+                                <string notr="true">color: #4f4f4f; font-size: 11px; font-weight: 600;</string>
+                              </property>
+                            </widget>
+                          </item>
+                          <item>
+                            <widget class="QTableView" name="tableEmployees_machine">
+                              <property name="alternatingRowColors">
+                                <bool>true</bool>
+                              </property>
+                              <property name="selectionBehavior">
+                                <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
+                              </property>
+                              <property name="selectionMode">
+                                <enum>QAbstractItemView::SelectionMode::SingleSelection</enum>
+                              </property>
+                              <property name="editTriggers">
+                                <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
+                              </property>
+                              <property name="showGrid">
+                                <bool>true</bool>
+                              </property>
+                            </widget>
+                          </item>
+                        </layout>
+                      </widget>
                     </item>
                   </layout>
                 </item>

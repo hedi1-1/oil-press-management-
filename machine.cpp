@@ -1,6 +1,7 @@
 #include "machine.h"
 #include "connexionmachine.h"
 #include "ui_machine.h"
+#include <QBrush>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDateEdit>
@@ -177,7 +178,7 @@ void NavigationBar::onTabButtonClicked() {
 
 machine::machine(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::machine), navigationBar(nullptr),
-      historiqueTableModel(nullptr), m_selectedRow(-1),
+  employeeTableModel(nullptr), historiqueTableModel(nullptr), m_selectedRow(-1),
       machineCardPollingTimer(nullptr), machineCardDialog(nullptr),
       countsTimer(nullptr), historiqueTimer(nullptr) {
   ui->setupUi(this);
@@ -230,6 +231,7 @@ machine::machine(QWidget *parent)
 
   // Initialize and load data
   setupMachineTable();
+  setupEmployeesTable();
   
   // Initialize date filters to show all machines by default
   ui->date_debut->setDate(QDate(2000, 1, 1));
@@ -244,6 +246,7 @@ machine::machine(QWidget *parent)
     ui->filtre_etat_marche_machine->setCurrentIndex(0);
     ui->filtre_type_alerte->setCurrentIndex(0);
     ui->filtre_alerte_criticite->setCurrentIndex(0);
+    ui->filtre_responsable->setCurrentIndex(0);
     ui->tri_par->setCurrentIndex(0);
     
     // Réinitialiser les dates par défaut
@@ -255,6 +258,7 @@ machine::machine(QWidget *parent)
   });
 
   chargerMachines();
+  chargerEmployees();
 
   // Export PDF button
   connect(ui->btnExporter_machine, &QPushButton::clicked, this,
@@ -438,12 +442,12 @@ void machine::setupNavigationBar() {
 }
 
 void machine::setupMachineTable() {
-  // Create model with columns matching requested order (13 columns)
-  machineTableModel = new QStandardItemModel(0, 13, this);
+  // Create model with columns matching requested order (14 columns)
+  machineTableModel = new QStandardItemModel(0, 14, this);
   machineTableModel->setHorizontalHeaderLabels(
       {"ID", "Nom", "Type", "État marche", "Temp. (°C)", "Charge (%)",
        "Fonctionnement", "Alerte", "Criticité", "Dernière maintenance",
-       "Date d'installation", "Score Santé", "Date mise à jour"});
+       "Date d'installation", "Score Santé", "Date mise à jour", "Responsable"});
 
   // Configure UI table view
   ui->tableMachines_machine->setModel(machineTableModel);
@@ -507,6 +511,210 @@ void machine::setupMachineTable() {
   ui->tableMachines_machine->verticalHeader()->setDefaultSectionSize(40);
 }
 
+void machine::setupEmployeesTable() {
+  employeeTableModel = new QStandardItemModel(0, 7, this);
+  employeeTableModel->setHorizontalHeaderLabels(
+      {"ID", "Nom utilisateur", "Email", "Role", "Etat", "Cree le", "Derniere connexion"});
+
+  ui->tableEmployees_machine->setModel(employeeTableModel);
+  ui->tableEmployees_machine->setStyleSheet(R"(
+        QTableView {
+            border: 2px solid #1A3C2F;
+            border-radius: 6px;
+            background-color: #FFFFFF;
+            alternate-background-color: #F0F7F4;
+            gridline-color: #D5E8D4;
+            font-size: 11px;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            selection-background-color: #C8E6C9;
+            selection-color: #1A3C2F;
+        }
+        QTableView::item {
+            padding: 6px 10px;
+            border-bottom: 1px solid #E8E8E8;
+        }
+        QHeaderView::section {
+            background-color: #1B4D3E;
+            color: white;
+            padding: 8px;
+            border: none;
+            border-right: 1px solid #2C5F4F;
+            font-weight: bold;
+            font-size: 11px;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        QHeaderView::section:last {
+            border-right: none;
+        }
+    )");
+
+  ui->tableEmployees_machine->setAlternatingRowColors(true);
+  ui->tableEmployees_machine->setSelectionBehavior(QAbstractItemView::SelectRows);
+  ui->tableEmployees_machine->setSelectionMode(QAbstractItemView::SingleSelection);
+  ui->tableEmployees_machine->setEditTriggers(QAbstractItemView::NoEditTriggers);
+  ui->tableEmployees_machine->verticalHeader()->setVisible(false);
+  ui->tableEmployees_machine->horizontalHeader()->setStretchLastSection(true);
+  ui->tableEmployees_machine->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+  ui->tableEmployees_machine->setWordWrap(false);
+
+  connect(ui->tableEmployees_machine, &QTableView::clicked, this,
+          [this](const QModelIndex &index) {
+            if (!index.isValid()) {
+              return;
+            }
+            onEmployeeRowChosen(index.row());
+          });
+}
+
+void machine::chargerEmployees() {
+  if (!employeeTableModel) {
+    return;
+  }
+
+  employeeTableModel->setRowCount(0);
+
+  QSqlQuery query(ConnectionMachine::getInstance().getDatabase());
+  query.prepare("SELECT USER_ID, USERNAME, EMAIL, ROLE, STATE, CREATED_AT, LAST_LOGIN "
+                "FROM EMPLOYEES ORDER BY USER_ID ASC");
+
+  if (!query.exec()) {
+    qDebug() << "Erreur lors du chargement des employes :" << query.lastError().text();
+    return;
+  }
+
+  QFont boldFont;
+  boldFont.setBold(true);
+
+  while (query.next()) {
+    QList<QStandardItem *> row;
+
+    const QString id = query.value(0).toString();
+    const QString username = query.value(1).toString();
+    const QString email = query.value(2).toString();
+    const QString role = query.value(3).toString();
+    const QString state = query.value(4).toString();
+    const QDateTime createdAt = query.value(5).toDateTime();
+    const QDateTime lastLogin = query.value(6).toDateTime();
+
+    const QString createdAtStr = createdAt.isValid() ? createdAt.toString("dd/MM/yyyy HH:mm") : "-";
+    const QString lastLoginStr = lastLogin.isValid() ? lastLogin.toString("dd/MM/yyyy HH:mm") : "Jamais";
+
+    const QStringList values = {id, username, email, role, state, createdAtStr, lastLoginStr};
+
+    for (const QString &value : values) {
+      auto *item = new QStandardItem(value);
+      item->setEditable(false);
+      item->setTextAlignment(Qt::AlignCenter);
+      item->setForeground(QColor("#333333"));
+      row.append(item);
+    }
+
+    row[3]->setFont(boldFont);
+    row[4]->setFont(boldFont);
+
+    const QString normalizedState = state.trimmed().toUpper();
+    if (normalizedState == "ACTIVE") {
+      row[4]->setForeground(QColor("#2E7D32"));
+    } else if (normalizedState == "INACTIVE" || normalizedState == "LOCKED" || normalizedState == "BLOCKED") {
+      row[4]->setForeground(QColor("#C62828"));
+    } else {
+      row[4]->setForeground(QColor("#E65100"));
+    }
+
+    for (QStandardItem *item : row) {
+      item->setData(item->foreground(), Qt::UserRole);
+    }
+
+    employeeTableModel->appendRow(row);
+  }
+
+  applyEmployeeSelectionLockState();
+}
+
+void machine::onEmployeeRowChosen(int row) {
+  if (!employeeTableModel || row < 0 || row >= employeeTableModel->rowCount()) {
+    return;
+  }
+
+  QStandardItem *idItem = employeeTableModel->item(row, 0);
+  if (!idItem) {
+    return;
+  }
+
+  m_selectedEmployeeId = idItem->text().toInt();
+  m_selectedEmployeeRow = row;
+  m_employeeSelectionLocked = true;
+
+  applyEmployeeSelectionLockState();
+  ui->tableEmployees_machine->selectRow(row);
+}
+
+void machine::applyEmployeeSelectionLockState() {
+  if (!employeeTableModel) {
+    return;
+  }
+
+  const QColor lockedFg("#A0A0A0");
+  const QColor lockedBg("#ECECEC");
+  const QColor activeBg("#FFFFFF");
+
+  // Reposition selected row if table has been refreshed.
+  if (m_employeeSelectionLocked && m_selectedEmployeeId >= 0) {
+    int foundRow = -1;
+    for (int r = 0; r < employeeTableModel->rowCount(); ++r) {
+      QStandardItem *idItem = employeeTableModel->item(r, 0);
+      if (idItem && idItem->text().toInt() == m_selectedEmployeeId) {
+        foundRow = r;
+        break;
+      }
+    }
+
+    if (foundRow >= 0) {
+      m_selectedEmployeeRow = foundRow;
+    } else {
+      m_employeeSelectionLocked = false;
+      m_selectedEmployeeId = -1;
+      m_selectedEmployeeRow = -1;
+    }
+  }
+
+  for (int r = 0; r < employeeTableModel->rowCount(); ++r) {
+    const bool selectedRow = (m_employeeSelectionLocked && r == m_selectedEmployeeRow);
+
+    for (int c = 0; c < employeeTableModel->columnCount(); ++c) {
+      QStandardItem *item = employeeTableModel->item(r, c);
+      if (!item) {
+        continue;
+      }
+
+      if (m_employeeSelectionLocked && !selectedRow) {
+        item->setFlags(Qt::ItemIsEnabled);
+        item->setForeground(lockedFg);
+        item->setBackground(lockedBg);
+      } else {
+        item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+        const QVariant savedColor = item->data(Qt::UserRole);
+        if (savedColor.isValid()) {
+          item->setForeground(savedColor.value<QBrush>());
+        }
+        item->setBackground(activeBg);
+      }
+    }
+  }
+}
+
+void machine::clearEmployeeSelection() {
+  m_selectedEmployeeId = -1;
+  m_selectedEmployeeRow = -1;
+  m_employeeSelectionLocked = false;
+
+  if (ui->tableEmployees_machine) {
+    ui->tableEmployees_machine->clearSelection();
+  }
+
+  applyEmployeeSelectionLockState();
+}
+
 void machine::onNavigationTabClicked(int index) {
   // When changing tabs, hide form and reset view
   if (index == 0) {
@@ -520,6 +728,11 @@ void machine::onNavigationTabClicked(int index) {
     ui->scrollHistoriqueOnOff_machine->setVisible(false);
     ui->scrollListeMachines->setVisible(false);
     ui->tableMachines_machine->setVisible(false);
+
+    if (index == 1) {
+      // Keep employees list in sync when user opens Actions tab.
+      chargerEmployees();
+    }
   }
 
   // Update the tab widget to show the corresponding tab
@@ -800,6 +1013,29 @@ machine::MachineFormData machine::collectMachineFormData() const {
   return data;
 }
 
+bool machine::machineHasEmployeeColumn() const {
+  return !machineEmployeeColumnName().isEmpty();
+}
+
+QString machine::machineEmployeeColumnName() const {
+  QSqlQuery query(ConnectionMachine::getInstance().getDatabase());
+  query.prepare("SELECT COLUMN_NAME "
+                "FROM USER_TAB_COLUMNS "
+                "WHERE TABLE_NAME = 'MACHINE' "
+                "AND COLUMN_NAME IN ('USER_ID', 'ID_USER') "
+                "ORDER BY CASE COLUMN_NAME WHEN 'USER_ID' THEN 1 ELSE 2 END");
+
+  if (!query.exec()) {
+    return QString();
+  }
+
+  if (query.next()) {
+    return query.value(0).toString();
+  }
+
+  return QString();
+}
+
 bool machine::isMachineNameAvailable(const QString &name) const {
   const QString trimmed = name.trimmed();
   if (trimmed.isEmpty()) {
@@ -826,22 +1062,54 @@ bool machine::isMachineNameAvailable(const QString &name) const {
 
 bool machine::insertMachine(const MachineFormData &data, QString *errorMessage) {
   QSqlQuery query(ConnectionMachine::getInstance().getDatabase());
-  query.prepare(
-      "INSERT INTO MACHINE (NOM_MACHINE, TYPE_MACHINE, ETAT_MARCHE, "
-      "TEMPERATURE_ACTUELLE, NIVEAU_CHARGE, ETAT_FONCTIONNEMENT, TYPE_ALERTE, "
-      "NIVEAU_CRITICITE, DATE_DERNIERE_MAINTENANCE, SCORE_SANTE) "
-      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+  const bool hasEmployeeSelection = (m_selectedEmployeeId >= 0);
+  const QString employeeColumn = machineEmployeeColumnName();
+  const bool hasEmployeeColumn = !employeeColumn.isEmpty();
 
-  query.addBindValue(data.nom);
-  query.addBindValue(data.type);
-  query.addBindValue(data.etatMarche);
-  query.addBindValue(data.temperature);
-  query.addBindValue(data.charge);
-  query.addBindValue(data.etatFonctionnement);
-  query.addBindValue(data.typeAlerte);
-  query.addBindValue(data.criticite);
-  query.addBindValue(data.derniereMaintenance);
-  query.addBindValue(data.scoreSante);
+  if (hasEmployeeSelection && !hasEmployeeColumn) {
+    if (errorMessage) {
+      *errorMessage =
+          "La colonne MACHINE.USER_ID (ou ID_USER) est absente. Ajoutez-la pour enregistrer l'employe responsable.";
+    }
+    return false;
+  }
+
+  if (hasEmployeeSelection) {
+    query.prepare(
+        "INSERT INTO MACHINE (NOM_MACHINE, TYPE_MACHINE, ETAT_MARCHE, "
+        "TEMPERATURE_ACTUELLE, NIVEAU_CHARGE, ETAT_FONCTIONNEMENT, TYPE_ALERTE, "
+      "NIVEAU_CRITICITE, DATE_DERNIERE_MAINTENANCE, SCORE_SANTE, " + employeeColumn + ") "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+
+    query.addBindValue(data.nom);
+    query.addBindValue(data.type);
+    query.addBindValue(data.etatMarche);
+    query.addBindValue(data.temperature);
+    query.addBindValue(data.charge);
+    query.addBindValue(data.etatFonctionnement);
+    query.addBindValue(data.typeAlerte);
+    query.addBindValue(data.criticite);
+    query.addBindValue(data.derniereMaintenance);
+    query.addBindValue(data.scoreSante);
+    query.addBindValue(m_selectedEmployeeId);
+  } else {
+    query.prepare(
+        "INSERT INTO MACHINE (NOM_MACHINE, TYPE_MACHINE, ETAT_MARCHE, "
+        "TEMPERATURE_ACTUELLE, NIVEAU_CHARGE, ETAT_FONCTIONNEMENT, TYPE_ALERTE, "
+        "NIVEAU_CRITICITE, DATE_DERNIERE_MAINTENANCE, SCORE_SANTE) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+
+    query.addBindValue(data.nom);
+    query.addBindValue(data.type);
+    query.addBindValue(data.etatMarche);
+    query.addBindValue(data.temperature);
+    query.addBindValue(data.charge);
+    query.addBindValue(data.etatFonctionnement);
+    query.addBindValue(data.typeAlerte);
+    query.addBindValue(data.criticite);
+    query.addBindValue(data.derniereMaintenance);
+    query.addBindValue(data.scoreSante);
+  }
 
   if (!query.exec()) {
     if (errorMessage) {
@@ -868,7 +1136,12 @@ bool machine::saveMachineWithName(const QString &name,
 
   QMessageBox msgBox(this);
   msgBox.setWindowTitle("Succès");
-  msgBox.setText("✅ Machine ajoutée avec succès !");
+  if (m_selectedEmployeeId >= 0) {
+    msgBox.setText(QString("✅ Machine ajoutée avec succès (ID employé responsable: %1) !")
+                       .arg(m_selectedEmployeeId));
+  } else {
+    msgBox.setText("✅ Machine ajoutée avec succès !");
+  }
   msgBox.setIcon(QMessageBox::Information);
   msgBox.setStyleSheet(R"(
             QMessageBox {
@@ -1306,6 +1579,9 @@ void machine::on_btnReinitialiser_machine_clicked() {
 
   // 10. Réinitialiser le score de santé à 100 (QSpinBox)
   ui->spinBox_score_sante_machine->setValue(100);
+
+  // 11. Déverrouiller la sélection employé (si un responsable avait été choisi)
+  clearEmployeeSelection();
 }
 
 void machine::chargerMachines() {
@@ -1313,12 +1589,25 @@ void machine::chargerMachines() {
 
   // 1. Préparer et exécuter la requête SQL pour récupérer les données dans
   // l'ordre exact de la base de données
+  const QString employeeColumn = machineEmployeeColumnName();
+  const bool hasEmployeeColumn = !employeeColumn.isEmpty();
   QSqlQuery query(ConnectionMachine::getInstance().getDatabase());
-  query.prepare("SELECT ID_MACHINE, NOM_MACHINE, TYPE_MACHINE, ETAT_MARCHE, "
-                "TEMPERATURE_ACTUELLE, NIVEAU_CHARGE, ETAT_FONCTIONNEMENT, "
-                "TYPE_ALERTE, NIVEAU_CRITICITE, DATE_DERNIERE_MAINTENANCE, "
-                "DATE_INSTALLATION, SCORE_SANTE, DATE_MISE_A_JOUR "
-                "FROM MACHINE ORDER BY ID_MACHINE ASC");
+  if (hasEmployeeColumn) {
+    query.prepare(
+        "SELECT M.ID_MACHINE, M.NOM_MACHINE, M.TYPE_MACHINE, M.ETAT_MARCHE, "
+        "M.TEMPERATURE_ACTUELLE, M.NIVEAU_CHARGE, M.ETAT_FONCTIONNEMENT, "
+        "M.TYPE_ALERTE, M.NIVEAU_CRITICITE, M.DATE_DERNIERE_MAINTENANCE, "
+        "M.DATE_INSTALLATION, M.SCORE_SANTE, M.DATE_MISE_A_JOUR, "
+        "NVL(E.USERNAME, '-') AS RESPONSABLE "
+        "FROM MACHINE M LEFT JOIN EMPLOYEES E ON M." + employeeColumn + " = E.USER_ID "
+        "ORDER BY M.ID_MACHINE ASC");
+  } else {
+    query.prepare("SELECT ID_MACHINE, NOM_MACHINE, TYPE_MACHINE, ETAT_MARCHE, "
+                  "TEMPERATURE_ACTUELLE, NIVEAU_CHARGE, ETAT_FONCTIONNEMENT, "
+                  "TYPE_ALERTE, NIVEAU_CRITICITE, DATE_DERNIERE_MAINTENANCE, "
+                  "DATE_INSTALLATION, SCORE_SANTE, DATE_MISE_A_JOUR, '-' AS RESPONSABLE "
+                  "FROM MACHINE ORDER BY ID_MACHINE ASC");
+  }
 
   if (!query.exec()) {
     qDebug() << "Erreur lors du chargement des machines :"
@@ -1342,12 +1631,47 @@ void machine::chargerMachines() {
     m.installation = query.value(10).toDate();
     m.scoreSante = query.value(11).toInt();
     m.miseAJour = query.value(12).toDate();
+    m.responsable = query.value(13).toString();
 
     m_allMachines.append(m);
   }
 
+  refreshResponsableFilterOptions();
+
   // 3. Appliquer le filtrage initial avec les valeurs par défaut (tout afficher)
   appliquerFiltres();
+}
+
+void machine::refreshResponsableFilterOptions() {
+  if (!ui->filtre_responsable) {
+    return;
+  }
+
+  const QString previous = ui->filtre_responsable->currentText();
+
+  QSet<QString> responsablesSet;
+  for (const MachineData &m : m_allMachines) {
+    const QString responsable = m.responsable.trimmed();
+    if (!responsable.isEmpty() && responsable != "-") {
+      responsablesSet.insert(responsable);
+    }
+  }
+
+  QStringList responsables = responsablesSet.values();
+  responsables.sort(Qt::CaseInsensitive);
+
+  ui->filtre_responsable->blockSignals(true);
+  ui->filtre_responsable->clear();
+  ui->filtre_responsable->addItem("-- Responsable --");
+  ui->filtre_responsable->addItems(responsables);
+
+  const int previousIndex = ui->filtre_responsable->findText(previous);
+  if (previousIndex >= 0) {
+    ui->filtre_responsable->setCurrentIndex(previousIndex);
+  } else {
+    ui->filtre_responsable->setCurrentIndex(0);
+  }
+  ui->filtre_responsable->blockSignals(false);
 }
 
 void machine::appliquerFiltres() {
@@ -1359,6 +1683,7 @@ void machine::appliquerFiltres() {
   QString fEtat = ui->filtre_etat_marche_machine->currentText();
   QString fAlerte = ui->filtre_type_alerte->currentText();
   QString fCriticite = ui->filtre_alerte_criticite->currentText();
+  QString fResponsable = ui->filtre_responsable->currentText();
   
   QDate dateDu = ui->date_debut->date();
   QDate dateAu = ui->date_fin->date();
@@ -1371,6 +1696,7 @@ void machine::appliquerFiltres() {
       if (fEtat != "-- État marche --" && m.etatMarche != fEtat) continue;
       if (fAlerte != "-- Type alerte --" && m.alerte != fAlerte) continue;
       if (fCriticite != "-- Criticité --" && m.criticite != fCriticite) continue;
+      if (fResponsable != "-- Responsable --" && m.responsable != fResponsable) continue;
       
       // Filtre sur la date de mise à jour (inclusivement entre dateDu et dateAu)
       // Ne filtrer que si la date est valide
@@ -1413,7 +1739,8 @@ void machine::appliquerFiltres() {
         m.maintenance.toString("yyyy-MM-dd"),
         m.installation.toString("yyyy-MM-dd"), 
         scoreStr, 
-        m.miseAJour.toString("yyyy-MM-dd")
+      m.miseAJour.toString("yyyy-MM-dd"),
+      m.responsable
     };
 
     // Créer les items pour chaque cellule de la ligne
@@ -1731,13 +2058,27 @@ void machine::rechercherMachines() {
   machineTableModel->setRowCount(0);
 
   // Query with case-insensitive LIKE on NOM_MACHINE
+  const QString employeeColumn = machineEmployeeColumnName();
+  const bool hasEmployeeColumn = !employeeColumn.isEmpty();
   QSqlQuery query(ConnectionMachine::getInstance().getDatabase());
-  query.prepare("SELECT ID_MACHINE, NOM_MACHINE, TYPE_MACHINE, ETAT_MARCHE, "
-                "TEMPERATURE_ACTUELLE, NIVEAU_CHARGE, ETAT_FONCTIONNEMENT, "
-                "TYPE_ALERTE, NIVEAU_CRITICITE, DATE_DERNIERE_MAINTENANCE, "
-                "DATE_INSTALLATION, SCORE_SANTE, DATE_MISE_A_JOUR "
-                "FROM MACHINE WHERE UPPER(NOM_MACHINE) LIKE UPPER(:search) "
-                "ORDER BY ID_MACHINE ASC");
+  if (hasEmployeeColumn) {
+    query.prepare(
+        "SELECT M.ID_MACHINE, M.NOM_MACHINE, M.TYPE_MACHINE, M.ETAT_MARCHE, "
+        "M.TEMPERATURE_ACTUELLE, M.NIVEAU_CHARGE, M.ETAT_FONCTIONNEMENT, "
+        "M.TYPE_ALERTE, M.NIVEAU_CRITICITE, M.DATE_DERNIERE_MAINTENANCE, "
+        "M.DATE_INSTALLATION, M.SCORE_SANTE, M.DATE_MISE_A_JOUR, "
+        "NVL(E.USERNAME, '-') AS RESPONSABLE "
+        "FROM MACHINE M LEFT JOIN EMPLOYEES E ON M." + employeeColumn + " = E.USER_ID "
+        "WHERE UPPER(M.NOM_MACHINE) LIKE UPPER(:search) "
+        "ORDER BY M.ID_MACHINE ASC");
+  } else {
+    query.prepare("SELECT ID_MACHINE, NOM_MACHINE, TYPE_MACHINE, ETAT_MARCHE, "
+                  "TEMPERATURE_ACTUELLE, NIVEAU_CHARGE, ETAT_FONCTIONNEMENT, "
+                  "TYPE_ALERTE, NIVEAU_CRITICITE, DATE_DERNIERE_MAINTENANCE, "
+                  "DATE_INSTALLATION, SCORE_SANTE, DATE_MISE_A_JOUR, '-' AS RESPONSABLE "
+                  "FROM MACHINE WHERE UPPER(NOM_MACHINE) LIKE UPPER(:search) "
+                  "ORDER BY ID_MACHINE ASC");
+  }
   query.bindValue(":search", "%" + searchText + "%");
 
   if (!query.exec()) {
@@ -1764,10 +2105,11 @@ void machine::rechercherMachines() {
     QString install = query.value(10).toDate().toString("yyyy-MM-dd");
     QString scoreSante = query.value(11).toString();
     QString maj = query.value(12).toDate().toString("yyyy-MM-dd");
+    QString responsable = query.value(13).toString();
 
     QStringList values = {id,      nom,        type,   etatMarche, temp,
                           charge,  fonction,   alerte, criticite,  maintenance,
-                          install, scoreSante, maj};
+                install, scoreSante, maj, responsable};
 
     for (int i = 0; i < values.size(); ++i) {
       auto *item = new QStandardItem(values[i]);

@@ -123,6 +123,7 @@ private:
     QDate installation;
     int scoreSante;
     QDate miseAJour;
+    QString responsable;
   };
   struct MachineFormData {
     QString nom;
@@ -161,6 +162,7 @@ private:
   NavigationBar *navigationBar;
   QVector<TodoItem> m_todoItems;
   QStandardItemModel *machineTableModel;
+  QStandardItemModel *employeeTableModel;
   QStandardItemModel *historiqueTableModel;
   QList<MachineData> m_allMachines; // Stockage global pour le filtrage
   QString m_selectedMachineId;
@@ -171,8 +173,19 @@ private:
   QTimer *historiqueTimer;
   QVector<HistoriqueEntry> m_historiqueEntries;
   void setupMachineTable();
+  void setupEmployeesTable();
   void chargerMachines();
+  void chargerEmployees();
+  void refreshResponsableFilterOptions();
+  void onEmployeeRowChosen(int row);
+  void applyEmployeeSelectionLockState();
+  void clearEmployeeSelection();
+  bool machineHasEmployeeColumn() const;
+  QString machineEmployeeColumnName() const;
   void appliquerFiltres();
+    int m_selectedEmployeeId = -1;
+    int m_selectedEmployeeRow = -1;
+    bool m_employeeSelectionLocked = false;
   void chargerHistorique();
   void rechercherMachines();
   void exporterPDF();
