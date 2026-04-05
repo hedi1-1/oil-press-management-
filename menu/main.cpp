@@ -58,10 +58,10 @@ int main(int argc, char *argv[]) {
 
   // Connect login to menu navigation
   QObject::connect(loginWindow, &Login::goToMenu,
-                   [menuWindow]() { menuWindow->show(); });
+                   [menuWindow]() { menuWindow->showFullScreen(); });
 
   // Show login first
-  loginWindow->show();
+  loginWindow->showFullScreen();
 
   return a.exec();
 }

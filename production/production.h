@@ -20,6 +20,7 @@
 #include <QDoubleSpinBox>
 #include <QPushButton>
 #include <QLabel>
+#include <QKeyEvent>
 #include <QtCharts/QChartView>
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QPieSeries>
@@ -67,6 +68,8 @@ private slots:
     void onDeleteClicked();
     void onModifyClicked();
     void onRefreshHistoryClicked();
+    void onApplyHistoryFilter();
+    void onClearHistoryFilter();
 
     // Simulation Slots
     void onRefreshPlannedClicked();
@@ -85,6 +88,9 @@ private slots:
     // Theme & Language Slots
     void onToggleDarkMode();
     void onToggleLanguage();
+
+protected:
+    void keyPressEvent(QKeyEvent *event) override;
 
 private:
     Ui::Production *ui;
@@ -125,6 +131,19 @@ private:
     QDateEdit      *m_dateReportTo;
     QComboBox      *m_comboReportQuality;
     QPushButton    *m_btnApplyReportFilters;
+    QPushButton    *m_btnFullscreen;
+    QPushButton    *m_btnExitFullscreen;
+    void onToggleFullscreen();
+    void onExitFullscreen();
+
+    // ── History filter/sort controls (Suivi tab) ───────────────────────────
+    QComboBox      *m_comboHistorySortField;
+    QComboBox      *m_comboHistorySortOrder;
+    QDateEdit      *m_dateHistoryFrom;
+    QDateEdit      *m_dateHistoryTo;
+    QPushButton    *m_btnApplyHistoryFilter;
+    QPushButton    *m_btnClearHistoryFilter;
+    bool            m_historyDateFilterEnabled;
 
     // ── Statistics tab widgets ─────────────────────────────────────────────
     QWidget                 *m_tabStatistiques;

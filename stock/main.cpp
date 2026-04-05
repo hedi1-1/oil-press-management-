@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
     
     // Lancer l'interface graphique
     Stock w;
-    w.show();
+    w.showFullScreen();
     
     return a.exec();
 }

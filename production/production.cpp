@@ -24,6 +24,7 @@
 #include <QFormLayout>
 #include <QGroupBox>
 #include <QLabel>
+#include <QShortcut>
 #include <QTextEdit>
 #include <QSignalBlocker>
 #include <QtCharts/QValueAxis>
@@ -57,6 +58,15 @@ Production::Production(QWidget *parent)
     , m_dateReportTo(nullptr)
     , m_comboReportQuality(nullptr)
     , m_btnApplyReportFilters(nullptr)
+    , m_btnFullscreen(nullptr)
+    , m_btnExitFullscreen(nullptr)
+    , m_comboHistorySortField(nullptr)
+    , m_comboHistorySortOrder(nullptr)
+    , m_dateHistoryFrom(nullptr)
+    , m_dateHistoryTo(nullptr)
+    , m_btnApplyHistoryFilter(nullptr)
+    , m_btnClearHistoryFilter(nullptr)
+    , m_historyDateFilterEnabled(false)
     , m_tabStatistiques(nullptr)
     , m_lblStatProdToday(nullptr)
     , m_lblStatRendAvg(nullptr)
@@ -74,6 +84,12 @@ Production::Production(QWidget *parent)
     , m_statsTick(0)
 {
     ui->setupUi(this);
+
+    // Ensure Escape exits fullscreen even when focus is inside child widgets.
+    auto *escapeFullscreenShortcut = new QShortcut(QKeySequence(Qt::Key_Escape), this);
+    escapeFullscreenShortcut->setContext(Qt::WindowShortcut);
+    connect(escapeFullscreenShortcut, &QShortcut::activated, this, &Production::onExitFullscreen);
+
     {
         QPixmap logo;
         for (const QString &p : QStringList{":/logo.png", "logo.png", "../production/logo.png",
@@ -122,6 +138,96 @@ Production::Production(QWidget *parent)
     connect(ui->btnDarkMode,  &QPushButton::clicked, this, &Production::onToggleDarkMode);
     connect(ui->btnLanguage,  &QPushButton::clicked, this, &Production::onToggleLanguage);
 
+    // Header fullscreen toggle button (inserted next to language/theme controls).
+    if (ui->btnLanguage && ui->btnLanguage->parentWidget()) {
+        auto *headerLayout = qobject_cast<QHBoxLayout*>(ui->btnLanguage->parentWidget()->layout());
+        if (headerLayout) {
+            m_btnFullscreen = new QPushButton("⛶ Plein écran", ui->btnLanguage->parentWidget());
+            m_btnFullscreen->setObjectName("btnFullscreen");
+            m_btnFullscreen->setMinimumSize(30, 34);
+            m_btnFullscreen->setCursor(Qt::PointingHandCursor);
+            m_btnFullscreen->setStyleSheet(
+                "QPushButton { background: rgba(255,255,255,0.15); color: white; font-size: 12px; font-weight: 600; "
+                "padding: 6px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); min-width: 0; } "
+                "QPushButton:hover { background: rgba(255,255,255,0.28); border-color: rgba(255,255,255,0.55); } "
+                "QPushButton:pressed { background: rgba(255,255,255,0.40); }");
+
+            m_btnExitFullscreen = new QPushButton("🗗 Quitter", ui->btnLanguage->parentWidget());
+            m_btnExitFullscreen->setObjectName("btnExitFullscreen");
+            m_btnExitFullscreen->setMinimumSize(30, 34);
+            m_btnExitFullscreen->setCursor(Qt::PointingHandCursor);
+            m_btnExitFullscreen->setStyleSheet(
+                "QPushButton { background: rgba(255,255,255,0.15); color: white; font-size: 12px; font-weight: 600; "
+                "padding: 6px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); min-width: 0; } "
+                "QPushButton:hover { background: rgba(255,255,255,0.28); border-color: rgba(255,255,255,0.55); } "
+                "QPushButton:pressed { background: rgba(255,255,255,0.40); }");
+            m_btnExitFullscreen->setVisible(false);
+
+            const int languageIndex = headerLayout->indexOf(ui->btnLanguage);
+            headerLayout->insertWidget(languageIndex, m_btnFullscreen);
+            headerLayout->insertWidget(languageIndex + 1, m_btnExitFullscreen);
+            connect(m_btnFullscreen, &QPushButton::clicked, this, &Production::onToggleFullscreen);
+            connect(m_btnExitFullscreen, &QPushButton::clicked, this, &Production::onExitFullscreen);
+        }
+    }
+
+        // Suivi tab: add history sort/date-filter row.
+        if (auto *historyLayout = qobject_cast<QVBoxLayout*>(ui->groupHistory->layout())) {
+        auto *historyToolsRow = new QHBoxLayout();
+        historyToolsRow->setSpacing(8);
+
+        auto *lblSort = new QLabel("Tri:", ui->groupHistory);
+        m_comboHistorySortField = new QComboBox(ui->groupHistory);
+        m_comboHistorySortField->addItem("ID", "IDPRODUCTION");
+        m_comboHistorySortField->addItem("Quantité olives", "QUANTITEOLIVESKG");
+        m_comboHistorySortField->addItem("Huile", "HUILEPRODUITEL");
+        m_comboHistorySortField->addItem("Rendement", "RENDEMENT");
+        m_comboHistorySortField->addItem("Statut", "STATUT");
+        m_comboHistorySortField->setMinimumHeight(34);
+
+        m_comboHistorySortOrder = new QComboBox(ui->groupHistory);
+        m_comboHistorySortOrder->addItem("Décroissant", "DESC");
+        m_comboHistorySortOrder->addItem("Croissant", "ASC");
+        m_comboHistorySortOrder->setMinimumHeight(34);
+
+        auto *lblFrom = new QLabel("Du:", ui->groupHistory);
+        m_dateHistoryFrom = new QDateEdit(QDate::currentDate().addMonths(-1), ui->groupHistory);
+        m_dateHistoryFrom->setCalendarPopup(true);
+        m_dateHistoryFrom->setDisplayFormat("dd/MM/yyyy");
+        m_dateHistoryFrom->setMinimumHeight(34);
+
+        auto *lblTo = new QLabel("Au:", ui->groupHistory);
+        m_dateHistoryTo = new QDateEdit(QDate::currentDate(), ui->groupHistory);
+        m_dateHistoryTo->setCalendarPopup(true);
+        m_dateHistoryTo->setDisplayFormat("dd/MM/yyyy");
+        m_dateHistoryTo->setMinimumHeight(34);
+
+        m_btnApplyHistoryFilter = new QPushButton("Appliquer", ui->groupHistory);
+        m_btnApplyHistoryFilter->setMinimumHeight(34);
+        m_btnClearHistoryFilter = new QPushButton("Tout", ui->groupHistory);
+        m_btnClearHistoryFilter->setMinimumHeight(34);
+
+        historyToolsRow->addWidget(lblSort);
+        historyToolsRow->addWidget(m_comboHistorySortField);
+        historyToolsRow->addWidget(m_comboHistorySortOrder);
+        historyToolsRow->addSpacing(10);
+        historyToolsRow->addWidget(lblFrom);
+        historyToolsRow->addWidget(m_dateHistoryFrom);
+        historyToolsRow->addWidget(lblTo);
+        historyToolsRow->addWidget(m_dateHistoryTo);
+        historyToolsRow->addWidget(m_btnApplyHistoryFilter);
+        historyToolsRow->addWidget(m_btnClearHistoryFilter);
+
+        historyLayout->insertLayout(0, historyToolsRow);
+
+        connect(m_btnApplyHistoryFilter, &QPushButton::clicked, this, &Production::onApplyHistoryFilter);
+        connect(m_btnClearHistoryFilter, &QPushButton::clicked, this, &Production::onClearHistoryFilter);
+        connect(m_comboHistorySortField, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &Production::onApplyHistoryFilter);
+        connect(m_comboHistorySortOrder, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &Production::onApplyHistoryFilter);
+        }
+
     // Capture light stylesheet for toggling
     m_lightStyleSheet = this->styleSheet();
 
@@ -129,6 +235,31 @@ Production::Production(QWidget *parent)
     setupAdvancedQualityUI();
     setupAdvancedReportsUI();
     buildStatisticsTab();
+
+    // Suivi tab: ensure only the idle banner is visible at startup and reserve
+    // enough vertical space to avoid clipping when the running panel is shown.
+    if (ui->widgetRunningActive) {
+        ui->widgetRunningActive->setVisible(false);
+    }
+    if (ui->lblRunningProduction) {
+        ui->lblRunningProduction->setVisible(true);
+    }
+    if (ui->groupRunningProduction) {
+        ui->groupRunningProduction->setMinimumHeight(260);
+        ui->groupRunningProduction->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    }
+    if (ui->groupHistory) {
+        ui->groupHistory->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    }
+    if (ui->tableProductionHistory) {
+        ui->tableProductionHistory->setMinimumHeight(170);
+        ui->tableProductionHistory->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    }
+    if (auto *suiviLayout = qobject_cast<QVBoxLayout*>(ui->tabSuivi->layout())) {
+        suiviLayout->setStretch(0, 3);
+        suiviLayout->setStretch(1, 2);
+        suiviLayout->setStretch(2, 0);
+    }
 
     // 1 production hour = 30 real seconds → timer fires every 500ms = 1 prod minute
     m_simTimer->setInterval(500);
@@ -335,6 +466,58 @@ void Production::onRefreshTerminatedClicked()
 
 void Production::setupAdvancedQualityUI()
 {
+    auto *qualityRoot = qobject_cast<QVBoxLayout*>(ui->tabQualite->layout());
+
+    // Build a strict no-scroll structure:
+    // root VBox -> top section (evaluation + notes) + bottom section (summary + action button)
+    if (qualityRoot && !ui->tabQualite->findChild<QWidget*>("qualityTopSection")) {
+        auto *topSection = new QWidget(ui->tabQualite);
+        topSection->setObjectName("qualityTopSection");
+        auto *topLayout = new QHBoxLayout(topSection);
+        topLayout->setContentsMargins(0, 0, 0, 0);
+        topLayout->setSpacing(16);
+
+        ui->groupQualityEval->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+        ui->groupQualityNotes->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+        topLayout->addWidget(ui->groupQualityEval, 1);
+        topLayout->addWidget(ui->groupQualityNotes, 1);
+
+        auto *bottomSection = new QWidget(ui->tabQualite);
+        bottomSection->setObjectName("qualityBottomSection");
+        auto *bottomLayout = new QVBoxLayout(bottomSection);
+        bottomLayout->setContentsMargins(0, 0, 0, 0);
+        bottomLayout->setSpacing(12);
+
+        ui->groupQualitySummary->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        bottomLayout->addWidget(ui->groupQualitySummary, 1);
+
+        if (ui->qualityFooterDivider) {
+            bottomLayout->addWidget(ui->qualityFooterDivider);
+        }
+
+        auto *footerRow = new QWidget(bottomSection);
+        auto *footerLayout = new QHBoxLayout(footerRow);
+        footerLayout->setContentsMargins(0, 0, 0, 0);
+        footerLayout->setSpacing(12);
+        footerLayout->addStretch(1);
+        footerLayout->addWidget(ui->btnValidateQuality, 0, Qt::AlignRight | Qt::AlignVCenter);
+
+        // Keep CTA anchored without creating an oversized empty area.
+        bottomLayout->addWidget(footerRow);
+
+        while (qualityRoot->count() > 0) {
+            QLayoutItem *oldItem = qualityRoot->takeAt(0);
+            delete oldItem;
+        }
+
+        qualityRoot->setContentsMargins(16, 16, 16, 16);
+        qualityRoot->setSpacing(16);
+        qualityRoot->addWidget(topSection, 4);
+        qualityRoot->addWidget(bottomSection, 2);
+        qualityRoot->setStretch(0, 4);
+        qualityRoot->setStretch(1, 2);
+    }
+
     auto *form = ui->groupQualityEval->findChild<QFormLayout*>("formQuality");
     if (form) {
         form->setFormAlignment(Qt::AlignTop);
@@ -355,9 +538,17 @@ void Production::setupAdvancedQualityUI()
         selectorLayout->setSpacing(8);
 
         m_comboQualityProduction = new QComboBox(selectorWrap);
-        m_comboQualityProduction->setMinimumHeight(45);
+        m_comboQualityProduction->setMinimumHeight(40);
+        m_comboQualityProduction->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
+        m_comboQualityProduction->setMinimumContentsLength(26);
+        m_comboQualityProduction->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+        m_comboQualityProduction->setStyleSheet(
+            "QComboBox { background: #ffffff; color: #111827; border: 2px solid #1B4332; border-radius: 10px; padding: 8px 12px; font-size: 14px; font-weight: 600; }"
+            "QComboBox:hover { border-color: #234E3E; background: #f8fffb; }"
+            "QComboBox::drop-down { border: none; width: 30px; background: transparent; }"
+            "QComboBox QAbstractItemView { background: #ffffff; color: #111827; border: 2px solid #1B4332; selection-background-color: #1B4332; selection-color: #ffffff; font-size: 13px; }");
         m_btnRefreshQualityProduction = new QPushButton("↻", selectorWrap);
-        m_btnRefreshQualityProduction->setFixedSize(45, 45);
+        m_btnRefreshQualityProduction->setFixedSize(44, 44);
         m_btnRefreshQualityProduction->setToolTip("Actualiser la liste des productions");
         m_btnRefreshQualityProduction->setCursor(Qt::PointingHandCursor);
 
@@ -374,42 +565,67 @@ void Production::setupAdvancedQualityUI()
         m_spinAcidityPercent->setSingleStep(0.05);
         m_spinAcidityPercent->setValue(0.80);
         m_spinAcidityPercent->setSuffix(" %");
-        m_spinAcidityPercent->setMinimumHeight(45);
-        m_spinAcidityPercent->setMinimumWidth(220);
+        m_spinAcidityPercent->setMinimumHeight(40);
+        m_spinAcidityPercent->setMinimumWidth(240);
         m_spinAcidityPercent->setButtonSymbols(QAbstractSpinBox::NoButtons);
 
-        ui->comboOilQuality->setMinimumHeight(45);
+        ui->comboOilQuality->setMinimumHeight(40);
         ui->lblOilQuality->setMinimumWidth(140);
-        ui->checkConformity->setMinimumHeight(44);
+        ui->checkConformity->setMinimumHeight(40);
     }
 
-    ui->groupQualityEval->setMinimumHeight(320);
-    ui->groupQualityNotes->setMinimumHeight(320);
-    ui->groupQualityEval->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-    ui->groupQualityNotes->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    ui->groupQualityEval->setMinimumHeight(0);
+    ui->groupQualityNotes->setMinimumHeight(0);
+    ui->groupQualityEval->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    ui->groupQualityNotes->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+    if (auto *evalLayout = qobject_cast<QVBoxLayout*>(ui->groupQualityEval->layout())) {
+        evalLayout->setSpacing(14);
+        evalLayout->setContentsMargins(16, 22, 16, 16);
+    }
+
+    if (auto *notesLayout = qobject_cast<QVBoxLayout*>(ui->groupQualityNotes->layout())) {
+        notesLayout->setSpacing(14);
+        notesLayout->setContentsMargins(16, 22, 16, 16);
+    }
+
+    if (auto *summaryLayout = qobject_cast<QVBoxLayout*>(ui->groupQualitySummary->layout())) {
+        summaryLayout->setSpacing(12);
+        summaryLayout->setContentsMargins(16, 16, 16, 16);
+    }
+
+    if (ui->lblQualitySummary) {
+        ui->lblQualitySummary->setStyleSheet(
+            "background-color: #edf7f1;"
+            "border-left: 5px solid #1E5A45;"
+            "padding: 14px 16px;"
+            "border-radius: 0 10px 10px 0;"
+            "color: #0f172a;"
+            "font-size: 16px;"
+            "font-weight: 700;");
+        ui->lblQualitySummary->setWordWrap(true);
+    }
 
     if (ui->txtQualityNotes) {
         ui->txtQualityNotes->setMinimumHeight(180);
+        ui->txtQualityNotes->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     }
 
     if (ui->btnValidateQuality) {
-        ui->btnValidateQuality->setMinimumWidth(280);
-    }
-
-    auto *qualityMain = ui->tabQualite->findChild<QHBoxLayout*>("layoutQualityMain");
-    if (qualityMain) {
-        qualityMain->setStretch(0, 5);
-        qualityMain->setStretch(1, 4);
-        qualityMain->setAlignment(Qt::AlignTop);
+        ui->btnValidateQuality->setMinimumWidth(300);
+        ui->btnValidateQuality->setMinimumHeight(50);
     }
 
     auto *sumLayout = qobject_cast<QVBoxLayout*>(ui->groupQualitySummary->layout());
     if (sumLayout) {
+        sumLayout->setAlignment(Qt::AlignTop);
         m_lblAiQualityScore = new QLabel("IA: score --/100 | confiance --%", ui->groupQualitySummary);
-        m_lblAiQualityScore->setStyleSheet("background-color: #eff6ff; color: #1e3a8a; border-left: 5px solid #3b82f6; padding: 12px; border-radius: 8px;");
+        m_lblAiQualityScore->setStyleSheet("background-color: #ffffff; color: #1e3a8a; border: 1px solid #bfdbfe; border-left: 5px solid #2563eb; padding: 12px; border-radius: 8px; font-size: 15px; font-weight: 700;");
+        m_lblAiQualityScore->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
         m_lblAiRecommendations = new QLabel("Remarques IA: en attente d'evaluation.", ui->groupQualitySummary);
         m_lblAiRecommendations->setWordWrap(true);
-        m_lblAiRecommendations->setStyleSheet("background-color: #f8fafc; color: #334155; border-left: 5px solid #0ea5e9; padding: 12px; border-radius: 8px;");
+        m_lblAiRecommendations->setStyleSheet("background-color: #ffffff; color: #111827; border: 1px solid #dbeafe; border-left: 5px solid #0284c7; padding: 12px; border-radius: 8px; font-size: 15px; font-weight: 600;");
+        m_lblAiRecommendations->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
         sumLayout->addWidget(m_lblAiQualityScore);
         sumLayout->addWidget(m_lblAiRecommendations);
     }
@@ -421,6 +637,8 @@ void Production::setupAdvancedQualityUI()
     if (m_comboQualityProduction) {
         connect(m_comboQualityProduction, QOverload<int>::of(&QComboBox::currentIndexChanged),
                 this, &Production::onQualityProductionSelected);
+        connect(m_comboQualityProduction, QOverload<int>::of(&QComboBox::activated),
+            this, &Production::onQualityProductionSelected);
     }
     if (m_spinAcidityPercent) {
         connect(m_spinAcidityPercent, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
@@ -438,29 +656,41 @@ void Production::loadQualityEvaluableProductions()
     if (!m_comboQualityProduction) return;
 
     m_comboQualityProduction->clear();
-    m_comboQualityProduction->addItem("— Choisir une production terminee —", -1);
+    m_comboQualityProduction->addItem("— Choisir une production terminée —", -1);
 
     QSqlQuery q(QSqlDatabase::database("production_conn"));
-    q.exec("SELECT IDPRODUCTION, DATEPRODUCTION, QUANTITEOLIVESKG, RENDEMENT "
-           "FROM PRODUCTION "
-           "WHERE STATUT = 'Termine' OR STATUT = 'Qualité validée' "
-           "ORDER BY IDPRODUCTION DESC");
+        q.exec("SELECT IDPRODUCTION, DATEPRODUCTION, QUANTITEOLIVESKG, RENDEMENT "
+            "FROM PRODUCTION "
+            "WHERE UPPER(STATUT) IN ('TERMINE', 'TERMINEE', 'TERMINÉ', 'TERMINÉE', 'QUALITE VALIDEE', 'QUALITÉ VALIDÉE') "
+            "OR STATUT = 'Termine' OR STATUT = 'Terminee' OR STATUT = 'Terminé' OR STATUT = 'Terminée' "
+            "OR STATUT = 'Qualité validée' OR STATUT = 'Qualite validée' "
+            "ORDER BY IDPRODUCTION DESC");
 
     int count = 0;
     while (q.next()) {
         const int id = q.value(0).toInt();
         const QString date = q.value(1).toDate().toString("dd/MM/yyyy");
         const int kg = q.value(2).toInt();
-        const double rend = q.value(3).toDouble();
         m_comboQualityProduction->addItem(
-            QString("ID #%1 — %2 — %3 kg — %4 %")
-                .arg(id).arg(date).arg(kg).arg(rend, 0, 'f', 2),
+            QString("ID #%1 — %2 — %3 kg")
+                .arg(id).arg(date).arg(kg),
             id);
         count++;
     }
 
+    m_comboQualityProduction->setEnabled(count > 0);
+
     if (count == 0) {
-        ui->lblQualitySummary->setText("ℹ  Aucune production terminee disponible pour evaluation.");
+        ui->lblQualitySummary->setText("ℹ  Aucune production terminée disponible pour évaluation.");
+        if (m_lblAiQualityScore) {
+            m_lblAiQualityScore->setText("IA: aucune production terminée trouvée.");
+        }
+        if (m_lblAiRecommendations) {
+            m_lblAiRecommendations->setText("Remarques IA: vérifiez le statut des productions (Terminé / Qualité validée).");
+        }
+    } else {
+        ui->lblQualitySummary->setText("ℹ  Sélectionnez une production pour lancer l'évaluation IA automatique.");
+        m_comboQualityProduction->setCurrentIndex(0);
     }
 }
 
@@ -474,10 +704,11 @@ void Production::onQualityProductionSelected(int index)
     if (!m_comboQualityProduction || index <= 0) {
         m_qualityProductionId = 0;
         ui->lblQualitySummary->setText("ℹ  Sélectionnez une production pour lancer l'évaluation IA automatique.");
+        ui->txtQualityNotes->clear();
         return;
     }
 
-    const int prodId = m_comboQualityProduction->currentData().toInt();
+    const int prodId = m_comboQualityProduction->itemData(index).toInt();
     if (prodId <= 0) return;
 
     m_qualityProductionId = prodId;
@@ -1235,6 +1466,15 @@ void Production::applyTranslations()
     // Theme & language toggle buttons
     ui->btnDarkMode->setText(m_isDarkMode ? btnLight[L] : btnDark[L]);
     ui->btnLanguage->setText(btnLang[L]);  // shows the next language
+    if (m_btnFullscreen) {
+        static const QStringList btnFsEnter = {"⛶ Plein écran", "⛶ Fullscreen", "⛶ شاشة كاملة"};
+        m_btnFullscreen->setText(btnFsEnter[L]);
+    }
+    if (m_btnExitFullscreen) {
+        static const QStringList btnFsExit = {"🗗 Quitter", "🗗 Exit", "🗗 خروج"};
+        m_btnExitFullscreen->setText(btnFsExit[L]);
+        m_btnExitFullscreen->setVisible(isFullScreen());
+    }
 
     // GroupBox titles (badge-style ones with setTitle)
     ui->groupRunningProduction->setTitle(grpRun[L]);
@@ -1252,6 +1492,35 @@ void Production::applyTranslations()
 void Production::onToggleLanguage()
 {
     m_langIndex = (m_langIndex + 1) % 3;
+    applyTranslations();
+}
+
+void Production::keyPressEvent(QKeyEvent *event)
+{
+    if (event && event->key() == Qt::Key_Escape && isFullScreen()) {
+        onExitFullscreen();
+        event->accept();
+        return;
+    }
+    QMainWindow::keyPressEvent(event);
+}
+
+void Production::onToggleFullscreen()
+{
+    if (isFullScreen()) {
+        showNormal();
+    } else {
+        showFullScreen();
+    }
+    applyTranslations();
+}
+
+void Production::onExitFullscreen()
+{
+    if (!isFullScreen()) {
+        return;
+    }
+    showNormal();
     applyTranslations();
 }
 
@@ -2085,9 +2354,30 @@ void Production::generatePdf(const QString &filePath,
 
 void Production::loadProductionHistory()
 {
+    QString whereClause;
+    if (m_historyDateFilterEnabled && m_dateHistoryFrom && m_dateHistoryTo) {
+        QDate from = m_dateHistoryFrom->date();
+        QDate to = m_dateHistoryTo->date();
+        if (from > to) {
+            qSwap(from, to);
+        }
+        whereClause = QString(" WHERE DATEPRODUCTION BETWEEN TO_DATE('%1','YYYY-MM-DD') AND TO_DATE('%2','YYYY-MM-DD')")
+                .arg(from.toString("yyyy-MM-dd"), to.toString("yyyy-MM-dd"));
+    }
+
+    QString orderField = "IDPRODUCTION";
+    QString orderDir = "DESC";
+    if (m_comboHistorySortField) {
+        orderField = m_comboHistorySortField->currentData().toString();
+    }
+    if (m_comboHistorySortOrder) {
+        orderDir = m_comboHistorySortOrder->currentData().toString();
+    }
+
     QSqlQuery query(QSqlDatabase::database("production_conn"));
     query.exec("SELECT IDPRODUCTION, DATEPRODUCTION, QUANTITEOLIVESKG, HUILEPRODUITEL, RENDEMENT, STATUT "
-               "FROM PRODUCTION ORDER BY IDPRODUCTION DESC");
+               "FROM PRODUCTION" + whereClause +
+               " ORDER BY " + orderField + " " + orderDir + ", IDPRODUCTION DESC");
     
     // Clear existing rows
     ui->tableProductionHistory->setRowCount(0);
@@ -2313,6 +2603,22 @@ void Production::onRefreshHistoryClicked()
 {
     loadProductionHistory();
     showSuccessNotification("Historique actualisé!");
+}
+
+void Production::onApplyHistoryFilter()
+{
+    m_historyDateFilterEnabled = true;
+    loadProductionHistory();
+}
+
+void Production::onClearHistoryFilter()
+{
+    m_historyDateFilterEnabled = false;
+    if (m_dateHistoryFrom) m_dateHistoryFrom->setDate(QDate::currentDate().addMonths(-1));
+    if (m_dateHistoryTo) m_dateHistoryTo->setDate(QDate::currentDate());
+    if (m_comboHistorySortField) m_comboHistorySortField->setCurrentIndex(0);
+    if (m_comboHistorySortOrder) m_comboHistorySortOrder->setCurrentIndex(0);
+    loadProductionHistory();
 }
 
 void Production::refreshTable()
