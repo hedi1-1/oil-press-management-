@@ -12,6 +12,7 @@
 #include <QKeyEvent>
 #include <QLabel>
 #include <QMainWindow>
+#include <QPair>
 #include <QPushButton>
 #include <QStandardItemModel>
 #include <QTimer>
@@ -107,6 +108,7 @@ private slots:
   void on_btnSupprimerMachine_machine_clicked();
   void on_btnModifierMachine_machine_clicked();
   void on_btnFiltrer_clicked();
+  void on_btnGenererStats_machine_clicked();
 
 private:
   struct MachineData {
@@ -124,6 +126,9 @@ private:
     int scoreSante;
     QDate miseAJour;
     QString responsable;
+    QString refroidissement;
+    QString tag;
+    QString priorite;
   };
   struct MachineFormData {
     QString nom;
@@ -190,6 +195,11 @@ private:
   void rechercherMachines();
   void exporterPDF();
   void afficherDialogExport();
+  QList<QPair<QString, double>> loadStatisticsData(const QString &statsType) const;
+  void renderStatisticsChart(const QList<QPair<QString, double>> &data,
+                             const QString &statsType,
+                             const QString &chartType);
+  void clearStatsChartArea(const QString &message);
   void showMachineCard();
   void updateMachineCounts();
   void updateHistoriqueDisplay();

@@ -27,7 +27,19 @@
 #include <QButtonGroup>
 #include <QRadioButton>
 #include <QFile>
-#include <QTextStream>// ============================================================================
+#include <QTextStream>
+#include <QVBoxLayout>
+#include <QtCharts/QBarCategoryAxis>
+#include <QtCharts/QBarSeries>
+#include <QtCharts/QBarSet>
+#include <QtCharts/QCategoryAxis>
+#include <QtCharts/QChart>
+#include <QtCharts/QChartView>
+#include <QtCharts/QLineSeries>
+#include <QtCharts/QPieSeries>
+#include <QtCharts/QPieSlice>
+#include <QtCharts/QValueAxis>
+// ============================================================================
 // NavigationBar Implementation
 // ============================================================================
 
@@ -367,6 +379,14 @@ machine::machine(QWidget *parent)
   connect(countsTimer, &QTimer::timeout, this, &machine::updateMachineCounts);
   countsTimer->start(10000); // 10 seconds
   updateMachineCounts();     // Initial call
+
+  // Statistics setup
+  if (ui->type_statistique_machine->findText("Type machine") == -1) {
+    ui->type_statistique_machine->addItem("Type machine");
+  }
+  connect(ui->btnGenererStats_machine, &QPushButton::clicked, this,
+          &machine::on_btnGenererStats_machine_clicked);
+  clearStatsChartArea("Sélectionnez un type de statistique et un type de graphique, puis cliquez sur Générer.");
 }
 
 machine::~machine() {
@@ -442,12 +462,13 @@ void machine::setupNavigationBar() {
 }
 
 void machine::setupMachineTable() {
-  // Create model with columns matching requested order (14 columns)
-  machineTableModel = new QStandardItemModel(0, 14, this);
+  // Create model with columns matching requested order (17 columns)
+  machineTableModel = new QStandardItemModel(0, 17, this);
   machineTableModel->setHorizontalHeaderLabels(
       {"ID", "Nom", "Type", "État marche", "Temp. (°C)", "Charge (%)",
        "Fonctionnement", "Alerte", "Criticité", "Dernière maintenance",
-       "Date d'installation", "Score Santé", "Date mise à jour", "Responsable"});
+       "Date d'installation", "Score Santé", "Date mise à jour", "Responsable",
+       "Refroidissement", "Tag", "Priorité"});
 
   // Configure UI table view
   ui->tableMachines_machine->setModel(machineTableModel);
@@ -1598,14 +1619,20 @@ void machine::chargerMachines() {
         "M.TEMPERATURE_ACTUELLE, M.NIVEAU_CHARGE, M.ETAT_FONCTIONNEMENT, "
         "M.TYPE_ALERTE, M.NIVEAU_CRITICITE, M.DATE_DERNIERE_MAINTENANCE, "
         "M.DATE_INSTALLATION, M.SCORE_SANTE, M.DATE_MISE_A_JOUR, "
-        "NVL(E.USERNAME, '-') AS RESPONSABLE "
+        "NVL(E.USERNAME, '-') AS RESPONSABLE, "
+        "NVL(M.REFROIDISSEMENT, '-') AS REFROIDISSEMENT, "
+        "NVL(M.TAG, '-') AS TAG, "
+        "NVL(M.PRIORITE, '-') AS PRIORITE "
         "FROM MACHINE M LEFT JOIN EMPLOYEES E ON M." + employeeColumn + " = E.USER_ID "
         "ORDER BY M.ID_MACHINE ASC");
   } else {
     query.prepare("SELECT ID_MACHINE, NOM_MACHINE, TYPE_MACHINE, ETAT_MARCHE, "
                   "TEMPERATURE_ACTUELLE, NIVEAU_CHARGE, ETAT_FONCTIONNEMENT, "
                   "TYPE_ALERTE, NIVEAU_CRITICITE, DATE_DERNIERE_MAINTENANCE, "
-                  "DATE_INSTALLATION, SCORE_SANTE, DATE_MISE_A_JOUR, '-' AS RESPONSABLE "
+                  "DATE_INSTALLATION, SCORE_SANTE, DATE_MISE_A_JOUR, '-' AS RESPONSABLE, "
+                  "NVL(REFROIDISSEMENT, '-') AS REFROIDISSEMENT, "
+                  "NVL(TAG, '-') AS TAG, "
+                  "NVL(PRIORITE, '-') AS PRIORITE "
                   "FROM MACHINE ORDER BY ID_MACHINE ASC");
   }
 
@@ -1632,6 +1659,9 @@ void machine::chargerMachines() {
     m.scoreSante = query.value(11).toInt();
     m.miseAJour = query.value(12).toDate();
     m.responsable = query.value(13).toString();
+    m.refroidissement = query.value(14).toString();
+    m.tag = query.value(15).toString();
+    m.priorite = query.value(16).toString();
 
     m_allMachines.append(m);
   }
@@ -1740,7 +1770,10 @@ void machine::appliquerFiltres() {
         m.installation.toString("yyyy-MM-dd"), 
         scoreStr, 
       m.miseAJour.toString("yyyy-MM-dd"),
-      m.responsable
+      m.responsable,
+      m.refroidissement,
+      m.tag,
+      m.priorite
     };
 
     // Créer les items pour chaque cellule de la ligne
@@ -1819,6 +1852,285 @@ void machine::appliquerFiltres() {
 
 void machine::on_btnFiltrer_clicked() {
     appliquerFiltres();
+}
+
+void machine::clearStatsChartArea(const QString &message) {
+  QLayout *layout = ui->zoneGraphique_machine->layout();
+  if (!layout) {
+    auto *newLayout = new QVBoxLayout(ui->zoneGraphique_machine);
+    newLayout->setContentsMargins(16, 16, 16, 16);
+    newLayout->setSpacing(10);
+    layout = newLayout;
+  }
+
+  while (QLayoutItem *item = layout->takeAt(0)) {
+    if (item->widget()) {
+      item->widget()->deleteLater();
+    }
+    delete item;
+  }
+
+  QLabel *placeholder = new QLabel(message, ui->zoneGraphique_machine);
+  placeholder->setAlignment(Qt::AlignCenter);
+  placeholder->setWordWrap(true);
+  placeholder->setStyleSheet(
+      "QLabel { color: #4A4A4A; font-size: 13px; font-weight: 600; "
+      "background-color: #F8FBFA; border: 1px dashed #9BB8AA; border-radius: 10px; "
+      "padding: 22px; }");
+  layout->addWidget(placeholder);
+}
+
+QList<QPair<QString, double>>
+machine::loadStatisticsData(const QString &statsType) const {
+  QList<QPair<QString, double>> data;
+  QSqlQuery query(ConnectionMachine::getInstance().getDatabase());
+
+  if (statsType == "État fonctionnement") {
+    query.prepare("SELECT NVL(TRIM(ETAT_FONCTIONNEMENT), 'Non défini') AS LIBELLE, "
+                  "COUNT(*) AS VALEUR "
+                  "FROM MACHINE "
+                  "GROUP BY NVL(TRIM(ETAT_FONCTIONNEMENT), 'Non défini') "
+                  "ORDER BY VALEUR DESC");
+  } else if (statsType == "Types alertes") {
+    query.prepare("SELECT NVL(TRIM(TYPE_ALERTE), 'Aucune') AS LIBELLE, "
+                  "COUNT(*) AS VALEUR "
+                  "FROM MACHINE "
+                  "GROUP BY NVL(TRIM(TYPE_ALERTE), 'Aucune') "
+                  "ORDER BY VALEUR DESC");
+  } else if (statsType == "Température moyenne") {
+    query.prepare("SELECT NVL(TRIM(TYPE_MACHINE), 'Non défini') AS LIBELLE, "
+                  "ROUND(AVG(NVL(TEMPERATURE_ACTUELLE, 0)), 2) AS VALEUR "
+                  "FROM MACHINE "
+                  "GROUP BY NVL(TRIM(TYPE_MACHINE), 'Non défini') "
+                  "ORDER BY VALEUR DESC");
+  } else if (statsType == "Type machine") {
+    query.prepare("SELECT NVL(TRIM(TYPE_MACHINE), 'Non défini') AS LIBELLE, "
+                  "COUNT(*) AS VALEUR "
+                  "FROM MACHINE "
+                  "GROUP BY NVL(TRIM(TYPE_MACHINE), 'Non défini') "
+                  "ORDER BY VALEUR DESC");
+  } else {
+    return data;
+  }
+
+  if (!query.exec()) {
+    qDebug() << "Erreur statistiques :" << query.lastError().text();
+    return data;
+  }
+
+  while (query.next()) {
+    const QString label = query.value(0).toString().trimmed();
+    const double value = query.value(1).toDouble();
+    data.append(qMakePair(label.isEmpty() ? QString("Non défini") : label, value));
+  }
+
+  return data;
+}
+
+void machine::renderStatisticsChart(const QList<QPair<QString, double>> &data,
+                                    const QString &statsType,
+                                    const QString &chartType) {
+  if (data.isEmpty()) {
+    clearStatsChartArea("Aucune donnée disponible pour cette statistique.");
+    return;
+  }
+
+  QLayout *layout = ui->zoneGraphique_machine->layout();
+  if (!layout) {
+    auto *newLayout = new QVBoxLayout(ui->zoneGraphique_machine);
+    newLayout->setContentsMargins(12, 12, 12, 12);
+    newLayout->setSpacing(8);
+    layout = newLayout;
+  }
+
+  while (QLayoutItem *item = layout->takeAt(0)) {
+    if (item->widget()) {
+      item->widget()->deleteLater();
+    }
+    delete item;
+  }
+
+  auto *chart = new QChart();
+  chart->setAnimationOptions(QChart::SeriesAnimations);
+  chart->setBackgroundBrush(QColor("#FFFFFF"));
+
+  const bool isTemperatureStats = (statsType == "Température moyenne");
+
+  const QMap<QString, QColor> etatPalette = {
+      {"Normal", QColor("#2E7D32")},
+      {"Alerte", QColor("#E65100")},
+      {"Panne", QColor("#C62828")},
+      {"Non défini", QColor("#607D8B")},
+  };
+  const QMap<QString, QColor> alertePalette = {
+      {"Aucune", QColor("#2E7D32")},
+      {"Température", QColor("#F57C00")},
+      {"Maintenance", QColor("#FB8C00")},
+      {"Sécurité", QColor("#C62828")},
+      {"Surcharge", QColor("#D84315")},
+      {"Panne", QColor("#B71C1C")},
+      {"Non défini", QColor("#607D8B")},
+  };
+  const QMap<QString, QColor> typeMachinePalette = {
+      {"Presse", QColor("#1565C0")},
+      {"Malaxeur", QColor("#00897B")},
+      {"Broyeur", QColor("#6A1B9A")},
+      {"Chauffeur", QColor("#EF6C00")},
+      {"Autre", QColor("#546E7A")},
+      {"Non défini", QColor("#607D8B")},
+  };
+
+  QColor themeColor("#1A3C2F");
+  if (statsType == "État fonctionnement") {
+    themeColor = QColor("#2E7D32");
+  } else if (statsType == "Types alertes") {
+    themeColor = QColor("#E65100");
+  } else if (statsType == "Température moyenne") {
+    themeColor = QColor("#0277BD");
+  } else if (statsType == "Type machine") {
+    themeColor = QColor("#1565C0");
+  }
+
+  chart->setTitle(QString("Statistique: %1").arg(statsType));
+  chart->setTitleBrush(QBrush(themeColor));
+  chart->legend()->setVisible(true);
+  chart->legend()->setAlignment(Qt::AlignBottom);
+  chart->legend()->setLabelColor(QColor("#2B2B2B"));
+
+  const QList<QColor> fallbackPalette = {
+      QColor("#2E7D32"), QColor("#1565C0"), QColor("#6A1B9A"), QColor("#EF6C00"),
+      QColor("#00897B"), QColor("#C62828"), QColor("#5D4037"), QColor("#455A64")};
+
+  auto colorForLabel = [&](const QString &label, int index) -> QColor {
+    const QString key = label.trimmed();
+    if (statsType == "État fonctionnement" && etatPalette.contains(key)) {
+      return etatPalette.value(key);
+    }
+    if (statsType == "Types alertes" && alertePalette.contains(key)) {
+      return alertePalette.value(key);
+    }
+    if ((statsType == "Type machine" || statsType == "Température moyenne") &&
+        typeMachinePalette.contains(key)) {
+      return typeMachinePalette.value(key);
+    }
+    return fallbackPalette[index % fallbackPalette.size()];
+  };
+
+  double maxValue = 0.0;
+  for (const auto &entry : data) {
+    if (entry.second > maxValue) {
+      maxValue = entry.second;
+    }
+  }
+
+  if (chartType == "PieChart") {
+    auto *series = new QPieSeries();
+    for (int i = 0; i < data.size(); ++i) {
+      const auto &entry = data[i];
+      QPieSlice *slice = series->append(entry.first, entry.second);
+      const QString suffix = isTemperatureStats ? " °C" : "";
+      slice->setLabel(QString("%1: %2%3").arg(entry.first).arg(entry.second, 0, 'f', isTemperatureStats ? 2 : 0).arg(suffix));
+      slice->setLabelVisible(true);
+      slice->setBrush(colorForLabel(entry.first, i));
+      slice->setPen(QPen(QColor("#FFFFFF"), 1));
+    }
+    chart->addSeries(series);
+  } else if (chartType == "LineChart") {
+    auto *series = new QLineSeries();
+    series->setName(statsType);
+    series->setColor(themeColor);
+    series->setPointsVisible(true);
+    series->setPointLabelsVisible(true);
+    series->setPointLabelsFormat(isTemperatureStats ? "@yPoint °C" : "@yPoint");
+
+    auto *axisX = new QCategoryAxis();
+    axisX->setLabelsPosition(QCategoryAxis::AxisLabelsPositionOnValue);
+    axisX->setLabelsAngle(-35);
+    axisX->setLabelsColor(QColor("#2B2B2B"));
+
+    for (int i = 0; i < data.size(); ++i) {
+      series->append(i, data[i].second);
+      axisX->append(data[i].first, i);
+    }
+
+    chart->addSeries(series);
+    chart->addAxis(axisX, Qt::AlignBottom);
+    series->attachAxis(axisX);
+    axisX->setRange(0, data.size() > 1 ? data.size() - 1 : 1);
+
+    auto *axisY = new QValueAxis();
+    axisY->setTitleText(isTemperatureStats ? "Température moyenne (°C)"
+                                           : "Nombre de machines");
+    axisY->setRange(0, maxValue > 0 ? maxValue * 1.2 : 10);
+    axisY->setLabelFormat(isTemperatureStats ? "%.2f" : "%.0f");
+    axisY->setLabelsColor(QColor("#2B2B2B"));
+    axisY->setGridLineColor(QColor("#DCE7E2"));
+    chart->addAxis(axisY, Qt::AlignLeft);
+    series->attachAxis(axisY);
+  } else {
+    auto *series = new QBarSeries();
+    QStringList categories;
+
+    for (int i = 0; i < data.size(); ++i) {
+      const auto &entry = data[i];
+      auto *set = new QBarSet(entry.first);
+      *set << entry.second;
+      set->setColor(colorForLabel(entry.first, i));
+      set->setLabelColor(QColor("#1F1F1F"));
+      series->append(set);
+      categories << entry.first;
+    }
+
+    series->setLabelsVisible(true);
+    series->setLabelsPosition(QAbstractBarSeries::LabelsOutsideEnd);
+    series->setLabelsFormat(isTemperatureStats ? "@value °C" : "@value");
+    chart->addSeries(series);
+
+    auto *axisX = new QBarCategoryAxis();
+    axisX->append(categories);
+    axisX->setLabelsAngle(-30);
+    axisX->setLabelsColor(QColor("#2B2B2B"));
+    chart->addAxis(axisX, Qt::AlignBottom);
+    series->attachAxis(axisX);
+
+    auto *axisY = new QValueAxis();
+    axisY->setTitleText(isTemperatureStats ? "Température moyenne (°C)"
+                                           : "Nombre de machines");
+    axisY->setRange(0, maxValue > 0 ? maxValue * 1.2 : 10);
+    axisY->setLabelFormat(isTemperatureStats ? "%.2f" : "%.0f");
+    axisY->setLabelsColor(QColor("#2B2B2B"));
+    axisY->setGridLineColor(QColor("#DCE7E2"));
+    chart->addAxis(axisY, Qt::AlignLeft);
+    series->attachAxis(axisY);
+  }
+
+  auto *chartView = new QChartView(chart, ui->zoneGraphique_machine);
+  chartView->setRenderHint(QPainter::Antialiasing);
+  chartView->setStyleSheet(
+      "QChartView { background-color: #FFFFFF; border: 1px solid #D7E5DF; "
+      "border-radius: 8px; padding: 6px; }");
+
+  QLabel *legendHelp = new QLabel(
+      QString("Affichage %1 • %2").arg(chartType, statsType),
+      ui->zoneGraphique_machine);
+  legendHelp->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+  legendHelp->setStyleSheet("QLabel { color: #47695D; font-size: 11px; font-weight: 600; }");
+
+  layout->addWidget(chartView);
+  layout->addWidget(legendHelp);
+}
+
+void machine::on_btnGenererStats_machine_clicked() {
+  const QString statsType = ui->type_statistique_machine->currentText();
+  const QString chartType = ui->type_graphique_machine->currentText();
+
+  const QList<QPair<QString, double>> data = loadStatisticsData(statsType);
+  if (data.isEmpty()) {
+    clearStatsChartArea("Aucune donnée trouvée pour ce type de statistique.");
+    return;
+  }
+
+  renderStatisticsChart(data, statsType, chartType);
 }
 
 void machine::on_tableMachines_machine_doubleClicked(const QModelIndex &index) {
@@ -2067,7 +2379,10 @@ void machine::rechercherMachines() {
         "M.TEMPERATURE_ACTUELLE, M.NIVEAU_CHARGE, M.ETAT_FONCTIONNEMENT, "
         "M.TYPE_ALERTE, M.NIVEAU_CRITICITE, M.DATE_DERNIERE_MAINTENANCE, "
         "M.DATE_INSTALLATION, M.SCORE_SANTE, M.DATE_MISE_A_JOUR, "
-        "NVL(E.USERNAME, '-') AS RESPONSABLE "
+        "NVL(E.USERNAME, '-') AS RESPONSABLE, "
+        "NVL(M.REFROIDISSEMENT, '-') AS REFROIDISSEMENT, "
+        "NVL(M.TAG, '-') AS TAG, "
+        "NVL(M.PRIORITE, '-') AS PRIORITE "
         "FROM MACHINE M LEFT JOIN EMPLOYEES E ON M." + employeeColumn + " = E.USER_ID "
         "WHERE UPPER(M.NOM_MACHINE) LIKE UPPER(:search) "
         "ORDER BY M.ID_MACHINE ASC");
@@ -2075,7 +2390,10 @@ void machine::rechercherMachines() {
     query.prepare("SELECT ID_MACHINE, NOM_MACHINE, TYPE_MACHINE, ETAT_MARCHE, "
                   "TEMPERATURE_ACTUELLE, NIVEAU_CHARGE, ETAT_FONCTIONNEMENT, "
                   "TYPE_ALERTE, NIVEAU_CRITICITE, DATE_DERNIERE_MAINTENANCE, "
-                  "DATE_INSTALLATION, SCORE_SANTE, DATE_MISE_A_JOUR, '-' AS RESPONSABLE "
+                  "DATE_INSTALLATION, SCORE_SANTE, DATE_MISE_A_JOUR, '-' AS RESPONSABLE, "
+                  "NVL(REFROIDISSEMENT, '-') AS REFROIDISSEMENT, "
+                  "NVL(TAG, '-') AS TAG, "
+                  "NVL(PRIORITE, '-') AS PRIORITE "
                   "FROM MACHINE WHERE UPPER(NOM_MACHINE) LIKE UPPER(:search) "
                   "ORDER BY ID_MACHINE ASC");
   }
@@ -2106,10 +2424,13 @@ void machine::rechercherMachines() {
     QString scoreSante = query.value(11).toString();
     QString maj = query.value(12).toDate().toString("yyyy-MM-dd");
     QString responsable = query.value(13).toString();
+    QString refroidissement = query.value(14).toString();
+    QString tag = query.value(15).toString();
+    QString priorite = query.value(16).toString();
 
     QStringList values = {id,      nom,        type,   etatMarche, temp,
                           charge,  fonction,   alerte, criticite,  maintenance,
-                install, scoreSante, maj, responsable};
+          install, scoreSante, maj, responsable, refroidissement, tag, priorite};
 
     for (int i = 0; i < values.size(); ++i) {
       auto *item = new QStandardItem(values[i]);
@@ -2282,13 +2603,34 @@ void machine::afficherDialogExport() {
 
   QString machineId = machineTableModel->item(m_selectedRow, 0)->text();
 
+  const QString employeeColumn = machineEmployeeColumnName();
+  const bool hasEmployeeColumn = !employeeColumn.isEmpty();
   QSqlQuery query(ConnectionMachine::getInstance().getDatabase());
-  query.prepare("SELECT ID_MACHINE, NOM_MACHINE, TYPE_MACHINE, ETAT_MARCHE, "
-                "TEMPERATURE_ACTUELLE, NIVEAU_CHARGE, ETAT_FONCTIONNEMENT, "
-                "TYPE_ALERTE, NIVEAU_CRITICITE, DATE_DERNIERE_MAINTENANCE, "
-                "DATE_INSTALLATION, SCORE_SANTE, DATE_MISE_A_JOUR "
-                "FROM MACHINE WHERE ID_MACHINE = ?");
-  query.addBindValue(machineId);
+  if (hasEmployeeColumn) {
+    query.prepare(
+        "SELECT M.ID_MACHINE, M.NOM_MACHINE, M.TYPE_MACHINE, M.ETAT_MARCHE, "
+        "M.TEMPERATURE_ACTUELLE, M.NIVEAU_CHARGE, M.ETAT_FONCTIONNEMENT, "
+        "M.TYPE_ALERTE, M.NIVEAU_CRITICITE, M.DATE_DERNIERE_MAINTENANCE, "
+        "M.DATE_INSTALLATION, M.SCORE_SANTE, M.DATE_MISE_A_JOUR, "
+        "NVL(E.USERNAME, '-') AS RESPONSABLE, "
+        "NVL(M.REFROIDISSEMENT, '-') AS REFROIDISSEMENT, "
+        "NVL(M.TAG, '-') AS TAG, "
+        "NVL(M.PRIORITE, '-') AS PRIORITE "
+        "FROM MACHINE M LEFT JOIN EMPLOYEES E ON M." + employeeColumn + " = E.USER_ID "
+        "WHERE M.ID_MACHINE = :id");
+  } else {
+    query.prepare(
+        "SELECT ID_MACHINE, NOM_MACHINE, TYPE_MACHINE, ETAT_MARCHE, "
+        "TEMPERATURE_ACTUELLE, NIVEAU_CHARGE, ETAT_FONCTIONNEMENT, "
+        "TYPE_ALERTE, NIVEAU_CRITICITE, DATE_DERNIERE_MAINTENANCE, "
+        "DATE_INSTALLATION, SCORE_SANTE, DATE_MISE_A_JOUR, "
+        "'-' AS RESPONSABLE, "
+        "NVL(REFROIDISSEMENT, '-') AS REFROIDISSEMENT, "
+        "NVL(TAG, '-') AS TAG, "
+        "NVL(PRIORITE, '-') AS PRIORITE "
+        "FROM MACHINE WHERE ID_MACHINE = :id");
+  }
+  query.bindValue(":id", machineId);
 
   if (!query.exec() || !query.next()) {
     QMessageBox::critical(this, "Erreur",
@@ -2309,6 +2651,10 @@ void machine::afficherDialogExport() {
   QString installation = query.value(10).toDate().toString("yyyy-MM-dd");
   QString scoreSante = query.value(11).toString();
   QString miseAJour = query.value(12).toDate().toString("yyyy-MM-dd");
+  QString responsable = query.value(13).toString();
+  QString refroidissement = query.value(14).toString();
+  QString tag = query.value(15).toString();
+  QString priorite = query.value(16).toString();
 
   QDateTime now = QDateTime::currentDateTime();
   QString genDate = now.toString("dd/MM/yyyy") + QString::fromUtf8(" à ") + now.toString("HH:mm:ss");
@@ -2401,13 +2747,25 @@ void machine::afficherDialogExport() {
               "  <div class='field'>📅 <span class='field-label'>Date mise à jour</span>&nbsp;&nbsp;&nbsp;"
               "    <span class='field-value'>%15</span></div>"
               "</div>"
+                  "<div class='section'>"
+                  "  <div class='section-title'>🧩  Suivi et métadonnées</div>"
+                  "  <div class='field'>👤 <span class='field-label'>Responsable</span>&nbsp;"
+                  "    <span class='field-value'>%16</span></div>"
+                  "  <div class='field'>❄️ <span class='field-label'>Refroidissement</span>&nbsp;"
+                  "    <span class='field-value'>%17</span></div>"
+                  "  <div class='field'>🏷️ <span class='field-label'>Tag</span>&nbsp;"
+                  "    <span class='field-value'>%18</span></div>"
+                  "  <div class='field'>📌 <span class='field-label'>Priorité</span>&nbsp;"
+                  "    <span class='field-value'>%19</span></div>"
+                  "</div>"
               "<div class='footer'>"
-              "  <div>Document généré le %16</div>"
+                  "  <div>Document généré le %20</div>"
               "  <div class='footer-brand'>🏭  Système de Gestion des Machines — Zitouna</div>"
               "</div>"
               "</body></html>")
               .arg(id, nom, type, etatColor, etatMarche, temperature, charge, fonctionnement, alerte)
-              .arg(criticiteColor, criticite, scoreSante, maintenance, installation, miseAJour, genDate);
+                  .arg(criticiteColor, criticite, scoreSante, maintenance, installation, miseAJour,
+                    responsable, refroidissement, tag, priorite, genDate);
 
       QTextDocument doc;
       doc.setHtml(html);
@@ -2440,6 +2798,10 @@ void machine::afficherDialogExport() {
           out << QString::fromUtf8("Dernière maintenance;") << maintenance << "\n";
           out << "Date d'installation;" << installation << "\n";
           out << QString::fromUtf8("Date mise à jour;") << miseAJour << "\n";
+          out << "Responsable;" << responsable << "\n";
+          out << "Refroidissement;" << refroidissement << "\n";
+          out << "Tag;" << tag << "\n";
+          out << QString::fromUtf8("Priorité;") << priorite << "\n";
           out << QString::fromUtf8("Document généré le;") << genDate << "\n";
           csvFile.close();
           success = true;
@@ -2476,6 +2838,12 @@ void machine::afficherDialogExport() {
           out << QString::fromUtf8("Dernière maintenance:").leftJustified(w, ' ') << maintenance << "\n";
           out << QString("Date d'installation:").leftJustified(w, ' ') << installation << "\n";
           out << QString::fromUtf8("Date mise à jour:").leftJustified(w, ' ') << miseAJour << "\n\n";
+
+          out << "--- SUIVI ET META ---\n";
+          out << QString("Responsable:").leftJustified(w, ' ') << responsable << "\n";
+          out << QString("Refroidissement:").leftJustified(w, ' ') << refroidissement << "\n";
+          out << QString("Tag:").leftJustified(w, ' ') << tag << "\n";
+          out << QString::fromUtf8("Priorité:").leftJustified(w, ' ') << priorite << "\n\n";
 
           out << "============================================================\n";
           out << QString::fromUtf8("Document généré le ") << genDate << "\n";
@@ -2519,13 +2887,34 @@ void machine::exporterPDF() {
   QString machineId = machineTableModel->item(m_selectedRow, 0)->text();
 
   // 3. Fetch all machine data from database
+  const QString employeeColumn = machineEmployeeColumnName();
+  const bool hasEmployeeColumn = !employeeColumn.isEmpty();
   QSqlQuery query(ConnectionMachine::getInstance().getDatabase());
-  query.prepare("SELECT ID_MACHINE, NOM_MACHINE, TYPE_MACHINE, ETAT_MARCHE, "
-                "TEMPERATURE_ACTUELLE, NIVEAU_CHARGE, ETAT_FONCTIONNEMENT, "
-                "TYPE_ALERTE, NIVEAU_CRITICITE, DATE_DERNIERE_MAINTENANCE, "
-                "DATE_INSTALLATION, SCORE_SANTE, DATE_MISE_A_JOUR "
-                "FROM MACHINE WHERE ID_MACHINE = ?");
-  query.addBindValue(machineId);
+  if (hasEmployeeColumn) {
+    query.prepare(
+        "SELECT M.ID_MACHINE, M.NOM_MACHINE, M.TYPE_MACHINE, M.ETAT_MARCHE, "
+        "M.TEMPERATURE_ACTUELLE, M.NIVEAU_CHARGE, M.ETAT_FONCTIONNEMENT, "
+        "M.TYPE_ALERTE, M.NIVEAU_CRITICITE, M.DATE_DERNIERE_MAINTENANCE, "
+        "M.DATE_INSTALLATION, M.SCORE_SANTE, M.DATE_MISE_A_JOUR, "
+        "NVL(E.USERNAME, '-') AS RESPONSABLE, "
+        "NVL(M.REFROIDISSEMENT, '-') AS REFROIDISSEMENT, "
+        "NVL(M.TAG, '-') AS TAG, "
+        "NVL(M.PRIORITE, '-') AS PRIORITE "
+        "FROM MACHINE M LEFT JOIN EMPLOYEES E ON M." + employeeColumn + " = E.USER_ID "
+        "WHERE M.ID_MACHINE = :id");
+  } else {
+    query.prepare(
+        "SELECT ID_MACHINE, NOM_MACHINE, TYPE_MACHINE, ETAT_MARCHE, "
+        "TEMPERATURE_ACTUELLE, NIVEAU_CHARGE, ETAT_FONCTIONNEMENT, "
+        "TYPE_ALERTE, NIVEAU_CRITICITE, DATE_DERNIERE_MAINTENANCE, "
+        "DATE_INSTALLATION, SCORE_SANTE, DATE_MISE_A_JOUR, "
+        "'-' AS RESPONSABLE, "
+        "NVL(REFROIDISSEMENT, '-') AS REFROIDISSEMENT, "
+        "NVL(TAG, '-') AS TAG, "
+        "NVL(PRIORITE, '-') AS PRIORITE "
+        "FROM MACHINE WHERE ID_MACHINE = :id");
+  }
+  query.bindValue(":id", machineId);
 
   if (!query.exec() || !query.next()) {
     QMessageBox::critical(this, "Erreur",
@@ -2548,6 +2937,10 @@ void machine::exporterPDF() {
   QString installation = query.value(10).toDate().toString("yyyy-MM-dd");
   QString scoreSante = query.value(11).toString();
   QString miseAJour = query.value(12).toDate().toString("yyyy-MM-dd");
+  QString responsable = query.value(13).toString();
+  QString refroidissement = query.value(14).toString();
+  QString tag = query.value(15).toString();
+  QString priorite = query.value(16).toString();
 
   // 4. Ask user where to save
   QString defaultName = QString("Fiche_Machine_%1_%2.pdf").arg(id, nom);
@@ -2665,9 +3058,27 @@ void machine::exporterPDF() {
           "    <span class='field-value'>%15</span></div>"
           "</div>"
 
+          // ===== SUIVI ET METADONNEES =====
+          "<div class='section'>"
+          "  <div class='section-title'>\xF0\x9F\xA7\xA9  Suivi et "
+          "m\xC3\xA9tadonn\xC3\xA9es</div>"
+          "  <div class='field'>\xF0\x9F\x91\xA4 <span "
+          "class='field-label'>Responsable</span>&nbsp;"
+          "    <span class='field-value'>%16</span></div>"
+          "  <div class='field'>\xE2\x9D\x84\xEF\xB8\x8F <span "
+          "class='field-label'>Refroidissement</span>&nbsp;"
+          "    <span class='field-value'>%17</span></div>"
+          "  <div class='field'>\xF0\x9F\x8F\xB7\xEF\xB8\x8F <span "
+          "class='field-label'>Tag</span>&nbsp;"
+          "    <span class='field-value'>%18</span></div>"
+          "  <div class='field'>\xF0\x9F\x93\x8C <span "
+          "class='field-label'>Priorit\xC3\xA9</span>&nbsp;"
+          "    <span class='field-value'>%19</span></div>"
+          "</div>"
+
           // ===== FOOTER =====
           "<div class='footer'>"
-          "  <div>Document g\xC3\xa9n\xC3\xa9r\xC3\xa9 le %16</div>"
+          "  <div>Document g\xC3\xA9n\xC3\xA9r\xC3\xA9 le %20</div>"
           "  <div class='footer-brand'>\xF0\x9F\x8F\xAD  Syst\xC3\xA8me de "
           "Gestion des Machines \xe2\x80\x94 Zitouna</div>"
           "</div>"
@@ -2675,8 +3086,8 @@ void machine::exporterPDF() {
           "</body></html>")
           .arg(id, nom, type, etatColor, etatMarche, temperature, charge,
                fonctionnement, alerte)
-          .arg(criticiteColor, criticite, scoreSante, maintenance, installation,
-               miseAJour, genDate);
+          .arg(criticiteColor, criticite, scoreSante, maintenance, installation, miseAJour,
+            responsable, refroidissement, tag, priorite, genDate);
 
   // 8. Setup printer and render HTML to PDF
   QPrinter printer(QPrinter::HighResolution);
@@ -2890,14 +3301,28 @@ void machine::showMachineCard() {
   if (m_selectedMachineId.isEmpty() || m_selectedRow < 0)
     return;
 
+  const QString employeeColumn = machineEmployeeColumnName();
+  const bool hasEmployeeColumn = !employeeColumn.isEmpty();
+  const QString fromClause = hasEmployeeColumn
+                                 ? ("FROM MACHINE M LEFT JOIN EMPLOYEES E ON M." +
+                                    employeeColumn +
+                                    " = E.USER_ID WHERE M.ID_MACHINE = :id")
+                                 : "FROM MACHINE M WHERE M.ID_MACHINE = :id";
+    const QString responsableExpr =
+      hasEmployeeColumn ? "NVL(E.USERNAME, '-')" : "'-'";
+
   // Query all machine info from Oracle
   QSqlQuery query(ConnectionMachine::getInstance().getDatabase());
-  query.prepare(
-      "SELECT NOM_MACHINE, TYPE_MACHINE, ETAT_MARCHE, TEMPERATURE_ACTUELLE, "
-      "NIVEAU_CHARGE, ETAT_FONCTIONNEMENT, TYPE_ALERTE, NIVEAU_CRITICITE, "
-      "DATE_DERNIERE_MAINTENANCE, DATE_INSTALLATION, SCORE_SANTE, "
-      "GARANTIE_EXPIRATION "
-      "FROM MACHINE WHERE ID_MACHINE = :id");
+    const QString queryWithGarantie =
+      "SELECT M.NOM_MACHINE, M.TYPE_MACHINE, M.ETAT_MARCHE, M.TEMPERATURE_ACTUELLE, "
+      "M.NIVEAU_CHARGE, M.ETAT_FONCTIONNEMENT, M.TYPE_ALERTE, M.NIVEAU_CRITICITE, "
+      "M.DATE_DERNIERE_MAINTENANCE, M.DATE_INSTALLATION, M.SCORE_SANTE, "
+      "NVL(M.REFROIDISSEMENT, '-') AS REFROIDISSEMENT, "
+      "NVL(M.TAG, '-') AS TAG, "
+      "NVL(M.PRIORITE, '-') AS PRIORITE, " +
+      responsableExpr + " AS RESPONSABLE, "
+      "M.GARANTIE_EXPIRATION " + fromClause;
+    query.prepare(queryWithGarantie);
   query.bindValue(":id", m_selectedMachineId);
 
   // Try with GARANTIE_EXPIRATION, if it fails try without
@@ -2905,11 +3330,15 @@ void machine::showMachineCard() {
   if (!query.exec() || !query.next()) {
     // Retry without GARANTIE_EXPIRATION column
     QSqlQuery query2(ConnectionMachine::getInstance().getDatabase());
-    query2.prepare(
-        "SELECT NOM_MACHINE, TYPE_MACHINE, ETAT_MARCHE, TEMPERATURE_ACTUELLE, "
-        "NIVEAU_CHARGE, ETAT_FONCTIONNEMENT, TYPE_ALERTE, NIVEAU_CRITICITE, "
-        "DATE_DERNIERE_MAINTENANCE, DATE_INSTALLATION, SCORE_SANTE "
-        "FROM MACHINE WHERE ID_MACHINE = :id");
+    const QString queryWithoutGarantie =
+      "SELECT M.NOM_MACHINE, M.TYPE_MACHINE, M.ETAT_MARCHE, M.TEMPERATURE_ACTUELLE, "
+      "M.NIVEAU_CHARGE, M.ETAT_FONCTIONNEMENT, M.TYPE_ALERTE, M.NIVEAU_CRITICITE, "
+      "M.DATE_DERNIERE_MAINTENANCE, M.DATE_INSTALLATION, M.SCORE_SANTE, "
+      "NVL(M.REFROIDISSEMENT, '-') AS REFROIDISSEMENT, "
+      "NVL(M.TAG, '-') AS TAG, "
+      "NVL(M.PRIORITE, '-') AS PRIORITE, " +
+      responsableExpr + " AS RESPONSABLE " + fromClause;
+    query2.prepare(queryWithoutGarantie);
     query2.bindValue(":id", m_selectedMachineId);
     if (!query2.exec() || !query2.next()) {
       QMessageBox::critical(this, "Erreur",
@@ -2933,7 +3362,11 @@ void machine::showMachineCard() {
   QString maintenance = query.value(8).toDate().toString("yyyy-MM-dd");
   QString installation = query.value(9).toDate().toString("yyyy-MM-dd");
   QString scoreSante = query.value(10).toString();
-  QString garantie = hasGarantie ? query.value(11).toDate().toString("yyyy-MM-dd") : "N/A";
+  QString refroidissement = query.value(11).toString();
+  QString tag = query.value(12).toString();
+  QString priorite = query.value(13).toString();
+  QString responsable = query.value(14).toString();
+  QString garantie = hasGarantie ? query.value(15).toDate().toString("yyyy-MM-dd") : "N/A";
 
   // Determine border color based on ETAT_FONCTIONNEMENT
   QString borderColor;
@@ -2951,7 +3384,7 @@ void machine::showMachineCard() {
   machineCardDialog->setWindowTitle(
       QString::fromUtf8("\xF0\x9F\x97\xBA\xEF\xB8\x8F Fiche Machine — ") + nom);
   machineCardDialog->setMinimumWidth(500);
-  machineCardDialog->setMinimumHeight(520);
+  machineCardDialog->setMinimumHeight(620);
   machineCardDialog->setModal(false); // Non-modal to allow background interaction
   machineCardDialog->setObjectName("machineCardDialog");
 
@@ -3036,6 +3469,10 @@ void machine::showMachineCard() {
   addField(4, 1, "Maintenance:", maintenance);
   addField(5, 0, "Installation:", installation);
   addField(5, 1, "Garantie:", garantie);
+  addField(6, 0, "Responsable:", responsable);
+  addField(6, 1, "Refroidissement:", refroidissement);
+  addField(7, 0, "Tag:", tag);
+  addField(7, 1, QString::fromUtf8("Priorité:"), priorite);
 
   mainLay->addLayout(grid);
 
