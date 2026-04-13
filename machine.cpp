@@ -2,7 +2,6 @@
 #include "connexionmachine.h"
 #include "ui_machine.h"
 #include <QBrush>
-#include <QCheckBox>
 #include <QComboBox>
 #include <QDateEdit>
 #include <QDateTime>
@@ -13,11 +12,13 @@
 #include <QFileDialog>
 #include <QFormLayout>
 #include <QHeaderView>
+#include <QItemSelectionModel>
 #include <QMap>
 #include <QMessageBox>
 #include <QPainter>
 #include <QPrinter>
 #include <QRegularExpression>
+#include <QScrollBar>
 #include <QSpacerItem>
 #include <QSpinBox>
 #include <QSet>
@@ -39,6 +40,71 @@
 #include <QtCharts/QPieSeries>
 #include <QtCharts/QPieSlice>
 #include <QtCharts/QValueAxis>
+
+namespace {
+int priorityScore(const QString &priorityRaw) {
+  const QString p = priorityRaw.trimmed().toLower();
+  if (p.contains("urgent") || p.contains("critique")) {
+    return 3;
+  }
+  if (p.contains("haute") || p.contains("élev") || p.contains("eleve")) {
+    return 2;
+  }
+  if (p.contains("moy") || p.contains("normal")) {
+    return 1;
+  }
+  return 0;
+}
+
+bool tagImpliesPriority(const QString &tagRaw) {
+  const QString t = tagRaw.trimmed().toLower();
+  return t.contains("urgent") || t.contains("critique") ||
+         t.contains("maintenance") || t.contains("reparer") ||
+         t.contains("réparer") || t.contains("priorit") || t.contains("panne");
+}
+
+QString normalizeFonctionnementState(const QString &stateRaw) {
+  const QString state = stateRaw.trimmed().toLower();
+  if (state == "normal" || state == "normale") {
+    return "normal";
+  }
+  if (state == "alerte") {
+    return "alerte";
+  }
+  if (state == "panne") {
+    return "panne";
+  }
+  return "";
+}
+
+QColor pastelRowColorForFonctionnement(const QString &stateRaw) {
+  const QString state = normalizeFonctionnementState(stateRaw);
+  if (state == "normal") {
+    return QColor("#E4F5E8");
+  }
+  if (state == "alerte") {
+    return QColor("#FFEEDB");
+  }
+  if (state == "panne") {
+    return QColor("#FADFE0");
+  }
+  return QColor("#FFFFFF");
+}
+
+QColor selectedPastelRowColorForFonctionnement(const QString &stateRaw) {
+  const QString state = normalizeFonctionnementState(stateRaw);
+  if (state == "normal") {
+    return QColor("#CFEAD6");
+  }
+  if (state == "alerte") {
+    return QColor("#FFDDBD");
+  }
+  if (state == "panne") {
+    return QColor("#F3C7CA");
+  }
+  return QColor("#E7EFEA");
+}
+} // namespace
 // ============================================================================
 // NavigationBar Implementation
 // ============================================================================
@@ -190,7 +256,8 @@ void NavigationBar::onTabButtonClicked() {
 
 machine::machine(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::machine), navigationBar(nullptr),
-  employeeTableModel(nullptr), historiqueTableModel(nullptr), m_selectedRow(-1),
+      machineTableRefreshTimer(nullptr), employeeTableModel(nullptr),
+      historiqueTableModel(nullptr), m_selectedRow(-1),
       machineCardPollingTimer(nullptr), machineCardDialog(nullptr),
       countsTimer(nullptr), historiqueTimer(nullptr) {
   ui->setupUi(this);
@@ -387,11 +454,21 @@ machine::machine(QWidget *parent)
   connect(ui->btnGenererStats_machine, &QPushButton::clicked, this,
           &machine::on_btnGenererStats_machine_clicked);
   clearStatsChartArea("Sélectionnez un type de statistique et un type de graphique, puis cliquez sur Générer.");
+
+  // Rafraîchissement périodique pour refléter les changements de l'état
+  // fonctionnement en quasi temps réel.
+  machineTableRefreshTimer = new QTimer(this);
+  connect(machineTableRefreshTimer, &QTimer::timeout, this,
+          &machine::chargerMachines);
+  machineTableRefreshTimer->start(1000);
 }
 
 machine::~machine() {
   if (dateTimeTimer) {
     dateTimeTimer->stop();
+  }
+  if (machineTableRefreshTimer) {
+    machineTableRefreshTimer->stop();
   }
   delete ui;
 }
@@ -479,11 +556,11 @@ void machine::setupMachineTable() {
             border: 2px solid #1A3C2F;
             border-radius: 6px;
             background-color: #FFFFFF;
-            alternate-background-color: #F0F7F4;
+          alternate-background-color: #FFFFFF;
             gridline-color: #D5E8D4;
             font-size: 12px;
             font-family: 'Segoe UI', Arial, sans-serif;
-            selection-background-color: #C8E6C9;
+            selection-background-color: transparent;
             selection-color: #1A3C2F;
         }
         QTableView::item {
@@ -494,7 +571,7 @@ void machine::setupMachineTable() {
             background-color: #E0F2E9;
         }
         QTableView::item:selected {
-            background-color: #C8E6C9;
+          background-color: transparent;
             color: #1A3C2F;
         }
         QHeaderView::section {
@@ -513,7 +590,7 @@ void machine::setupMachineTable() {
     )");
 
   // Configure table view behavior
-  ui->tableMachines_machine->setAlternatingRowColors(true);
+  ui->tableMachines_machine->setAlternatingRowColors(false);
   ui->tableMachines_machine->setSelectionBehavior(
       QAbstractItemView::SelectRows);
   ui->tableMachines_machine->setSelectionMode(
@@ -527,6 +604,12 @@ void machine::setupMachineTable() {
   ui->tableMachines_machine->setHorizontalScrollBarPolicy(
       Qt::ScrollBarAsNeeded);
   ui->tableMachines_machine->setShowGrid(true);
+
+  connect(ui->tableMachines_machine->selectionModel(),
+          &QItemSelectionModel::selectionChanged, this,
+          [this](const QItemSelection &, const QItemSelection &) {
+            applyMachineRowPastelColors();
+          });
 
   // Set row height
   ui->tableMachines_machine->verticalHeader()->setDefaultSectionSize(40);
@@ -765,32 +848,50 @@ void machine::onNavigationTabClicked(int index) {
 // ============================================================================
 
 void machine::setupTodoList() {
-  // Connect the "+ Ajouter" button
-  connect(ui->btnAjouterTodo_machine, &QPushButton::clicked, this,
-          &machine::showAddTodoDialog);
+  connect(ui->btnSummaryActualiser_machine, &QPushButton::clicked, this,
+          [this]() { chargerMachines(); });
 
-  // Add sample entries for demonstration
-  addTodoItem("Presse Hydraulique A3", "Siemens", "Urgent");
-  addTodoItem("Convoyeur B12", "Bosch", "Normal");
-  addTodoItem("Compresseur C7", "Atlas Copco", "Urgent");
+  // Liste alimentee automatiquement depuis la base de donnees (TAG/PRIORITE)
+  ui->btnAjouterTodo_machine->setVisible(false);
+
+  reloadTodoFromMachineData();
 }
 
-void machine::addTodoItem(const QString &machineName, const QString &fabricant,
-                          const QString &priority) {
-  TodoItem item;
-  item.machineName = machineName;
-  item.fabricant = fabricant;
-  item.priority = priority;
-  item.done = false;
-  m_todoItems.append(item);
-  refreshTodoList();
-}
+void machine::reloadTodoFromMachineData() {
+  m_todoItems.clear();
 
-void machine::onTodoCheckToggled(int index, bool checked) {
-  if (index >= 0 && index < m_todoItems.size()) {
-    m_todoItems[index].done = checked;
-    refreshTodoList();
+  for (const MachineData &m : m_allMachines) {
+    const QString rawPriority = m.priorite.trimmed();
+    const QString rawTag = m.tag.trimmed();
+
+    const bool hasPriority = (priorityScore(rawPriority) >= 2);
+    const bool hasPriorityTag = tagImpliesPriority(rawTag);
+    if (!hasPriority && !hasPriorityTag) {
+      continue;
+    }
+
+    TodoItem item;
+    item.machineId = m.id;
+    item.machineName = m.nom;
+    item.machineType = m.type;
+    item.tag = (rawTag.isEmpty() || rawTag == "-") ? "Aucun" : rawTag;
+    item.priority = (rawPriority.isEmpty() || rawPriority == "-")
+                        ? "A definir"
+                        : rawPriority;
+    m_todoItems.append(item);
   }
+
+  std::sort(m_todoItems.begin(), m_todoItems.end(),
+            [](const TodoItem &a, const TodoItem &b) {
+              const int pa = priorityScore(a.priority);
+              const int pb = priorityScore(b.priority);
+              if (pa != pb) {
+                return pa > pb;
+              }
+              return a.machineName.toLower() < b.machineName.toLower();
+            });
+
+  refreshTodoList();
 }
 
 QWidget *machine::createTodoItemWidget(int index) {
@@ -799,95 +900,61 @@ QWidget *machine::createTodoItemWidget(int index) {
   QWidget *row = new QWidget();
   row->setObjectName("todoRow");
 
-  // Styles based on done state
-  if (item.done) {
-    row->setStyleSheet("QWidget#todoRow { background-color: #F5F5F5; "
-                       "border-radius: 4px; padding: 2px; }");
-  } else {
-    row->setStyleSheet("QWidget#todoRow { background-color: white; border: 1px "
-                       "solid #E8E8E8; border-radius: 4px; padding: 2px; }");
-  }
+  const int score = priorityScore(item.priority);
+  const QString leftAccent =
+      (score >= 3) ? "#B42318" : ((score >= 2) ? "#EA580C" : "#1B4D3E");
+  row->setStyleSheet(QString("QWidget#todoRow { background-color: #FFFFFF; "
+                             "border: 1px solid #DDE5DF; border-left: 5px solid %1; "
+                             "border-radius: 9px; }")
+                        .arg(leftAccent));
 
   QHBoxLayout *rowLayout = new QHBoxLayout(row);
-  rowLayout->setContentsMargins(10, 6, 10, 6);
-  rowLayout->setSpacing(10);
+  rowLayout->setContentsMargins(8, 5, 8, 5);
+  rowLayout->setSpacing(8);
 
-  // Checkbox
-  QCheckBox *cb = new QCheckBox();
-  cb->setChecked(item.done);
-  cb->setStyleSheet("QCheckBox::indicator { width: 18px; height: 18px; }"
-                    "QCheckBox::indicator:unchecked { border: 2px solid #999; "
-                    "border-radius: 4px; background: white; }"
-                    "QCheckBox::indicator:checked { border: 2px solid #2E7D32; "
-                    "border-radius: 4px; background: #2E7D32; }");
-  // Capture index for lambda
-  int idx = index;
-  connect(cb, &QCheckBox::toggled, this,
-          [this, idx](bool checked) { onTodoCheckToggled(idx, checked); });
-  rowLayout->addWidget(cb);
+  QVBoxLayout *infoLayout = new QVBoxLayout();
+  infoLayout->setSpacing(1);
+  infoLayout->setContentsMargins(0, 0, 0, 0);
 
-  // Machine name label
   QLabel *lblName = new QLabel(item.machineName);
-  if (item.done) {
-    lblName->setStyleSheet(
-        "font-size: 12px; color: #AAA; text-decoration: line-through; "
-        "background: transparent; border: none;");
-  } else {
-    lblName->setStyleSheet("font-size: 12px; font-weight: bold; color: #333; "
-                           "background: transparent; border: none;");
-  }
-  rowLayout->addWidget(lblName);
+  lblName->setStyleSheet("font-size: 12px; font-weight: 700; color: #143A2A; "
+                         "background: transparent; border: none;");
 
-  // Fabricant label
-  QLabel *lblFab = new QLabel(item.fabricant);
-  if (item.done) {
-    lblFab->setStyleSheet(
-        "font-size: 11px; color: #BBB; text-decoration: line-through; "
-        "background: transparent; border: none;");
-  } else {
-    lblFab->setStyleSheet(
-        "font-size: 11px; color: #777; background: transparent; border: none;");
-  }
-  rowLayout->addWidget(lblFab);
+  QLabel *lblType = new QLabel(QString("Type: %1").arg(item.machineType));
+  lblType->setStyleSheet("font-size: 11px; color: #5A6B62; "
+                         "background: transparent; border: none;");
 
-  // Spacer
-  rowLayout->addStretch();
+  infoLayout->addWidget(lblName);
+  infoLayout->addWidget(lblType);
+  rowLayout->addLayout(infoLayout, 1);
 
-  // Priority badge
   QLabel *badge = new QLabel(item.priority);
-  if (item.done) {
+  if (score >= 3) {
     badge->setStyleSheet(
-        "font-size: 10px; font-weight: bold; color: #CCC; background-color: "
-        "#F0F0F0;"
-        "border-radius: 4px; padding: 2px 10px; border: none;");
-  } else if (item.priority == "Urgent") {
+        "font-size: 10px; font-weight: 700; color: #FFFFFF; "
+        "background-color: #B42318; border-radius: 10px; "
+        "padding: 3px 10px; border: none;");
+  } else if (score >= 2) {
     badge->setStyleSheet(
-        "font-size: 10px; font-weight: bold; color: white; background-color: "
-        "#D32F2F;"
-        "border-radius: 4px; padding: 2px 10px; border: none;");
+        "font-size: 10px; font-weight: 700; color: #FFFFFF; "
+        "background-color: #EA580C; border-radius: 10px; "
+        "padding: 3px 10px; border: none;");
   } else {
     badge->setStyleSheet(
-        "font-size: 10px; font-weight: bold; color: white; background-color: "
-        "#F57F17;"
-        "border-radius: 4px; padding: 2px 10px; border: none;");
+        "font-size: 10px; font-weight: 700; color: #FFFFFF; "
+        "background-color: #1B4D3E; border-radius: 10px; "
+        "padding: 3px 10px; border: none;");
   }
   badge->setAlignment(Qt::AlignCenter);
   rowLayout->addWidget(badge);
 
-  // Delete button
-  QPushButton *btnDel = new QPushButton("✕");
-  btnDel->setFixedSize(22, 22);
-  btnDel->setCursor(Qt::PointingHandCursor);
-  btnDel->setStyleSheet("QPushButton { background: transparent; color: #999; "
-                        "font-size: 13px; border: none; padding: 0px; }"
-                        "QPushButton:hover { color: #D32F2F; }");
-  connect(btnDel, &QPushButton::clicked, this, [this, idx]() {
-    if (idx >= 0 && idx < m_todoItems.size()) {
-      m_todoItems.removeAt(idx);
-      refreshTodoList();
-    }
-  });
-  rowLayout->addWidget(btnDel);
+  QLabel *tagBadge = new QLabel(item.tag);
+  tagBadge->setAlignment(Qt::AlignCenter);
+  tagBadge->setStyleSheet(
+      "font-size: 10px; font-weight: 600; color: #1B4D3E; "
+      "background-color: #EAF4EF; border: 1px solid #C7DACF; "
+      "border-radius: 10px; padding: 3px 10px;");
+  rowLayout->addWidget(tagBadge);
 
   return row;
 }
@@ -907,38 +974,21 @@ void machine::refreshTodoList() {
     }
   }
 
-  // Sort: Urgent+not done first, Normal+not done next, done items last
-  QVector<int> indices;
-  for (int i = 0; i < m_todoItems.size(); ++i) {
-    indices.append(i);
-  }
-  std::sort(indices.begin(), indices.end(), [this](int a, int b) {
-    const TodoItem &ia = m_todoItems[a];
-    const TodoItem &ib = m_todoItems[b];
-    // Done items go last
-    if (ia.done != ib.done)
-      return !ia.done;
-    // Among not-done, Urgent first
-    if (!ia.done && !ib.done) {
-      if (ia.priority == "Urgent" && ib.priority != "Urgent")
-        return true;
-      if (ia.priority != "Urgent" && ib.priority == "Urgent")
-        return false;
-    }
-    return false;
-  });
-
-  // Reorder m_todoItems according to sorted indices
-  QVector<TodoItem> sorted;
-  for (int idx : indices) {
-    sorted.append(m_todoItems[idx]);
-  }
-  m_todoItems = sorted;
-
-  // Create widgets in sorted order
+  // Create widgets
   for (int i = 0; i < m_todoItems.size(); ++i) {
     QWidget *w = createTodoItemWidget(i);
     ui->layoutTodoContent->addWidget(w);
+  }
+
+  if (m_todoItems.isEmpty()) {
+    QLabel *emptyLabel = new QLabel(
+        "Aucune machine prioritaire pour le moment.");
+    emptyLabel->setAlignment(Qt::AlignCenter);
+    emptyLabel->setMinimumHeight(56);
+    emptyLabel->setStyleSheet(
+        "font-size: 12px; color: #6F7D75; background-color: #F7FAF8; "
+        "border: 1px dashed #C7D6CD; border-radius: 8px; padding: 10px;");
+    ui->layoutTodoContent->addWidget(emptyLabel);
   }
 
   // Add spacer at bottom to push items up
@@ -946,75 +996,11 @@ void machine::refreshTodoList() {
       new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding));
 
   // Update counter in title
-  int pending = 0;
-  for (const auto &item : m_todoItems) {
-    if (!item.done)
-      pending++;
-  }
+  int pending = m_todoItems.size();
   ui->lblTodoTitle->setText(QString("🔧 Machines à réparer (%1)").arg(pending));
-}
 
-void machine::showAddTodoDialog() {
-  QDialog dialog(this);
-  dialog.setWindowTitle("🔧 Ajouter une intervention");
-  dialog.setFixedSize(380, 240);
-  dialog.setStyleSheet(
-      "QDialog { background-color: #1A3C2F; }"
-      "QLabel { font-size: 12px; color: #E0E0E0; font-weight: bold; }"
-      "QLineEdit { padding: 6px 10px; border: 1px solid #2D5F47; "
-      "border-radius: 5px; font-size: 12px; background-color: #F5F5F5; color: "
-      "#333; }"
-      "QComboBox { padding: 6px 10px; border: 1px solid #2D5F47; "
-      "border-radius: 5px; font-size: 12px; background-color: #F5F5F5; color: "
-      "#333; }"
-      "QComboBox::drop-down { border: none; }"
-      "QComboBox QAbstractItemView { background: white; color: #333; "
-      "selection-background-color: #2D5F47; selection-color: white; }");
-
-  QFormLayout *form = new QFormLayout(&dialog);
-  form->setSpacing(14);
-  form->setContentsMargins(20, 20, 20, 16);
-
-  QLineEdit *editMachine = new QLineEdit();
-  editMachine->setPlaceholderText("Ex: Presse Hydraulique A3");
-  form->addRow("Machine :", editMachine);
-
-  QLineEdit *editFabricant = new QLineEdit();
-  editFabricant->setPlaceholderText("Ex: Siemens");
-  form->addRow("Fabricant :", editFabricant);
-
-  QComboBox *comboPriority = new QComboBox();
-  comboPriority->addItems({"Urgent", "Normal"});
-  form->addRow("Priorité :", comboPriority);
-
-  QDialogButtonBox *buttons =
-      new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-  buttons->button(QDialogButtonBox::Ok)->setText("Ajouter");
-  buttons->button(QDialogButtonBox::Cancel)->setText("Annuler");
-  buttons->button(QDialogButtonBox::Ok)
-      ->setStyleSheet("QPushButton { background-color: #C9A227; color: "
-                      "#1A3C2F; font-weight: bold; font-size: 12px;"
-                      "border: none; border-radius: 5px; padding: 8px 20px; }"
-                      "QPushButton:hover { background-color: #B8911F; }");
-  buttons->button(QDialogButtonBox::Cancel)
-      ->setStyleSheet(
-          "QPushButton { background-color: rgba(255,255,255,0.15); color: "
-          "#CCC; font-size: 12px;"
-          "border: 1px solid #4A7A66; border-radius: 5px; padding: 8px 20px; }"
-          "QPushButton:hover { background-color: rgba(255,255,255,0.25); "
-          "color: white; }");
-  form->addRow(buttons);
-
-  connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
-  connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
-
-  if (dialog.exec() == QDialog::Accepted) {
-    QString name = editMachine->text().trimmed();
-    QString fab = editFabricant->text().trimmed();
-    QString prio = comboPriority->currentText();
-    if (!name.isEmpty() && !fab.isEmpty()) {
-      addTodoItem(name, fab, prio);
-    }
+  if (ui->scrollTodoList_machine && ui->scrollTodoList_machine->verticalScrollBar()) {
+    ui->scrollTodoList_machine->verticalScrollBar()->setValue(0);
   }
 }
 
@@ -1666,6 +1652,8 @@ void machine::chargerMachines() {
     m_allMachines.append(m);
   }
 
+  reloadTodoFromMachineData();
+
   refreshResponsableFilterOptions();
 
   // 3. Appliquer le filtrage initial avec les valeurs par défaut (tout afficher)
@@ -1757,6 +1745,7 @@ void machine::appliquerFiltres() {
   // 5. Parcourir et afficher les machines filtrées et triées
   for (const MachineData &m : filteredMachines) {
     QList<QStandardItem *> row;
+    const QColor rowPastelColor = pastelRowColorForFonctionnement(m.fonctionnement);
 
     QString tempStr = QString::number(m.temperature, 'f', 2);
     QString chargeStr = QString::number(m.charge, 'f', 2);
@@ -1782,6 +1771,7 @@ void machine::appliquerFiltres() {
       item->setEditable(false);
       item->setTextAlignment(Qt::AlignCenter);
       item->setForeground(QColor("#333333")); // Force sombre
+      item->setBackground(rowPastelColor);
       row.append(item);
     }
 
@@ -1791,17 +1781,14 @@ void machine::appliquerFiltres() {
     // Colonnes concernées : 4, 5, 6, 7, 8, 11
     // -------------------------------------------------------------------------
     const bool machineInactive = (m.etatMarche == "OFF" || m.etatMarche == "VEILLE");
-    const QList<int> colsADesactiver = {4, 5, 6, 7, 8, 11};
+    const QList<int> colsADesactiver = {4, 5, 7, 8, 11};
 
     if (machineInactive) {
-      const QColor bgGrise("#E8E8E8");     // fond gris clair
-      const QColor fgGrise("#AAAAAA");     // texte gris
       const QColor fgBoldGrise("#999999"); // texte gras grisé
 
       for (int col : colsADesactiver) {
         // Retirer Qt::ItemIsEnabled pour le grisage natif Qt
         row[col]->setFlags(row[col]->flags() & ~Qt::ItemIsEnabled);
-        row[col]->setBackground(bgGrise);
         row[col]->setForeground(fgBoldGrise);
       }
     }
@@ -1817,16 +1804,17 @@ void machine::appliquerFiltres() {
     else if (m.etatMarche == "OFF")
       row[3]->setForeground(QColor("#C62828")); // Rouge
 
-    if (!machineInactive) {
-      // -- Etat Fonctionnement (Colonne 6)
-      row[6]->setFont(boldFont);
-      if (m.fonctionnement == "Normal")
-        row[6]->setForeground(QColor("#2E7D32")); // Vert
-      else if (m.fonctionnement == "Alerte")
-        row[6]->setForeground(QColor("#E65100")); // Orange
-      else if (m.fonctionnement == "Panne")
-        row[6]->setForeground(QColor("#C62828")); // Rouge
+    // -- Etat Fonctionnement (Colonne 6)
+    // Toujours coloré selon l'état de fonctionnement (même OFF/VEILLE).
+    row[6]->setFont(boldFont);
+    if (m.fonctionnement == "Normal" || m.fonctionnement == "Normale")
+      row[6]->setForeground(QColor("#2E7D32")); // Vert
+    else if (m.fonctionnement == "Alerte")
+      row[6]->setForeground(QColor("#E65100")); // Orange
+    else if (m.fonctionnement == "Panne")
+      row[6]->setForeground(QColor("#C62828")); // Rouge
 
+    if (!machineInactive) {
       // -- Type Alerte (Colonne 7)
       row[7]->setFont(boldFont);
       if (m.alerte == "Aucune")
@@ -1847,6 +1835,69 @@ void machine::appliquerFiltres() {
     }
 
     machineTableModel->appendRow(row);
+  }
+
+  restoreSelectedMachineRow();
+  applyMachineRowPastelColors();
+}
+
+void machine::restoreSelectedMachineRow() {
+  if (m_selectedMachineId.isEmpty() || !machineTableModel ||
+      !ui->tableMachines_machine) {
+    return;
+  }
+
+  for (int row = 0; row < machineTableModel->rowCount(); ++row) {
+    QStandardItem *idItem = machineTableModel->item(row, 0);
+    if (idItem && idItem->text() == m_selectedMachineId) {
+      m_selectedRow = row;
+      ui->tableMachines_machine->selectRow(row);
+      applyMachineRowPastelColors();
+      return;
+    }
+  }
+
+  m_selectedRow = -1;
+  m_selectedMachineId.clear();
+  ui->btnModifierMachine_machine->setEnabled(false);
+  ui->btnSupprimerMachine_machine->setEnabled(false);
+  ui->btnExporter_machine->setEnabled(false);
+  ui->btnToggleOnOff_machine->setEnabled(false);
+  ui->btnCarteMachine->setEnabled(false);
+  applyMachineRowPastelColors();
+}
+
+void machine::applyMachineRowPastelColors() {
+  if (!machineTableModel || !ui->tableMachines_machine) {
+    return;
+  }
+
+  QSet<int> selectedRows;
+  if (ui->tableMachines_machine->selectionModel()) {
+    const QModelIndexList rows =
+        ui->tableMachines_machine->selectionModel()->selectedRows();
+    for (const QModelIndex &idx : rows) {
+      selectedRows.insert(idx.row());
+    }
+  }
+
+  for (int r = 0; r < machineTableModel->rowCount(); ++r) {
+    QStandardItem *fonctionnementItem = machineTableModel->item(r, 6);
+    const QString fonctionnement =
+        fonctionnementItem ? fonctionnementItem->text() : QString();
+
+    const QColor baseColor = pastelRowColorForFonctionnement(fonctionnement);
+    const QColor selectedColor =
+        selectedPastelRowColorForFonctionnement(fonctionnement);
+    const QColor rowColor = selectedRows.contains(r) ? selectedColor : baseColor;
+
+    for (int c = 0; c < machineTableModel->columnCount(); ++c) {
+      QStandardItem *item = machineTableModel->item(r, c);
+      if (!item) {
+        continue;
+      }
+      item->setBackground(rowColor);
+    }
   }
 }
 

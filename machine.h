@@ -69,10 +69,11 @@ private:
 
 // Todo item for maintenance list
 struct TodoItem {
+  QString machineId;
   QString machineName;
-  QString fabricant;
-  QString priority; // "Urgent" or "Normal"
-  bool done;
+  QString machineType;
+  QString tag;
+  QString priority;
 };
 
 // Historique entry for live timer
@@ -155,15 +156,13 @@ private:
 
   void setupNavigationBar();
   void setupTodoList();
+  void reloadTodoFromMachineData();
   void refreshTodoList();
-  void addTodoItem(const QString &machineName, const QString &fabricant,
-                   const QString &priority);
-  void onTodoCheckToggled(int index, bool checked);
-  void showAddTodoDialog();
   QWidget *createTodoItemWidget(int index);
 
   Ui::machine *ui;
   QTimer *dateTimeTimer;
+  QTimer *machineTableRefreshTimer;
   NavigationBar *navigationBar;
   QVector<TodoItem> m_todoItems;
   QStandardItemModel *machineTableModel;
@@ -203,5 +202,7 @@ private:
   void showMachineCard();
   void updateMachineCounts();
   void updateHistoriqueDisplay();
+  void restoreSelectedMachineRow();
+  void applyMachineRowPastelColors();
 };
 #endif // MACHINE_H
