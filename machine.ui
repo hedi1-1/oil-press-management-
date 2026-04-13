@@ -583,26 +583,26 @@ QPushButton:pressed {
                             </size>
                           </property>
                           <property name="styleSheet">
-                            <string>QFrame#frameTodoList { background-color: #FAFAFA; border: 1px solid #E0E0E0; border-radius: 10px; }</string>
+                            <string>QFrame#frameTodoList_machine { background-color: #F8FBF9; border: 1px solid #D8E4DC; border-radius: 12px; }</string>
                           </property>
                           <property name="frameShape">
                             <enum>QFrame::Shape::StyledPanel</enum>
                           </property>
                           <layout class="QVBoxLayout" name="layoutTodoList">
                             <property name="spacing">
-                              <number>8</number>
+                              <number>4</number>
                             </property>
                             <property name="leftMargin">
-                              <number>14</number>
+                              <number>8</number>
                             </property>
                             <property name="topMargin">
-                              <number>10</number>
+                              <number>6</number>
                             </property>
                             <property name="rightMargin">
-                              <number>14</number>
+                              <number>8</number>
                             </property>
                             <property name="bottomMargin">
-                              <number>10</number>
+                              <number>6</number>
                             </property>
                             <item>
                               <layout class="QHBoxLayout" name="layoutTodoHeader">
@@ -633,7 +633,7 @@ QPushButton:pressed {
                                   <widget class="QPushButton" name="btnSummaryActualiser_machine">
                                     <property name="minimumSize">
                                       <size>
-                                        <width>90</width>
+                                        <width>30</width>
                                         <height>30</height>
                                       </size>
                                     </property>
@@ -661,6 +661,12 @@ QPushButton:pressed {
                             </item>
                             <item>
                               <widget class="QScrollArea" name="scrollTodoList_machine">
+                                <property name="minimumSize">
+                                  <size>
+                                    <width>0</width>
+                                    <height>95</height>
+                                  </size>
+                                </property>
                                 <property name="styleSheet">
                                   <string>QScrollArea { border: none; background: transparent; } QScrollBar:vertical { width: 6px; background: transparent; } QScrollBar::handle:vertical { background: #CCC; border-radius: 3px; min-height: 20px; } QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }</string>
                                 </property>
@@ -681,19 +687,19 @@ QPushButton:pressed {
                                   </property>
                                   <layout class="QVBoxLayout" name="layoutTodoContent">
                                     <property name="spacing">
-                                      <number>6</number>
+                                      <number>4</number>
                                     </property>
                                     <property name="leftMargin">
-                                      <number>2</number>
+                                      <number>0</number>
                                     </property>
                                     <property name="topMargin">
-                                      <number>2</number>
+                                      <number>0</number>
                                     </property>
                                     <property name="rightMargin">
-                                      <number>2</number>
+                                      <number>0</number>
                                     </property>
                                     <property name="bottomMargin">
-                                      <number>2</number>
+                                      <number>0</number>
                                     </property>
                                   </layout>
                                 </widget>
