@@ -16,13 +16,19 @@
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QVBoxLayout>
+#include <QHBoxLayout>
 #include <QTabWidget>
 #include <QFrame>
 #include <QTextCharFormat>
 #include <QBrush>
 #include <QGraphicsOpacityEffect>
+#include <QGraphicsDropShadowEffect>
 #include <QPropertyAnimation>
 #include <QEasingCurve>
+#include <QDateTime>
+#include <QSignalBlocker>
+#include <QtSerialPort/QSerialPort>
+#include <QtSerialPort/QSerialPortInfo>
 #include <algorithm>
 
 Stock::Stock(QWidget *parent)
@@ -31,6 +37,26 @@ Stock::Stock(QWidget *parent)
     , dateTimeTimer(nullptr)
     , calendarRefreshTimer(nullptr)
     , connexion(nullptr)
+    , m_serial(nullptr)
+    , m_serialBuffer()
+    , m_currentWeightL(0.0)
+    , m_currentStatusRaw()
+    , m_currentStockId(0)
+    , m_hasStockId(false)
+    , m_freezeValue(false)
+    , m_lastValidationMs(0)
+    , m_comboPorts(nullptr)
+    , m_btnConnectArduino(nullptr)
+    , m_btnRefreshPorts(nullptr)
+    , m_lblPoidsTitre(nullptr)
+    , m_lblPoidsValeur(nullptr)
+    , m_lblStockIdValeur(nullptr)
+    , m_progressArduino(nullptr)
+    , m_lblStatusArduino(nullptr)
+    , m_spinManualWeight(nullptr)
+    , m_btnPlusOneL(nullptr)
+    , m_btnConfirmWeight(nullptr)
+    , m_btnValiderPoids(nullptr)
 {
     ui->setupUi(this);
     {
@@ -54,8 +80,14 @@ Stock::Stock(QWidget *parent)
         connexion->createConnection();
     }
     
+    m_serial = new QSerialPort(this);
+    m_serial->setBaudRate(QSerialPort::Baud9600);
+    connect(m_serial, &QSerialPort::readyRead, this, &Stock::onSerialReadyRead);
+
     // Initialiser l'interface
     initialiserInterface();
+    setupArduinoTabUi();
+    refreshAvailablePorts();
     
     // Activer le scrolling sur tous les onglets
     activerScrolling();
@@ -130,6 +162,9 @@ Stock::Stock(QWidget *parent)
 
 Stock::~Stock()
 {
+    if (m_serial && m_serial->isOpen()) {
+        m_serial->close();
+    }
     if (dateTimeTimer) {
         dateTimeTimer->stop();
         delete dateTimeTimer;
@@ -240,6 +275,638 @@ void Stock::initialiserInterface()
     // ID en lecture seule
     ui->lineEditIdStock->setReadOnly(true);
     ui->lineEditIdStock->setPlaceholderText("Auto-généré");
+}
+
+void Stock::setupArduinoTabUi()
+{
+    const int tabIndex = ui->tabWidgetStock->indexOf(ui->tabArduino);
+    if (tabIndex >= 0) {
+        ui->tabWidgetStock->setTabText(tabIndex, "Suivi Production Arduino");
+    }
+
+    ui->tabArduino->setStyleSheet(
+        "QWidget { background-color: #0F172A; color: white; }"
+        "QGroupBox { border: 1px solid #273247; border-radius: 12px; margin-top: 12px; "
+        "padding-top: 14px; color: #00C896; font-weight: 700; background-color: #111827; }"
+        "QGroupBox::title { subcontrol-origin: margin; left: 12px; padding: 0 8px; }"
+        "QLabel { color: white; }"
+        "QPushButton { background-color: #00C896; color: #0b1220; border: none; "
+        "border-radius: 8px; padding: 8px 14px; font-weight: 700; min-height: 34px; }"
+        "QPushButton:hover { background-color: #16d6a5; }"
+        "QComboBox { background-color: #0b1220; color: white; border: 1px solid #334155; "
+        "border-radius: 8px; padding: 6px 10px; min-height: 34px; }"
+        "QTextEdit { background-color: #0b1220; color: #e5e7eb; border: 1px solid #334155; border-radius: 8px; }"
+    );
+
+    if (ui->verticalLayout_12) {
+        ui->verticalLayout_12->setSpacing(14);
+        ui->verticalLayout_12->setContentsMargins(16, 16, 16, 16);
+    }
+
+    const QString groupStyle =
+        "QGroupBox { border: 1px solid #2f3e56; border-radius: 12px; margin-top: 14px; "
+        "padding-top: 14px; color: #D4AF37; font-weight: 800; background-color: #111827; }"
+        "QGroupBox::title { subcontrol-origin: margin; left: 12px; right: 12px; padding: 0 10px; }";
+
+    if (ui->groupConnexion) {
+        ui->groupConnexion->setTitle("Connexion Arduino");
+        ui->groupConnexion->setMinimumHeight(96);
+        ui->groupConnexion->setAlignment(Qt::AlignHCenter);
+        ui->groupConnexion->setStyleSheet(groupStyle);
+    }
+    if (ui->groupCapteur) {
+        ui->groupCapteur->setTitle("Suivi Poids en Temps Reel");
+        ui->groupCapteur->setMinimumHeight(255);
+        ui->groupCapteur->setAlignment(Qt::AlignHCenter);
+        ui->groupCapteur->setStyleSheet(groupStyle);
+    }
+    if (ui->groupLogs) {
+        ui->groupLogs->setTitle("Logs Serie");
+        ui->groupLogs->setMinimumHeight(220);
+        ui->groupLogs->setAlignment(Qt::AlignHCenter);
+        ui->groupLogs->setStyleSheet(groupStyle);
+    }
+
+    if (ui->labelEtatConnexion) {
+        ui->labelEtatConnexion->setText("Non connecte");
+        ui->labelEtatConnexion->setStyleSheet(
+            "QLabel { color: #fecaca; font-size: 15px; font-weight: 800; padding: 6px 12px; "
+            "background-color: rgba(239,68,68,0.18); border: 1px solid rgba(239,68,68,0.42); "
+            "border-radius: 8px; }");
+    }
+
+    m_comboPorts = new QComboBox(this);
+    m_comboPorts->setMinimumWidth(190);
+    m_btnRefreshPorts = new QPushButton("Actualiser Ports", this);
+    m_btnConnectArduino = new QPushButton("Connecter", this);
+    m_btnConnectArduino->setMinimumWidth(120);
+    m_btnRefreshPorts->setMinimumWidth(140);
+
+    if (ui->layoutConnexion) {
+        ui->layoutConnexion->setSpacing(10);
+        ui->layoutConnexion->setContentsMargins(12, 10, 12, 10);
+        ui->layoutConnexion->insertWidget(1, m_comboPorts);
+        ui->layoutConnexion->insertWidget(2, m_btnRefreshPorts);
+        ui->layoutConnexion->insertWidget(3, m_btnConnectArduino);
+    }
+
+    m_lblPoidsTitre = new QLabel("Poids actuel", this);
+    m_lblPoidsTitre->setAlignment(Qt::AlignCenter);
+    m_lblPoidsTitre->setStyleSheet(
+        "QLabel { color: #d1d5db; font-size: 28px; font-weight: 700; }");
+
+    m_lblPoidsValeur = new QLabel("-- L", this);
+    m_lblPoidsValeur->setAlignment(Qt::AlignCenter);
+    m_lblPoidsValeur->setStyleSheet(
+        "QLabel { color: #3df5cb; font-size: 64px; font-weight: 900; letter-spacing: 1px; "
+        "background-color: #0b1933; border: 1px solid #2f3e56; border-radius: 10px; padding: 6px 10px; }");
+    auto *poidsGlow = new QGraphicsDropShadowEffect(m_lblPoidsValeur);
+    poidsGlow->setBlurRadius(24);
+    poidsGlow->setOffset(0, 0);
+    poidsGlow->setColor(QColor(0, 200, 150, 160));
+    m_lblPoidsValeur->setGraphicsEffect(poidsGlow);
+
+    m_lblStockIdValeur = new QLabel("STOCK_ID: --", this);
+    m_lblStockIdValeur->setAlignment(Qt::AlignCenter);
+    m_lblStockIdValeur->setStyleSheet(
+        "QLabel { color: #93c5fd; font-size: 16px; font-weight: 800; letter-spacing: 1px; "
+        "padding: 6px 10px; background-color: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.4); "
+        "border-radius: 8px; }");
+
+    m_progressArduino = new QProgressBar(this);
+    m_progressArduino->setRange(0, 20);
+    m_progressArduino->setValue(0);
+    m_progressArduino->setFormat("%v / %m L");
+    m_progressArduino->setAlignment(Qt::AlignCenter);
+    m_progressArduino->setMinimumHeight(30);
+
+    m_lblStatusArduino = new QLabel("En attente de donnees...", this);
+    m_lblStatusArduino->setAlignment(Qt::AlignCenter);
+    m_lblStatusArduino->setStyleSheet(
+        "QLabel { color: #f8fafc; font-size: 18px; font-weight: 800; "
+        "padding: 8px 12px; background-color: #1f2937; border: 1px solid #334155; border-radius: 8px; }");
+    auto *statusGlow = new QGraphicsDropShadowEffect(m_lblStatusArduino);
+    statusGlow->setBlurRadius(16);
+    statusGlow->setOffset(0, 0);
+    statusGlow->setColor(QColor(255, 255, 255, 110));
+    m_lblStatusArduino->setGraphicsEffect(statusGlow);
+
+    m_btnValiderPoids = new QPushButton("Valider Poids", this);
+    m_btnValiderPoids->setStyleSheet(
+        "QPushButton { background-color: #D4AF37; color: #111827; font-size: 15px; "
+        "font-weight: 800; border-radius: 10px; padding: 10px 20px; }"
+        "QPushButton:hover { background-color: #e2c45d; }");
+
+    auto *manualRow = new QHBoxLayout();
+    manualRow->setSpacing(10);
+    auto *lblManual = new QLabel("Mode test sans capteur", this);
+    lblManual->setStyleSheet("QLabel { color: #cbd5e1; font-size: 14px; font-weight: 700; }");
+
+    m_spinManualWeight = new QDoubleSpinBox(this);
+    m_spinManualWeight->setRange(0.0, 20.0);
+    m_spinManualWeight->setDecimals(1);
+    m_spinManualWeight->setSingleStep(0.1);
+    m_spinManualWeight->setSuffix(" L");
+    m_spinManualWeight->setValue(0.0);
+    m_spinManualWeight->setMinimumWidth(120);
+    m_spinManualWeight->setStyleSheet(
+        "QDoubleSpinBox { background-color: #0b1220; color: #f8fafc; border: 1px solid #334155; "
+        "border-radius: 8px; padding: 6px 10px; min-height: 34px; font-weight: 700; }"
+        "QDoubleSpinBox::up-button, QDoubleSpinBox::down-button { width: 18px; }");
+
+    m_btnPlusOneL = new QPushButton("+ 1L", this);
+    m_btnPlusOneL->setMinimumWidth(80);
+    m_btnConfirmWeight = new QPushButton("Confirmer Poids", this);
+    m_btnConfirmWeight->setMinimumWidth(150);
+    m_btnConfirmWeight->setStyleSheet(
+        "QPushButton { background-color: #D4AF37; color: #111827; font-size: 14px; "
+        "font-weight: 800; border-radius: 10px; padding: 9px 16px; }"
+        "QPushButton:hover { background-color: #e2c45d; }");
+
+    auto *manualHint = new QLabel("Seuil min: 10L", this);
+    manualHint->setStyleSheet("QLabel { color: #fbbf24; font-size: 13px; font-weight: 700; }");
+
+    manualRow->addWidget(lblManual);
+    manualRow->addWidget(m_spinManualWeight);
+    manualRow->addWidget(m_btnPlusOneL);
+    manualRow->addWidget(m_btnConfirmWeight);
+    manualRow->addWidget(manualHint);
+    manualRow->addStretch();
+
+    if (ui->layoutCapteur) {
+        ui->layoutCapteur->addWidget(m_lblPoidsTitre);
+        ui->layoutCapteur->addWidget(m_lblPoidsValeur);
+        ui->layoutCapteur->addWidget(m_lblStockIdValeur, 0, Qt::AlignHCenter);
+        ui->layoutCapteur->addWidget(m_progressArduino);
+        ui->layoutCapteur->addWidget(m_lblStatusArduino);
+        ui->layoutCapteur->addLayout(manualRow);
+        ui->layoutCapteur->addWidget(m_btnValiderPoids, 0, Qt::AlignHCenter);
+    }
+
+    if (ui->labelValeurCapteur) {
+        ui->labelValeurCapteur->hide();
+    }
+
+    if (ui->btnSynchroniser) {
+        ui->btnSynchroniser->setText("Rafraichir Data/DB");
+        ui->btnSynchroniser->setMinimumWidth(160);
+    }
+
+    if (ui->textLogsArduino) {
+        ui->textLogsArduino->setPlaceholderText("Les trames serie apparaitront ici...");
+        ui->textLogsArduino->document()->setMaximumBlockCount(350);
+    }
+
+    connect(m_btnRefreshPorts, &QPushButton::clicked, this, &Stock::onRefreshPortsClicked);
+    connect(m_btnConnectArduino, &QPushButton::clicked, this, &Stock::onConnectArduinoClicked);
+        connect(m_spinManualWeight, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+            this, &Stock::onManualWeightChanged);
+        connect(m_btnPlusOneL, &QPushButton::clicked, this, &Stock::onManualPlusOneClicked);
+        connect(m_btnConfirmWeight, &QPushButton::clicked, this, &Stock::onManualConfirmClicked);
+    connect(m_btnValiderPoids, &QPushButton::clicked, this, &Stock::onValidatePoidsClicked);
+
+    updateProgressBarColor(QStringLiteral("REMPLISSAGE"));
+}
+
+void Stock::refreshAvailablePorts()
+{
+    if (!m_comboPorts) {
+        return;
+    }
+
+    m_comboPorts->clear();
+    const auto ports = QSerialPortInfo::availablePorts();
+    for (const QSerialPortInfo &info : ports) {
+        QString desc = info.description().trimmed();
+        if (desc.isEmpty()) {
+            desc = "Arduino/Serial";
+        }
+        m_comboPorts->addItem(QString("%1 (%2)").arg(info.portName(), desc), info.portName());
+    }
+
+    if (m_comboPorts->count() == 0) {
+        m_comboPorts->addItem("Aucun port detecte", QString());
+    }
+}
+
+void Stock::onRefreshPortsClicked()
+{
+    refreshAvailablePorts();
+}
+
+void Stock::onConnectArduinoClicked()
+{
+    if (!m_serial) {
+        return;
+    }
+
+    if (m_serial->isOpen()) {
+        m_serial->close();
+        if (ui->labelEtatConnexion) {
+            ui->labelEtatConnexion->setText("Non connecte");
+            ui->labelEtatConnexion->setStyleSheet(
+                "QLabel { color: #fecaca; font-size: 15px; font-weight: 800; padding: 6px 12px; "
+                "background-color: rgba(239,68,68,0.18); border: 1px solid rgba(239,68,68,0.42); "
+                "border-radius: 8px; }");
+        }
+        if (m_btnConnectArduino) {
+            m_btnConnectArduino->setText("Connecter");
+        }
+        if (ui->textLogsArduino) {
+            ui->textLogsArduino->append("Connexion serie fermee");
+        }
+        return;
+    }
+
+    if (!m_comboPorts || m_comboPorts->count() == 0) {
+        afficherMessage("Arduino", "Aucun port serie disponible", true);
+        return;
+    }
+
+    const QString portName = m_comboPorts->currentData().toString();
+    if (portName.isEmpty()) {
+        afficherMessage("Arduino", "Selectionnez un port serie valide", true);
+        return;
+    }
+
+    m_serial->setPortName(portName);
+    m_serial->setBaudRate(QSerialPort::Baud9600);
+    m_serial->setDataBits(QSerialPort::Data8);
+    m_serial->setParity(QSerialPort::NoParity);
+    m_serial->setStopBits(QSerialPort::OneStop);
+    m_serial->setFlowControl(QSerialPort::NoFlowControl);
+
+    if (!m_serial->open(QIODevice::ReadOnly)) {
+        afficherMessage("Arduino", "Impossible d'ouvrir " + portName + " : " + m_serial->errorString(), true);
+        return;
+    }
+
+    m_serialBuffer.clear();
+    m_freezeValue = false;
+
+    if (ui->labelEtatConnexion) {
+        ui->labelEtatConnexion->setText("Connecte: " + portName);
+        ui->labelEtatConnexion->setStyleSheet(
+            "QLabel { color: #d1fae5; font-size: 15px; font-weight: 800; padding: 6px 12px; "
+            "background-color: rgba(0,200,150,0.20); border: 1px solid rgba(0,200,150,0.45); "
+            "border-radius: 8px; }");
+    }
+    if (m_btnConnectArduino) {
+        m_btnConnectArduino->setText("Deconnecter");
+    }
+    if (ui->textLogsArduino) {
+        ui->textLogsArduino->append("Connexion serie etablie sur " + portName + " (9600)");
+    }
+}
+
+void Stock::onSerialReadyRead()
+{
+    if (!m_serial) {
+        return;
+    }
+
+    m_serialBuffer += QString::fromUtf8(m_serial->readAll());
+    m_serialBuffer.replace('\r', '\n');
+    int newLineIndex = -1;
+    while ((newLineIndex = m_serialBuffer.indexOf('\n')) >= 0) {
+        const QString line = m_serialBuffer.left(newLineIndex).trimmed();
+        m_serialBuffer.remove(0, newLineIndex + 1);
+        if (!line.isEmpty()) {
+            parseArduinoLine(line);
+        }
+    }
+}
+
+void Stock::onManualPlusOneClicked()
+{
+    if (!m_spinManualWeight) {
+        return;
+    }
+
+    const double nextValue = std::min(20.0, m_spinManualWeight->value() + 1.0);
+    m_spinManualWeight->setValue(nextValue);
+}
+
+void Stock::onManualWeightChanged(double value)
+{
+    if (m_freezeValue) {
+        return;
+    }
+
+    m_currentWeightL = value;
+    m_currentStatusRaw = (value < m_minWeightThresholdL) ? "FAIBLE" : "STABLE";
+    applyArduinoStateUi();
+    persistArduinoToStock(false);
+}
+
+void Stock::onManualConfirmClicked()
+{
+    onValidatePoidsClicked();
+}
+
+void Stock::parseArduinoLine(const QString &line)
+{
+    const QString normalizedLine = line.trimmed();
+
+    if (normalizedLine.startsWith("WEIGHT:", Qt::CaseInsensitive)) {
+        if (m_freezeValue) {
+            return;
+        }
+        bool ok = false;
+        const QString raw = normalizedLine.section(':', 1).trimmed().replace(',', '.');
+        const double arduinoValue = raw.toDouble(&ok);
+        if (ok) {
+            const qint64 nowMs = QDateTime::currentMSecsSinceEpoch();
+            const bool recentValidation = (m_lastValidationMs > 0) && ((nowMs - m_lastValidationMs) < 12000);
+            const bool suspiciousZero = (arduinoValue <= 0.05) && (m_currentWeightL >= m_minWeightThresholdL);
+            const bool intentionalReset = (m_currentStatusRaw == "REMPLISSAGE");
+            if (recentValidation && suspiciousZero && !intentionalReset) {
+                if (ui->textLogsArduino) {
+                    ui->textLogsArduino->append("Info: zero transitoire ignore apres validation");
+                }
+                return;
+            }
+
+            // Requested business mapping: 1 ml sensor unit is treated as 1 L.
+            m_currentWeightL = arduinoValue;
+            if (m_currentStatusRaw.isEmpty() || m_currentStatusRaw == "STABLE" || m_currentStatusRaw == "FAIBLE") {
+                m_currentStatusRaw = (m_currentWeightL < m_minWeightThresholdL) ? "FAIBLE" : "STABLE";
+            }
+            if (m_spinManualWeight) {
+                const QSignalBlocker blocker(m_spinManualWeight);
+                m_spinManualWeight->setValue(std::clamp(m_currentWeightL, 0.0, 20.0));
+            }
+            applyArduinoStateUi();
+            persistArduinoToStock(false);
+        }
+        return;
+    }
+
+    if (normalizedLine.startsWith("STATUS:", Qt::CaseInsensitive)) {
+        m_currentStatusRaw = normalizedLine.section(':', 1).trimmed().toUpper();
+        if (m_currentStatusRaw == "REMPLISSAGE") {
+            m_freezeValue = false;
+            m_hasStockId = false;
+            m_currentStockId = 0;
+        }
+        if (m_currentStatusRaw == "VALIDATED" || m_currentStatusRaw == "FAIBLE_CONFIRMED") {
+            m_freezeValue = true;
+            m_lastValidationMs = QDateTime::currentMSecsSinceEpoch();
+        }
+        applyArduinoStateUi();
+        persistArduinoToStock(m_currentStatusRaw == "VALIDATED");
+        return;
+    }
+
+    if (normalizedLine.startsWith("STOCK_ID:", Qt::CaseInsensitive)) {
+        bool ok = false;
+        const QString raw = normalizedLine.section(':', 1).trimmed();
+        const qlonglong stockId = raw.toLongLong(&ok);
+        if (ok) {
+            m_currentStockId = stockId;
+            m_hasStockId = true;
+            applyArduinoStateUi();
+        }
+        return;
+    }
+
+    if (ui->textLogsArduino) {
+        ui->textLogsArduino->append("Trame ignoree: " + normalizedLine);
+    }
+}
+
+void Stock::updateProgressBarColor(const QString &status)
+{
+    if (!m_progressArduino) {
+        return;
+    }
+
+    QString chunkColor = "#00C896";
+    if (status == "STABLE") {
+        chunkColor = "#f59e0b";
+    } else if (status == "FAIBLE") {
+        chunkColor = "#ef4444";
+    } else if (status == "VALIDATED") {
+        chunkColor = "#D4AF37";
+    }
+
+    m_progressArduino->setStyleSheet(
+        QString(
+            "QProgressBar { border: 1px solid #334155; border-radius: 10px; text-align: center; "
+            "height: 26px; background: #0b1220; color: white; font-weight: 700; }"
+            "QProgressBar::chunk { border-radius: 9px; background-color: %1; }"
+        ).arg(chunkColor)
+    );
+}
+
+void Stock::applyArduinoStateUi()
+{
+    if (m_lblPoidsValeur) {
+        m_lblPoidsValeur->setText(QString::number(m_currentWeightL, 'f', 2) + " L");
+    }
+
+    if (m_progressArduino) {
+        const int barValue = std::clamp(qRound(m_currentWeightL), 0, 20);
+        m_progressArduino->setValue(barValue);
+    }
+
+    if (m_lblStockIdValeur) {
+        QString stockIdText = "STOCK_ID: --";
+        QString stockIdStyle =
+            "QLabel { color: #93c5fd; font-size: 16px; font-weight: 800; letter-spacing: 1px; "
+            "padding: 6px 10px; background-color: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.4); "
+            "border-radius: 8px; }";
+
+        if (m_hasStockId) {
+            if (m_currentStockId > 0) {
+                stockIdText = QString("STOCK_ID: %1").arg(m_currentStockId, 4, 10, QChar('0'));
+                stockIdStyle =
+                    "QLabel { color: #d1fae5; font-size: 16px; font-weight: 900; letter-spacing: 1px; "
+                    "padding: 6px 10px; background-color: rgba(0,200,150,0.20); border: 1px solid rgba(0,200,150,0.45); "
+                    "border-radius: 8px; }";
+            } else {
+                stockIdText = "STOCK_ID: ECHEC";
+                stockIdStyle =
+                    "QLabel { color: #fecaca; font-size: 16px; font-weight: 900; letter-spacing: 1px; "
+                    "padding: 6px 10px; background-color: rgba(239,68,68,0.22); border: 1px solid rgba(239,68,68,0.45); "
+                    "border-radius: 8px; }";
+            }
+        }
+
+        m_lblStockIdValeur->setText(stockIdText);
+        m_lblStockIdValeur->setStyleSheet(stockIdStyle);
+    }
+
+    QString statusText = "En attente de donnees...";
+    QString statusBadgeStyle = "QLabel { color: #ffffff; font-size: 18px; font-weight: 800; "
+                              "padding: 8px 12px; background-color: rgba(255,255,255,0.06); border-radius: 8px; }";
+    if (m_currentStatusRaw == "REMPLISSAGE") {
+        statusText = "Remplissage en cours";
+        statusBadgeStyle = "QLabel { color: #d1fae5; font-size: 18px; font-weight: 800; "
+                           "padding: 8px 12px; background-color: rgba(0,200,150,0.20); border-radius: 8px; }";
+    } else if (m_currentStatusRaw == "STABLE") {
+        statusText = "Stable - en attente validation";
+        statusBadgeStyle = "QLabel { color: #fef3c7; font-size: 18px; font-weight: 800; "
+                           "padding: 8px 12px; background-color: rgba(245,158,11,0.25); border-radius: 8px; }";
+    } else if (m_currentStatusRaw == "FAIBLE") {
+        statusText = "Niveau faible";
+        statusBadgeStyle = "QLabel { color: #fecaca; font-size: 18px; font-weight: 800; "
+                           "padding: 8px 12px; background-color: rgba(239,68,68,0.22); border-radius: 8px; }";
+    } else if (m_currentStatusRaw == "FAIBLE_CONFIRMED") {
+        statusText = "Echec seuil confirme";
+        statusBadgeStyle = "QLabel { color: #fecaca; font-size: 18px; font-weight: 800; "
+                           "padding: 8px 12px; background-color: rgba(239,68,68,0.30); border-radius: 8px; }";
+    } else if (m_currentStatusRaw == "VALIDATED") {
+        statusText = "Valide";
+        statusBadgeStyle = "QLabel { color: #fff3c4; font-size: 18px; font-weight: 800; "
+                           "padding: 8px 12px; background-color: rgba(212,175,55,0.28); border-radius: 8px; }";
+    }
+
+    if (m_lblStatusArduino) {
+        m_lblStatusArduino->setText(statusText);
+        m_lblStatusArduino->setStyleSheet(statusBadgeStyle);
+    }
+
+    updateProgressBarColor(m_currentStatusRaw);
+
+    if (m_lblPoidsValeur) {
+        if (m_currentStatusRaw == "VALIDATED") {
+            m_lblPoidsValeur->setStyleSheet(
+                "QLabel { color: #f5d978; font-size: 64px; font-weight: 900; letter-spacing: 1px; "
+                "background-color: #2a2413; border: 1px solid #6f5a1b; border-radius: 10px; padding: 6px 10px; }");
+            if (auto *effect = qobject_cast<QGraphicsDropShadowEffect*>(m_lblPoidsValeur->graphicsEffect())) {
+                effect->setColor(QColor(212, 175, 55, 170));
+            }
+        } else {
+            m_lblPoidsValeur->setStyleSheet(
+                "QLabel { color: #3df5cb; font-size: 64px; font-weight: 900; letter-spacing: 1px; "
+                "background-color: #0b1933; border: 1px solid #2f3e56; border-radius: 10px; padding: 6px 10px; }");
+            if (auto *effect = qobject_cast<QGraphicsDropShadowEffect*>(m_lblPoidsValeur->graphicsEffect())) {
+                effect->setColor(QColor(0, 200, 150, 160));
+            }
+        }
+    }
+
+    if (ui->textLogsArduino) {
+        static QString lastLogSignature;
+        const QString signature = QString("%1|%2|%3")
+                                      .arg(QString::number(m_currentWeightL, 'f', 2))
+                                      .arg(m_currentStatusRaw)
+                                      .arg(m_hasStockId ? QString::number(m_currentStockId) : QString("--"));
+        if (signature == lastLogSignature) {
+            return;
+        }
+        lastLogSignature = signature;
+
+        ui->textLogsArduino->append(
+            QString("[%1] WEIGHT=%2L STATUS=%3 STOCK_ID=%4")
+                .arg(QDateTime::currentDateTime().toString("HH:mm:ss"))
+                .arg(QString::number(m_currentWeightL, 'f', 2))
+                .arg(m_currentStatusRaw.isEmpty() ? "N/A" : m_currentStatusRaw)
+                .arg(m_hasStockId ? QString::number(m_currentStockId) : QString("--")));
+    }
+}
+
+void Stock::persistArduinoToStock(bool validated)
+{
+    if (!connexion || !connexion->isOpen()) {
+        return;
+    }
+
+    const QString etat = (m_currentStatusRaw == "FAIBLE" || m_currentStatusRaw == "FAIBLE_CONFIRMED")
+                             ? "Faible"
+                             : ((validated || m_currentStatusRaw == "VALIDATED") ? "Disponible" : "En commande");
+
+    QSqlQuery query(connexion->getDatabase());
+    query.prepare(
+        "MERGE INTO STOCK s "
+        "USING (SELECT 1 AS K FROM DUAL) x "
+        "ON (s.TYPE_HUILE = 'MESURE_ARDUINO' AND NVL(s.SOURCE_DONNEE, 'MANUEL') = 'ARDUINO') "
+        "WHEN MATCHED THEN UPDATE SET "
+        "  s.QUANTITE_ACTUELLE = :qte, "
+        "  s.SEUIL_ALERTE = 5, "
+        "  s.DATE_DERNIERE_MISE_A_JOUR = SYSDATE, "
+        "  s.EMPLACEMENT_STOCKAGE = 'CUVE ARDUINO', "
+        "  s.ETAT_STOCK = :etat, "
+        "  s.SOURCE_DONNEE = 'ARDUINO', "
+        "  s.ARDUINO_STATUS = :astatus, "
+        "  s.ARDUINO_STOCK_ID = :asid, "
+        "  s.ARDUINO_PORT = :aport, "
+        "  s.ARDUINO_DERNIERE_LECTURE = SYSDATE "
+        "WHEN NOT MATCHED THEN INSERT "
+        "  (ID_STOCK, TYPE_HUILE, QUANTITE_ACTUELLE, SEUIL_ALERTE, DATE_DERNIERE_MISE_A_JOUR, "
+        "   EMPLACEMENT_STOCKAGE, ETAT_STOCK, SOURCE_DONNEE, ARDUINO_STATUS, ARDUINO_STOCK_ID, ARDUINO_PORT, ARDUINO_DERNIERE_LECTURE) "
+        "VALUES "
+        "  (SEQ_STOCK.NEXTVAL, 'MESURE_ARDUINO', :qte, 5, SYSDATE, "
+        "   'CUVE ARDUINO', :etat, 'ARDUINO', :astatus, :asid, :aport, SYSDATE)"
+    );
+
+    query.bindValue(":qte", m_currentWeightL);
+    query.bindValue(":etat", etat);
+    query.bindValue(":astatus", m_currentStatusRaw);
+    query.bindValue(":asid", m_hasStockId ? QVariant::fromValue(m_currentStockId) : QVariant(QVariant::LongLong));
+    query.bindValue(":aport", (m_serial && m_serial->isOpen()) ? m_serial->portName() : QString("N/A"));
+
+    if (!query.exec()) {
+        // Fallback for older STOCK schema without Arduino-specific columns.
+        QSqlQuery qFind(connexion->getDatabase());
+        qFind.prepare("SELECT ID_STOCK FROM STOCK WHERE TYPE_HUILE = 'MESURE_ARDUINO' ORDER BY ID_STOCK FETCH FIRST 1 ROWS ONLY");
+
+        if (qFind.exec() && qFind.next()) {
+            const int id = qFind.value(0).toInt();
+            QSqlQuery qUpd(connexion->getDatabase());
+            qUpd.prepare("UPDATE STOCK SET QUANTITE_ACTUELLE = :qte, SEUIL_ALERTE = 5, DATE_DERNIERE_MISE_A_JOUR = SYSDATE, "
+                         "EMPLACEMENT_STOCKAGE = 'CUVE ARDUINO', ETAT_STOCK = :etat WHERE ID_STOCK = :id");
+            qUpd.bindValue(":qte", m_currentWeightL);
+            qUpd.bindValue(":etat", etat);
+            qUpd.bindValue(":id", id);
+            if (!qUpd.exec() && ui->textLogsArduino) {
+                ui->textLogsArduino->append("Erreur DB Arduino (fallback update): " + qUpd.lastError().text());
+            }
+        } else {
+            QSqlQuery qIns(connexion->getDatabase());
+            qIns.prepare("INSERT INTO STOCK (TYPE_HUILE, QUANTITE_ACTUELLE, SEUIL_ALERTE, DATE_DERNIERE_MISE_A_JOUR, EMPLACEMENT_STOCKAGE, ETAT_STOCK) "
+                         "VALUES ('MESURE_ARDUINO', :qte, 5, SYSDATE, 'CUVE ARDUINO', :etat)");
+            qIns.bindValue(":qte", m_currentWeightL);
+            qIns.bindValue(":etat", etat);
+            if (!qIns.exec() && ui->textLogsArduino) {
+                ui->textLogsArduino->append("Erreur DB Arduino (fallback insert): " + qIns.lastError().text());
+            }
+        }
+
+        if (ui->textLogsArduino) {
+            ui->textLogsArduino->append("Info: fallback DB active (schema STOCK ancien). Erreur initiale: " + query.lastError().text());
+        }
+    }
+}
+
+void Stock::onValidatePoidsClicked()
+{
+    if (m_spinManualWeight && (!m_serial || !m_serial->isOpen())) {
+        m_currentWeightL = m_spinManualWeight->value();
+    }
+
+    if (m_currentWeightL <= 0.0) {
+        afficherMessage("Validation", "Aucune valeur de poids a valider.", true);
+        return;
+    }
+
+    m_freezeValue = true;
+    m_lastValidationMs = QDateTime::currentMSecsSinceEpoch();
+    const bool isSuccess = (m_currentWeightL >= m_minWeightThresholdL);
+    m_currentStatusRaw = isSuccess ? "VALIDATED" : "FAIBLE";
+    applyArduinoStateUi();
+    persistArduinoToStock(isSuccess);
+    chargerDonneesTable();
+
+    if (isSuccess) {
+        afficherMessage("Validation", QString("Poids final valide: %1 L").arg(QString::number(m_currentWeightL, 'f', 2)));
+    } else {
+        afficherMessage("Validation",
+                        QString("Poids enregistre avec echec seuil: %1 L (< %2 L)")
+                            .arg(QString::number(m_currentWeightL, 'f', 2))
+                            .arg(QString::number(m_minWeightThresholdL, 'f', 0)));
+    }
 }
 
 void Stock::configurerTableStocks()
@@ -1387,9 +2054,10 @@ void Stock::onExportRapportPDFClicked()
 
 void Stock::onSynchroniserClicked()
 {
+    refreshAvailablePorts();
     chargerDonneesTable();
     onCalendarDateSelected(ui->calendarWidgetStock->selectedDate());
-    afficherMessage("Synchronisation", "Données synchronisées avec la base de données !");
+    afficherMessage("Synchronisation", "Ports serie et donnees base synchronises.");
 }
 
 // ==================== SELECTION TABLE ====================

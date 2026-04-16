@@ -12,6 +12,9 @@
 #include <QTableWidget>
 #include <QTextEdit>
 #include <QLabel>
+#include <QPushButton>
+#include <QProgressBar>
+#include <QDoubleSpinBox>
 #include "connexion.h"
 
 QT_BEGIN_NAMESPACE
@@ -19,6 +22,8 @@ namespace Ui {
 class Stock;
 }
 QT_END_NAMESPACE
+
+class QSerialPort;
 
 class Stock : public QMainWindow
 {
@@ -66,6 +71,13 @@ private slots:
     
     // Synchronisation
     void onSynchroniserClicked();
+    void onRefreshPortsClicked();
+    void onConnectArduinoClicked();
+    void onSerialReadyRead();
+    void onManualPlusOneClicked();
+    void onManualConfirmClicked();
+    void onManualWeightChanged(double value);
+    void onValidatePoidsClicked();
 
     // Calendrier interactif
     void onCalendarDateSelected(const QDate &date);
@@ -80,6 +92,28 @@ private:
     QTimer *calendarRefreshTimer;
     Connexion* connexion;
     QMap<QDate, QString> dateStatutMap;
+    QSerialPort *m_serial;
+    QString m_serialBuffer;
+    double m_currentWeightL;
+    QString m_currentStatusRaw;
+    qlonglong m_currentStockId;
+    bool m_hasStockId;
+    bool m_freezeValue;
+    qint64 m_lastValidationMs;
+
+    QComboBox *m_comboPorts;
+    QPushButton *m_btnConnectArduino;
+    QPushButton *m_btnRefreshPorts;
+    QLabel *m_lblPoidsTitre;
+    QLabel *m_lblPoidsValeur;
+    QLabel *m_lblStockIdValeur;
+    QProgressBar *m_progressArduino;
+    QLabel *m_lblStatusArduino;
+    QDoubleSpinBox *m_spinManualWeight;
+    QPushButton *m_btnPlusOneL;
+    QPushButton *m_btnConfirmWeight;
+    QPushButton *m_btnValiderPoids;
+    const double m_minWeightThresholdL = 10.0;
     
     // Méthodes utilitaires
     void initialiserInterface();
@@ -91,6 +125,12 @@ private:
     void afficherMessage(const QString& titre, const QString& message, bool isError = false);
     void configurerTableStocks();
     QString getEtatStock(double quantite, double seuil);
+    void setupArduinoTabUi();
+    void refreshAvailablePorts();
+    void parseArduinoLine(const QString &line);
+    void applyArduinoStateUi();
+    void updateProgressBarColor(const QString &status);
+    void persistArduinoToStock(bool validated);
     void initialiserCalendrier();
     void chargerDatesStockCalendrier();
     void mettreEnCouleurCalendrier();

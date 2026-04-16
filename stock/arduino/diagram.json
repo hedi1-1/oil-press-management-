@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "author": "PressIQ",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "wokwi-arduino-uno", "id": "uno", "top": 10, "left": -20, "attrs": {} },
+    { "type": "wokwi-breadboard-half", "id": "bb1", "top": -20, "left": 250, "attrs": {} },
+    { "type": "wokwi-lcd1602", "id": "lcd", "top": -220, "left": -120, "attrs": { "pins": "i2c" } },
+    { "type": "wokwi-joystick", "id": "analogCtrl", "top": 210, "left": -250, "attrs": {} },
+    { "type": "wokwi-7segment", "id": "seg1", "top": -20, "left": 520, "attrs": { "common": "cathode" } },
+    { "type": "wokwi-7segment", "id": "seg2", "top": -20, "left": 630, "attrs": { "common": "cathode" } }
+  ],
+  "connections": [
+    ["uno:5V", "bb1:tp.1", "red", ["v0"]],
+    ["uno:GND.1", "bb1:tn.1", "black", ["v0"]],
+
+    ["bb1:tp.20", "bb1:bp.20", "red", ["v0"]],
+    ["bb1:tn.20", "bb1:bn.20", "black", ["v0"]],
+
+    ["bb1:tp.4", "lcd:VCC", "red", ["v0"]],
+    ["bb1:tn.4", "lcd:GND", "black", ["v0"]],
+    ["uno:A4", "lcd:SDA", "green", ["v0"]],
+    ["uno:A5", "lcd:SCL", "blue", ["v0"]],
+
+    ["bb1:bp.6", "analogCtrl:VCC", "red", ["v0"]],
+    ["bb1:bn.6", "analogCtrl:GND", "black", ["v0"]],
+    ["uno:A0", "analogCtrl:VRy", "orange", ["v0"]],
+
+    ["uno:10", "seg1:COM", "purple", ["v0"]],
+    ["uno:11", "seg2:COM", "purple", ["v0"]],
+
+    ["uno:4", "seg1:A", "green", ["v0"]],
+    ["uno:4", "seg2:A", "green", ["v0"]],
+
+    ["uno:5", "seg1:B", "green", ["v0"]],
+    ["uno:5", "seg2:B", "green", ["v0"]],
+
+    ["uno:6", "seg1:C", "green", ["v0"]],
+    ["uno:6", "seg2:C", "green", ["v0"]],
+
+    ["uno:7", "seg1:D", "green", ["v0"]],
+    ["uno:7", "seg2:D", "green", ["v0"]],
+
+    ["uno:8", "seg1:E", "green", ["v0"]],
+    ["uno:8", "seg2:E", "green", ["v0"]],
+
+    ["uno:9", "seg1:F", "green", ["v0"]],
+    ["uno:9", "seg2:F", "green", ["v0"]],
+
+    ["uno:12", "seg1:G", "green", ["v0"]],
+    ["uno:12", "seg2:G", "green", ["v0"]],
+
+    ["uno:13", "seg1:DP", "green", ["v0"]],
+    ["uno:13", "seg2:DP", "green", ["v0"]]
+  ]
+}
