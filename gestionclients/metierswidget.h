@@ -46,6 +46,7 @@ private slots:
     void on_tableView_resultats_doubleClicked(const QModelIndex &index);
     void on_pushButton_rapport_clicked();
     void on_pushButton_exportRapport_clicked();
+    void on_pushButton_exportIdea_clicked();
     void onRapportClientChanged(int index);
     void onChartConfigChanged();
 
@@ -76,6 +77,7 @@ private:
     QList<Client> collectExportClients() const;
     QString buildClientsPlainText(const QList<Client> &data) const;
     QString buildClientsHtmlTable(const QList<Client> &data) const;
+    QString percentString(int part, int total) const;
     void initializeStatsChart();
     void updateStatsChart();
     void initializeFideliteChart();
@@ -83,6 +85,9 @@ private:
     void refreshReportClients();
     void renderReportClient(const ReportClient &client);
     void renderReportAllClients();
+    void updateStrategicPanels();
+    void updateInsightPanel();
+    void updateRapportIdeaPanel();
 };
 
 #endif // METIERSWIDGET_H

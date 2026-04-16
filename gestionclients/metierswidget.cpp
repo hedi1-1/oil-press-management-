@@ -18,12 +18,6 @@
 #include <QTextDocument>
 #include <algorithm>
 
-static QString csvEscape(QString value)
-{
-    value.replace('"', "\"\"");
-    return '"' + value + '"';
-}
-
 MetiersWidget::MetiersWidget(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::MetiersWidget)
@@ -71,6 +65,9 @@ void MetiersWidget::refreshFromClients()
     updateStatsChart();
     refreshFideliteTableView();
     refreshReportClients();
+    updateStrategicPanels();
+    updateInsightPanel();
+    updateRapportIdeaPanel();
 }
 
 void MetiersWidget::refreshFideliteTableView()
@@ -241,21 +238,7 @@ void MetiersWidget::exportToTxt(const QList<Client> &data)
     }
     
     QTextStream out(&file);
-    out << "========================================\n";
-    out << "    LISTE DES CLIENTS\n";
-    out << "========================================\n\n";
-    
-    for (const Client &client : data) {
-        out << "ID: " << client.id_client << "\n";
-        out << "Nom: " << client.nom << "\n";
-        out << "Prénom: " << client.prenom << "\n";
-        out << "Téléphone: " << client.telephone << "\n";
-        out << "Email: " << client.email << "\n";
-        out << "Type: " << client.type_client << "\n";
-        out << "Total Olives: " << client.total_olives_livrees << " kg\n";
-        out << "Statut: " << client.statut << "\n";
-        out << "----------------------------------------\n\n";
-    }
+    out << buildClientsPlainText(data);
     
     file.close();
     QMessageBox::information(this, "Succès", "Export TXT réussi!");
@@ -308,33 +291,113 @@ QList<Client> MetiersWidget::collectExportClients() const
 QString MetiersWidget::buildClientsPlainText(const QList<Client> &data) const
 {
     QString text;
-    text += "========================================\n";
-    text += "    LISTE DES CLIENTS\n";
-    text += "========================================\n\n";
+    const int total = data.size();
+    int particuliers = 0;
+    int societes = 0;
+    int cooperatives = 0;
+    int autres = 0;
+    double totalOlives = 0.0;
 
     for (const Client &client : data) {
-        text += "ID: " + QString::number(client.id_client) + "\n";
-        text += "Nom: " + client.nom + "\n";
-        text += "Prénom: " + client.prenom + "\n";
-        text += "Téléphone: " + client.telephone + "\n";
-        text += "Email: " + client.email + "\n";
-        text += "Type: " + client.type_client + "\n";
-        text += "Total Olives: " + QString::number(client.total_olives_livrees, 'f', 0) + " kg\n";
-        text += "Statut: " + client.statut + "\n";
-        text += "----------------------------------------\n\n";
+        if (client.type_client == "Particulier") particuliers++;
+        else if (client.type_client == "Société") societes++;
+        else if (client.type_client == "Coopérative") cooperatives++;
+        else autres++;
+        totalOlives += client.total_olives_livrees;
     }
 
-    text += "Total exporté: " + QString::number(data.size()) + " client(s)\n";
+    text += "============================================================\n";
+    text += "                   LISTE DES CLIENTS\n";
+    text += "============================================================\n";
+    text += "Date: " + QDate::currentDate().toString("dd/MM/yyyy") + "\n";
+    text += "Total exporté: " + QString::number(total) + " client(s)\n";
+    text += "Total olives: " + QString::number(totalOlives, 'f', 0) + " kg\n";
+    text += "------------------------------------------------------------\n";
+    text += "Répartition par type:\n";
+    text += "  - Particulier: " + QString::number(particuliers) + " (" + percentString(particuliers, total) + ")\n";
+    text += "  - Société: " + QString::number(societes) + " (" + percentString(societes, total) + ")\n";
+    if (cooperatives > 0) {
+        text += "  - Coopérative: " + QString::number(cooperatives) + " (" + percentString(cooperatives, total) + ")\n";
+    }
+    if (autres > 0) {
+        text += "  - Autres: " + QString::number(autres) + " (" + percentString(autres, total) + ")\n";
+    }
+    text += "------------------------------------------------------------\n";
+    text += "ID   | Nom complet              | Type        | Total (kg) | Statut\n";
+    text += "------------------------------------------------------------\n";
+
+    for (const Client &client : data) {
+        QString nomComplet = (client.nom + " " + client.prenom).left(24);
+        QString type = client.type_client.left(10);
+        text += QString("%1 | %2 | %3 | %4 | %5\n")
+                    .arg(QString::number(client.id_client).rightJustified(4, ' '))
+                    .arg(nomComplet.leftJustified(24, ' '))
+                    .arg(type.leftJustified(10, ' '))
+                    .arg(QString::number(client.total_olives_livrees, 'f', 0).rightJustified(9, ' '))
+                    .arg(client.statut);
+    }
+
+    text += "============================================================\n";
     return text;
 }
 
 QString MetiersWidget::buildClientsHtmlTable(const QList<Client> &data) const
 {
+    const int total = data.size();
+    int particuliers = 0;
+    int societes = 0;
+    int cooperatives = 0;
+    int autres = 0;
+    double totalOlives = 0.0;
+
+    for (const Client &client : data) {
+        if (client.type_client == "Particulier") particuliers++;
+        else if (client.type_client == "Société") societes++;
+        else if (client.type_client == "Coopérative") cooperatives++;
+        else autres++;
+        totalOlives += client.total_olives_livrees;
+    }
+
     QString html;
-    html += "<html><head><meta charset=\"UTF-8\"></head><body>";
-    html += "<h2>Liste des clients</h2>";
-    html += "<table border=\"1\" cellspacing=\"0\" cellpadding=\"4\">";
-    html += "<tr><th>ID</th><th>Nom</th><th>Prénom</th><th>Téléphone</th><th>Email</th><th>Type</th><th>Total Olives (kg)</th><th>Statut</th></tr>";
+            html += "<html><head><meta charset=\"UTF-8\">";
+            html += "<style>"
+                "body{font-family:'Segoe UI',Arial,sans-serif;color:#111827;margin:26px;background:#ffffff;}"
+                ".title{font-size:26px;font-weight:700;text-align:center;margin:0 0 6px 0;}"
+                ".date{font-size:13px;text-align:center;margin:0 0 16px 0;color:#4b5563;font-weight:600;}"
+                ".summary{display:flex;gap:14px;flex-wrap:wrap;margin:10px 0 14px 0;justify-content:center;}"
+                ".card{border:1px solid #e5e7eb;border-radius:10px;padding:10px 14px;background:#f8fafc;min-width:160px;}"
+                ".label{font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;}"
+                ".value{font-size:18px;font-weight:700;color:#111827;}"
+                ".types{margin:6px auto 16px auto;max-width:820px;border:1px solid #e5e7eb;border-radius:8px;padding:10px 12px;background:#f9fafb;}"
+                ".types p{margin:4px 0;font-size:12px;color:#111827;}"
+                "table{width:90%;margin:0 auto;border-collapse:collapse;font-size:12px;}"
+                "th,td{border:1px solid #999;padding:8px;}"
+                "th{background:#4FC3F7;color:#111827;font-weight:700;text-align:center;}"
+                "tbody tr:nth-child(odd){background:#F5F5F5;}"
+                "tbody tr:nth-child(even){background:#FFFFFF;}"
+                "tbody tr:hover{background:#FFF9C4;}"
+                ".tag{display:inline-block;padding:2px 9px;border-radius:999px;background:#e5e7eb;font-size:11px;}"
+                "footer{margin-top:14px;color:#6b7280;font-size:11px;text-align:center;}"
+                "</style></head><body>";
+            html += "<h1 class=\"title\">Liste des clients</h1>";
+            html += "<div class=\"date\">Généré le " + QDate::currentDate().toString("dd/MM/yyyy") + "</div>";
+    html += "<div class=\"summary\">";
+    html += "<div class=\"card\"><div class=\"label\">Total clients</div><div class=\"value\">" + QString::number(total) + "</div></div>";
+    html += "<div class=\"card\"><div class=\"label\">Total olives</div><div class=\"value\">" + QString::number(totalOlives, 'f', 0) + " kg</div></div>";
+    html += "<div class=\"card\"><div class=\"label\">Moyenne</div><div class=\"value\">" + (total > 0 ? QString::number(totalOlives / total, 'f', 0) : "0") + " kg/client</div></div>";
+    html += "</div>";
+    html += "<div class=\"types\">";
+    html += "<p><b>Particulier:</b> " + QString::number(particuliers) + " (" + percentString(particuliers, total) + ")</p>";
+    html += "<p><b>Société:</b> " + QString::number(societes) + " (" + percentString(societes, total) + ")</p>";
+    if (cooperatives > 0) {
+        html += "<p><b>Coopérative:</b> " + QString::number(cooperatives) + " (" + percentString(cooperatives, total) + ")</p>";
+    }
+    if (autres > 0) {
+        html += "<p><b>Autres:</b> " + QString::number(autres) + " (" + percentString(autres, total) + ")</p>";
+    }
+    html += "</div>";
+    html += "<table>";
+    html += "<tr><th>ID</th><th>Nom</th><th>Prénom</th><th>Téléphone</th><th>Email</th><th>Type</th><th>Total (kg)</th><th>Statut</th></tr>";
 
     for (const Client &client : data) {
         html += "<tr>";
@@ -345,14 +408,21 @@ QString MetiersWidget::buildClientsHtmlTable(const QList<Client> &data) const
         html += "<td>" + client.email.toHtmlEscaped() + "</td>";
         html += "<td>" + client.type_client.toHtmlEscaped() + "</td>";
         html += "<td>" + QString::number(client.total_olives_livrees, 'f', 0).toHtmlEscaped() + "</td>";
-        html += "<td>" + client.statut.toHtmlEscaped() + "</td>";
+        html += "<td><span class=\"tag\">" + client.statut.toHtmlEscaped() + "</span></td>";
         html += "</tr>";
     }
 
     html += "</table>";
-    html += "<p><b>Total exporté:</b> " + QString::number(data.size()) + " client(s)</p>";
+    html += "<footer>Total exporté: " + QString::number(total) + " client(s)</footer>";
     html += "</body></html>";
     return html;
+}
+
+QString MetiersWidget::percentString(int part, int total) const
+{
+    if (total <= 0) return "0 %";
+    double percent = (part * 100.0) / total;
+    return QString::number(percent, 'f', 0) + " %";
 }
 
 void MetiersWidget::on_pushButton_txt_clicked()
@@ -395,7 +465,7 @@ void MetiersWidget::on_pushButton_excel_clicked()
         return;
     }
 
-    QString fileName = QFileDialog::getSaveFileName(this, "Exporter en Excel", "", "Excel CSV (*.csv)");
+    QString fileName = QFileDialog::getSaveFileName(this, "Exporter en Excel", "", "Excel Files (*.xls)");
     if (fileName.isEmpty()) return;
 
     QFile file(fileName);
@@ -407,21 +477,10 @@ void MetiersWidget::on_pushButton_excel_clicked()
     QTextStream out(&file);
     out.setEncoding(QStringConverter::Utf8);
     out << "\uFEFF";
-    out << "ID;Nom;Prénom;Téléphone;Email;Type;Total Olives (kg);Statut\n";
-
-    for (const Client &client : data) {
-        out << csvEscape(QString::number(client.id_client)) << ';'
-            << csvEscape(client.nom) << ';'
-            << csvEscape(client.prenom) << ';'
-            << csvEscape(client.telephone) << ';'
-            << csvEscape(client.email) << ';'
-            << csvEscape(client.type_client) << ';'
-            << csvEscape(QString::number(client.total_olives_livrees, 'f', 0)) << ';'
-            << csvEscape(client.statut) << '\n';
-    }
+    out << buildClientsHtmlTable(data);
 
     file.close();
-    QMessageBox::information(this, "Succès", "Export Excel (CSV) réussi!");
+    QMessageBox::information(this, "Succès", "Export Excel réussi!");
 }
 
 void MetiersWidget::on_pushButton_word_clicked()
@@ -462,6 +521,7 @@ void MetiersWidget::on_pushButton_stat_clicked()
     int standard = 0, moyen = 0, important = 0;
     QMap<QDate, int> creationsParMois;
     double totalOlives = 0;
+
     
     for (const Client &client : *clients) {
         if (client.type_client == "Particulier") particuliers++;
@@ -491,28 +551,224 @@ void MetiersWidget::on_pushButton_stat_clicked()
     stats += "========================================\n\n";
     stats += "📊 Total Clients: " + QString::number(totalClients) + "\n\n";
     stats += "👥 Types de Clients:\n";
-    stats += "   • Particuliers: " + QString::number(particuliers) + "\n";
-    stats += "   • Sociétés: " + QString::number(societes) + "\n\n";
+    stats += "   • Particuliers: " + QString::number(particuliers) + " (" + percentString(particuliers, totalClients) + ")\n";
+    stats += "   • Sociétés: " + QString::number(societes) + " (" + percentString(societes, totalClients) + ")\n\n";
     stats += "🏆 Fidélité:\n";
-    stats += "   • Bronze: " + QString::number(bronze) + "\n";
-    stats += "   • Silver: " + QString::number(silver) + "\n";
-    stats += "   • Gold: " + QString::number(gold) + "\n";
-    stats += "   • Premium: " + QString::number(premium) + "\n\n";
+    stats += "   • Bronze: " + QString::number(bronze) + " (" + percentString(bronze, totalClients) + ")\n";
+    stats += "   • Silver: " + QString::number(silver) + " (" + percentString(silver, totalClients) + ")\n";
+    stats += "   • Gold: " + QString::number(gold) + " (" + percentString(gold, totalClients) + ")\n";
+    stats += "   • Premium: " + QString::number(premium) + " (" + percentString(premium, totalClients) + ")\n\n";
     stats += "🧭 Importance (Total olives):\n";
-    stats += "   • Standard: " + QString::number(standard) + "\n";
-    stats += "   • Moyen: " + QString::number(moyen) + "\n";
-    stats += "   • Important: " + QString::number(important) + "\n\n";
+    stats += "   • Standard: " + QString::number(standard) + " (" + percentString(standard, totalClients) + ")\n";
+    stats += "   • Moyen: " + QString::number(moyen) + " (" + percentString(moyen, totalClients) + ")\n";
+    stats += "   • Important: " + QString::number(important) + " (" + percentString(important, totalClients) + ")\n\n";
     stats += "📅 Créations par mois:\n";
     for (auto it = creationsParMois.constBegin(); it != creationsParMois.constEnd(); ++it) {
-        stats += "   • " + QLocale::system().toString(it.key(), "MMMM yyyy") + ": " + QString::number(it.value()) + "\n";
+        stats += "   • " + QLocale::system().toString(it.key(), "MMMM yyyy") + ": " + QString::number(it.value()) + " (" + percentString(it.value(), totalClients) + ")\n";
     }
     stats += "\n";
     stats += "🫒 Total Olives: " + QString::number(totalOlives, 'f', 2) + " kg\n";
     stats += "📈 Moyenne: " + QString::number(totalOlives / totalClients, 'f', 2) + " kg/client\n";
     stats += "========================================\n";
+
     
     ui->textEdit_stats->setPlainText(stats);
     updateStatsChart();
+    updateStrategicPanels();
+    updateInsightPanel();
+}
+
+void MetiersWidget::updateStrategicPanels()
+{
+    if (!ui->textEdit_metiersA || !ui->textEdit_metiersB) return;
+
+    if (!clients || clients->isEmpty()) {
+        ui->textEdit_metiersA->setPlainText("Aucune donnée disponible.");
+        ui->textEdit_metiersB->setPlainText("Aucune donnée disponible.");
+        return;
+    }
+
+    QStringList hautePriorite;
+    QStringList moyennePriorite;
+    QStringList bassePriorite;
+
+    int vipASoigner = 0;
+    int aFideliser = 0;
+    int aReactiver = 0;
+    int grosVolumes = 0;
+
+    const QDate today = QDate::currentDate();
+
+    auto fideliteLabel = [](const Client &client) {
+        const QString niveau = client.getStatutFidelite();
+        if (niveau == "Premium" || niveau == "Gold") return QString("haute");
+        if (niveau == "Silver") return QString("moyenne");
+        return QString("faible");
+    };
+
+    for (const Client &client : *clients) {
+        const QString fidelite = fideliteLabel(client);
+        const bool isImportant = (client.statut == "Important");
+        const bool isStandard = (client.statut == "Standard");
+        const bool isSociete = (client.type_client == "Société");
+        const bool isParticulier = (client.type_client == "Particulier");
+        const bool olderThanYear = client.date_creation.isValid() && client.date_creation.daysTo(today) > 365;
+        const bool newerThan30Days = client.date_creation.isValid() && client.date_creation.daysTo(today) < 30;
+        const bool hugeVolume = client.total_olives_livrees > 1000000.0;
+
+        const QString fullName = client.nom + " " + client.prenom;
+
+        if (isImportant && fidelite == "haute") {
+            vipASoigner++;
+            hautePriorite << QString("%1 → Appel prioritaire").arg(fullName);
+        } else if (isImportant && fidelite == "moyenne") {
+            aFideliser++;
+            moyennePriorite << QString("%1 → SMS relance").arg(fullName);
+        }
+
+        if (isStandard && isSociete) {
+            moyennePriorite << QString("%1 → Email offre société").arg(fullName);
+        }
+
+        if (isStandard && isParticulier && olderThanYear) {
+            aReactiver++;
+            bassePriorite << QString("%1 → Alerte réactivation").arg(fullName);
+        }
+
+        if (hugeVolume) {
+            grosVolumes++;
+            hautePriorite << QString("%1 → Offre spéciale volume").arg(fullName);
+        }
+
+        if (newerThan30Days) {
+            hautePriorite << QString("%1 → Bienvenue + appel découverte").arg(fullName);
+        }
+    }
+
+    QString htmlA;
+    htmlA += "<div><span style='color:#D32F2F;font-weight:700;'>🔴 Haute priorité</span></div>";
+    if (hautePriorite.isEmpty()) {
+        htmlA += "<div>Aucune action</div>";
+    } else {
+        htmlA += "<ul>";
+        for (const QString &item : hautePriorite) {
+            htmlA += "<li>" + item.toHtmlEscaped() + "</li>";
+        }
+        htmlA += "</ul>";
+    }
+
+    htmlA += "<div style='margin-top:6px;'><span style='color:#F9A825;font-weight:700;'>🟡 Moyenne priorité</span></div>";
+    if (moyennePriorite.isEmpty()) {
+        htmlA += "<div>Aucune action</div>";
+    } else {
+        htmlA += "<ul>";
+        for (const QString &item : moyennePriorite) {
+            htmlA += "<li>" + item.toHtmlEscaped() + "</li>";
+        }
+        htmlA += "</ul>";
+    }
+
+    htmlA += "<div style='margin-top:6px;'><span style='color:#388E3C;font-weight:700;'>🟢 Basse priorité</span></div>";
+    if (bassePriorite.isEmpty()) {
+        htmlA += "<div>Aucune action</div>";
+    } else {
+        htmlA += "<ul>";
+        for (const QString &item : bassePriorite) {
+            htmlA += "<li>" + item.toHtmlEscaped() + "</li>";
+        }
+        htmlA += "</ul>";
+    }
+
+    QString recommandation;
+    if (vipASoigner > 0) {
+        recommandation = "Prioriser les VIP pour maintenir le volume et la fidélité.";
+    } else if (aReactiver > 0) {
+        recommandation = "Lancer une campagne de réactivation pour les anciens clients.";
+    } else if (grosVolumes > 0) {
+        recommandation = "Remercier les gros volumes avec une offre dédiée.";
+    } else if (aFideliser > 0) {
+        recommandation = "Proposer des avantages pour convertir les clients en VIP.";
+    } else {
+        recommandation = "Continuer la prospection et le suivi régulier des clients.";
+    }
+
+    QString htmlB;
+    htmlB += "<div><b>VIP à soigner :</b> " + QString::number(vipASoigner) + "</div>";
+    htmlB += "<div><b>À fidéliser :</b> " + QString::number(aFideliser) + "</div>";
+    htmlB += "<div><b>À réactiver :</b> " + QString::number(aReactiver) + "</div>";
+    htmlB += "<div><b>Gros volumes :</b> " + QString::number(grosVolumes) + "</div>";
+    htmlB += "<div style='margin-top:8px;'><b>Recommandation :</b> " + recommandation.toHtmlEscaped() + "</div>";
+
+    ui->textEdit_metiersA->setHtml(htmlA);
+    ui->textEdit_metiersB->setHtml(htmlB);
+}
+
+void MetiersWidget::updateInsightPanel()
+{
+    if (!ui->textEdit_insights) return;
+
+    if (!clients || clients->isEmpty()) {
+        ui->textEdit_insights->setPlainText("Aucune donnée disponible.");
+        return;
+    }
+
+    QList<Client> sorted = *clients;
+    std::sort(sorted.begin(), sorted.end(), [](const Client &a, const Client &b) {
+        return a.total_olives_livrees > b.total_olives_livrees;
+    });
+
+    const QDate today = QDate::currentDate();
+    QStringList nouveaux;
+    QStringList aReactiver;
+    int particuliers = 0;
+    int societes = 0;
+
+    for (const Client &client : *clients) {
+        if (client.type_client == "Particulier") particuliers++;
+        else if (client.type_client == "Société") societes++;
+
+        if (client.date_creation.isValid()) {
+            int days = client.date_creation.daysTo(today);
+            if (days >= 0 && days <= 30) {
+                nouveaux << (client.nom + " " + client.prenom);
+            }
+            if (days > 365 && client.statut == "Standard") {
+                aReactiver << (client.nom + " " + client.prenom);
+            }
+        }
+    }
+
+    QString html;
+    html += "<div style='font-weight:700;'>Top 3 volumes</div>";
+    html += "<ol>";
+    for (int i = 0; i < sorted.size() && i < 3; ++i) {
+        const Client &c = sorted[i];
+        html += "<li>" + (c.nom + " " + c.prenom).toHtmlEscaped()
+              + " — " + QString::number(c.total_olives_livrees, 'f', 0)
+              + " kg</li>";
+    }
+    html += "</ol>";
+
+    html += "<div style='margin-top:6px;font-weight:700;'>Nouveaux (30 jours)</div>";
+    if (nouveaux.isEmpty()) {
+        html += "<div>Aucun nouveau client</div>";
+    } else {
+        html += "<div>" + nouveaux.join(", ").toHtmlEscaped() + "</div>";
+    }
+
+    html += "<div style='margin-top:6px;font-weight:700;'>A reactivier</div>";
+    if (aReactiver.isEmpty()) {
+        html += "<div>Aucun client a reactivier</div>";
+    } else {
+        html += "<div>" + aReactiver.join(", ").toHtmlEscaped() + "</div>";
+    }
+
+    html += "<div style='margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;'>";
+    html += "<span style='background:#e8f5e9;border:1px solid #c8e6c9;border-radius:999px;padding:2px 8px;'>Particulier: " + QString::number(particuliers) + "</span>";
+    html += "<span style='background:#e3f2fd;border:1px solid #bbdefb;border-radius:999px;padding:2px 8px;'>Société: " + QString::number(societes) + "</span>";
+    html += "</div>";
+
+    ui->textEdit_insights->setHtml(html);
 }
 
 void MetiersWidget::initializeStatsChart()
@@ -609,9 +865,15 @@ void MetiersWidget::updateStatsChart()
 
     if (chartType.contains("Camembert")) {
         QPieSeries *series = new QPieSeries();
+        double sum = 0.0;
         for (int i = 0; i < labels.size(); ++i) {
             if (values[i] <= 0) continue;
-            QPieSlice *slice = series->append(labels[i], values[i]);
+            series->append(labels[i], values[i]);
+            sum += values[i];
+        }
+        for (QPieSlice *slice : series->slices()) {
+            double percent = (sum > 0.0) ? (slice->value() * 100.0 / sum) : 0.0;
+            slice->setLabel(QString("%1 (%2%)").arg(slice->label()).arg(percent, 0, 'f', 0));
             slice->setLabelVisible();
         }
         chart->addSeries(series);
@@ -672,7 +934,10 @@ void MetiersWidget::updateFideliteChart()
     if (silver > 0) series->append("Silver", silver)->setBrush(QColor("#C0C0C0"));
     if (gold > 0) series->append("Gold", gold)->setBrush(QColor("#D4AF37"));
     if (premium > 0) series->append("Premium", premium)->setBrush(QColor("#1B4332"));
+    double sum = series->sum();
     for (QPieSlice *slice : series->slices()) {
+        double percent = (sum > 0.0) ? (slice->value() * 100.0 / sum) : 0.0;
+        slice->setLabel(QString("%1 (%2%)").arg(slice->label()).arg(percent, 0, 'f', 0));
         slice->setLabelVisible();
         slice->setLabelColor(QColor("#2c3e50"));
     }
@@ -769,26 +1034,50 @@ void MetiersWidget::on_pushButton_exportRapport_clicked()
     QMessageBox::information(this, "Succès", "Rapport exporté avec succès!");
 }
 
+void MetiersWidget::on_pushButton_exportIdea_clicked()
+{
+    if (!ui->textEdit_rapportIdea) return;
+
+    QString fileName = QFileDialog::getSaveFileName(this, "Exporter l'idée", "", "Text Files (*.txt)");
+    if (fileName.isEmpty()) return;
+
+    QFile file(fileName);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QMessageBox::critical(this, "Erreur", "Impossible de créer le fichier!");
+        return;
+    }
+
+    QTextStream out(&file);
+    out << ui->textEdit_rapportIdea->toPlainText();
+    file.close();
+
+    QMessageBox::information(this, "Succès", "Idée exportée avec succès!");
+}
+
 void MetiersWidget::onRapportClientChanged(int index)
 {
     if (index < 0) {
         ui->textEdit_rapport->setPlainText("Sélectionnez un client pour voir le rapport");
+        updateRapportIdeaPanel();
         return;
     }
 
     int clientId = ui->comboBox_rapportClient->currentData().toInt();
     if (clientId == 0) {
         renderReportAllClients();
+        updateRapportIdeaPanel();
         return;
     }
 
     for (const ReportClient &client : reportClients) {
         if (client.id == clientId) {
             renderReportClient(client);
+            updateRapportIdeaPanel();
             return;
         }
     }
     ui->textEdit_rapport->setPlainText("Client introuvable.");
+    updateRapportIdeaPanel();
 }
 
 void MetiersWidget::refreshReportClients()
@@ -888,4 +1177,73 @@ void MetiersWidget::renderReportAllClients()
     report += "========================================\n";
 
     ui->textEdit_rapport->setPlainText(report);
+}
+
+void MetiersWidget::updateRapportIdeaPanel()
+{
+    if (!ui->textEdit_rapportIdea) return;
+
+    if (!clients || clients->isEmpty()) {
+        ui->textEdit_rapportIdea->setPlainText("Aucune donnée disponible.");
+        return;
+    }
+
+    QList<Client> sorted = *clients;
+    std::sort(sorted.begin(), sorted.end(), [](const Client &a, const Client &b) {
+        return a.total_olives_livrees > b.total_olives_livrees;
+    });
+
+    const QDate today = QDate::currentDate();
+    int nouveaux30 = 0;
+    int reactivation = 0;
+    QStringList clientsRisque;
+    double totalOlives = 0.0;
+
+    for (const Client &client : *clients) {
+        totalOlives += client.total_olives_livrees;
+        if (client.date_creation.isValid()) {
+            int days = client.date_creation.daysTo(today);
+            if (days >= 0 && days <= 30) nouveaux30++;
+            if (days > 365 && client.statut == "Standard") reactivation++;
+            if (days > 365 && client.statut == "Standard" && client.getStatutFidelite() == "Bronze") {
+                clientsRisque << (client.nom + " " + client.prenom);
+            }
+        }
+    }
+
+    QString html;
+    html += "<div style='font-weight:700;'>Boussole rapide</div>";
+    html += "<div style='margin:6px 0;'>Total olives: <b>" + QString::number(totalOlives, 'f', 0) + " kg</b></div>";
+    html += "<div>Nouveaux (30j): <b>" + QString::number(nouveaux30) + "</b></div>";
+    html += "<div>À réactiver: <b>" + QString::number(reactivation) + "</b></div>";
+
+    html += "<div style='margin-top:8px;font-weight:700;'>Top 2 volumes</div>";
+    html += "<ol>";
+    for (int i = 0; i < sorted.size() && i < 2; ++i) {
+        const Client &c = sorted[i];
+        html += "<li>" + (c.nom + " " + c.prenom).toHtmlEscaped() + " — "
+              + QString::number(c.total_olives_livrees, 'f', 0) + " kg</li>";
+    }
+    html += "</ol>";
+
+    QString focus;
+    if (!sorted.isEmpty()) {
+        focus = "Focus du jour: appeler " + sorted.first().nom + " " + sorted.first().prenom + " (plus gros volume).";
+    } else {
+        focus = "Focus du jour: analyser les tendances clients.";
+    }
+    html += "<div style='margin-top:8px;'><b>Conseil:</b> " + focus.toHtmlEscaped() + "</div>";
+
+    html += "<div style='margin-top:10px;font-weight:700;'>Détecteur de risque de départ</div>";
+    if (clientsRisque.isEmpty()) {
+        html += "<div>Aucun client à risque</div>";
+    } else {
+        html += "<ul>";
+        for (const QString &name : clientsRisque) {
+            html += "<li>" + name.toHtmlEscaped() + "</li>";
+        }
+        html += "</ul>";
+    }
+
+    ui->textEdit_rapportIdea->setHtml(html);
 }

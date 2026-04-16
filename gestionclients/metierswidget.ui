@@ -202,112 +202,290 @@
       <attribute name="title">
        <string>Statistiques</string>
       </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_3">
-       <item>
-        <widget class="QPushButton" name="pushButton_stat">
-         <property name="text">
-          <string>Générer les Statistiques</string>
+      <layout class="QHBoxLayout" name="horizontalLayout_statsSplit">
+      <item>
+       <widget class="QFrame" name="frame_statsLeft">
+         <property name="styleSheet">
+          <string notr="true">QFrame#frame_statsLeft{border-right:1px solid #d0d0d0;background:#ffffff;}</string>
          </property>
+         <layout class="QVBoxLayout" name="verticalLayout_statsLeft">
+          <property name="leftMargin">
+           <number>20</number>
+          </property>
+          <property name="topMargin">
+           <number>20</number>
+          </property>
+          <property name="rightMargin">
+           <number>20</number>
+          </property>
+          <property name="bottomMargin">
+           <number>20</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="label_statsTitle">
+            <property name="text">
+             <string>STATISTIQUES CLIENTS</string>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">font-weight:700;font-size:16px;</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButton_stat">
+            <property name="text">
+             <string>Générer les Statistiques</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QGroupBox" name="groupBox_graphique">
+            <property name="title">
+             <string>Configuration Graphique</string>
+            </property>
+            <layout class="QHBoxLayout" name="horizontalLayout_graphique">
+             <item>
+              <widget class="QLabel" name="label_chartType">
+               <property name="text">
+                <string>Type de graphique:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="comboBox_chartType">
+               <item>
+                <property name="text">
+                 <string>Camembert</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Barres (horizontales)</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="label_statData">
+               <property name="text">
+                <string>Données:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="comboBox_statData">
+               <item>
+                <property name="text">
+                 <string>Type client</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Total olives (Standard/Moyen/Important)</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Date création (par mois)</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer_stats">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QWidget" name="statsChartContainer">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>220</height>
+             </size>
+            </property>
+            <layout class="QVBoxLayout" name="statsChartLayout">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QTextEdit" name="textEdit_stats">
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </widget>
        </item>
-             <item>
-                <widget class="QGroupBox" name="groupBox_graphique">
-                 <property name="title">
-                    <string>Configuration Graphique</string>
-                 </property>
-                 <layout class="QHBoxLayout" name="horizontalLayout_graphique">
-                    <item>
-                     <widget class="QLabel" name="label_chartType">
-                        <property name="text">
-                         <string>Type de graphique:</string>
-                        </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <widget class="QComboBox" name="comboBox_chartType">
-                        <item>
-                         <property name="text">
-                            <string>Camembert</string>
-                         </property>
-                        </item>
-                        <item>
-                         <property name="text">
-                            <string>Barres (horizontales)</string>
-                         </property>
-                        </item>
-                     </widget>
-                    </item>
-                    <item>
-                     <widget class="QLabel" name="label_statData">
-                        <property name="text">
-                         <string>Données:</string>
-                        </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <widget class="QComboBox" name="comboBox_statData">
-                        <item>
-                         <property name="text">
-                            <string>Type client</string>
-                         </property>
-                        </item>
-                        <item>
-                         <property name="text">
-                            <string>Total olives (Standard/Moyen/Important)</string>
-                         </property>
-                        </item>
-                        <item>
-                         <property name="text">
-                            <string>Date création (par mois)</string>
-                         </property>
-                        </item>
-                     </widget>
-                    </item>
-                    <item>
-                     <spacer name="horizontalSpacer_stats">
-                        <property name="orientation">
-                         <enum>Qt::Horizontal</enum>
-                        </property>
-                        <property name="sizeHint" stdset="0">
-                         <size>
-                            <width>40</width>
-                            <height>20</height>
-                         </size>
-                        </property>
-                     </spacer>
-                    </item>
-                 </layout>
-                </widget>
-             </item>
-             <item>
-                <widget class="QWidget" name="statsChartContainer">
-                 <property name="minimumSize">
-                    <size>
-                     <width>0</width>
-                     <height>220</height>
-                    </size>
-                 </property>
-                 <layout class="QVBoxLayout" name="statsChartLayout">
-                    <property name="leftMargin">
-                     <number>0</number>
-                    </property>
-                    <property name="topMargin">
-                     <number>0</number>
-                    </property>
-                    <property name="rightMargin">
-                     <number>0</number>
-                    </property>
-                    <property name="bottomMargin">
-                     <number>0</number>
-                    </property>
-                 </layout>
-                </widget>
-             </item>
-       <item>
-        <widget class="QTextEdit" name="textEdit_stats">
-         <property name="readOnly">
-          <bool>true</bool>
+      <item>
+       <widget class="QFrame" name="frame_statsRight">
+         <property name="styleSheet">
+          <string notr="true">QFrame#frame_statsRight{background:#ffffff;}</string>
          </property>
+         <layout class="QVBoxLayout" name="verticalLayout_statsRight">
+          <property name="leftMargin">
+           <number>20</number>
+          </property>
+          <property name="topMargin">
+           <number>20</number>
+          </property>
+          <property name="rightMargin">
+           <number>20</number>
+          </property>
+          <property name="bottomMargin">
+           <number>20</number>
+          </property>
+          <item>
+           <widget class="QFrame" name="frame_metiersStrategiques">
+            <property name="styleSheet">
+             <string notr="true">QFrame#frame_metiersStrategiques{border:2px solid #1B4332;background:#ffffff;border-radius:10px;padding:15px;}</string>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_metiersStrategiques">
+             <item>
+              <widget class="QLabel" name="label_metiersStrategiques">
+               <property name="text">
+                <string>MES 2 MÉTIERS STRATÉGIQUES</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignCenter</set>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">background:#1B4332;color:#ffffff;font-weight:700;padding:6px;border-radius:6px;</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_metiersStrategiques">
+               <item>
+                <widget class="QFrame" name="frame_metiersA">
+                 <property name="styleSheet">
+                  <string notr="true">QFrame#frame_metiersA{background:#F5F5F5;border-radius:8px;padding:10px;}</string>
+                 </property>
+                 <layout class="QVBoxLayout" name="verticalLayout_metiersA">
+                  <item>
+                   <widget class="QLabel" name="label_metiersA">
+                    <property name="text">
+                     <string>PARTIE A : COMMERCIAL PILOTE AUTOMATIQUE</string>
+                    </property>
+                    <property name="styleSheet">
+                     <string notr="true">font-weight:700;color:#000000;</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QTextEdit" name="textEdit_metiersA">
+                    <property name="readOnly">
+                     <bool>true</bool>
+                    </property>
+                    <property name="styleSheet">
+                     <string notr="true">background:transparent;border:none;</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item>
+                <widget class="QFrame" name="frame_metiersB">
+                 <property name="styleSheet">
+                  <string notr="true">QFrame#frame_metiersB{background:#ffffff;border:1px solid #e0e0e0;border-radius:8px;padding:10px;}</string>
+                 </property>
+                 <layout class="QVBoxLayout" name="verticalLayout_metiersB">
+                  <item>
+                   <widget class="QLabel" name="label_metiersB">
+                    <property name="text">
+                     <string>PARTIE B : TABLEAU DE BORD DÉCIDEUR</string>
+                    </property>
+                    <property name="styleSheet">
+                     <string notr="true">font-weight:700;color:#000000;</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QTextEdit" name="textEdit_metiersB">
+                    <property name="readOnly">
+                     <bool>true</bool>
+                    </property>
+                    <property name="styleSheet">
+                     <string notr="true">background:transparent;border:none;</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+              </layout>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QFrame" name="frame_insights">
+            <property name="styleSheet">
+             <string notr="true">QFrame#frame_insights{border:1px solid #e0e0e0;border-radius:10px;background:#ffffff;padding:10px;}</string>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_insights">
+             <item>
+              <widget class="QLabel" name="label_insightsTitle">
+               <property name="text">
+                <string>RADAR EXPRESS</string>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">font-weight:700;color:#1B4332;</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QTextEdit" name="textEdit_insights">
+               <property name="readOnly">
+                <bool>true</bool>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">background:transparent;border:none;</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <spacer name="verticalSpacer_metiers">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
         </widget>
        </item>
       </layout>
@@ -500,77 +678,171 @@
       <attribute name="title">
        <string>Rapport</string>
       </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_5">
-         <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_rapportSelect">
+      <layout class="QHBoxLayout" name="horizontalLayout_rapportSplit">
+       <item>
+        <widget class="QFrame" name="frame_rapportLeft">
+         <property name="styleSheet">
+          <string notr="true">QFrame#frame_rapportLeft{border-right:1px solid #d0d0d0;background:#ffffff;}</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_rapportLeft">
+          <property name="leftMargin">
+           <number>20</number>
+          </property>
+          <property name="topMargin">
+           <number>20</number>
+          </property>
+          <property name="rightMargin">
+           <number>20</number>
+          </property>
+          <property name="bottomMargin">
+           <number>20</number>
+          </property>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_rapportSelect">
             <item>
              <widget class="QLabel" name="label_rapportSelect">
-               <property name="text">
-                <string>Client:</string>
-               </property>
+              <property name="text">
+               <string>Client:</string>
+              </property>
              </widget>
             </item>
             <item>
              <widget class="QComboBox" name="comboBox_rapportClient">
-               <property name="minimumSize">
-                <size>
-                  <width>220</width>
-                  <height>0</height>
-                </size>
-               </property>
+              <property name="minimumSize">
+               <size>
+                <width>220</width>
+                <height>0</height>
+               </size>
+              </property>
              </widget>
             </item>
             <item>
              <spacer name="horizontalSpacer_rapportSelect">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                  <width>40</width>
-                  <height>20</height>
-                </size>
-               </property>
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
              </spacer>
             </item>
-          </layout>
-         </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_4">
-         <item>
-          <widget class="QPushButton" name="pushButton_rapport">
-           <property name="text">
-            <string>Générer Rapport</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="pushButton_exportRapport">
-           <property name="text">
-            <string>Exporter Rapport</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_3">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_4">
+            <item>
+             <widget class="QPushButton" name="pushButton_rapport">
+              <property name="text">
+               <string>Générer Rapport</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="pushButton_exportRapport">
+              <property name="text">
+               <string>Exporter Rapport</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer_3">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QTextEdit" name="textEdit_rapport">
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
        </item>
        <item>
-        <widget class="QTextEdit" name="textEdit_rapport">
-         <property name="readOnly">
-          <bool>true</bool>
+        <widget class="QFrame" name="frame_rapportRight">
+         <property name="styleSheet">
+          <string notr="true">QFrame#frame_rapportRight{background:#ffffff;}</string>
          </property>
+         <layout class="QVBoxLayout" name="verticalLayout_rapportRight">
+          <property name="leftMargin">
+           <number>20</number>
+          </property>
+          <property name="topMargin">
+           <number>20</number>
+          </property>
+          <property name="rightMargin">
+           <number>20</number>
+          </property>
+          <property name="bottomMargin">
+           <number>20</number>
+          </property>
+          <item>
+           <widget class="QFrame" name="frame_rapportIdea">
+            <property name="styleSheet">
+             <string notr="true">QFrame#frame_rapportIdea{border:2px solid #1B4332;border-radius:10px;background:#ffffff;padding:12px;}</string>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_rapportIdea">
+             <item>
+              <widget class="QLabel" name="label_rapportIdeaTitle">
+               <property name="text">
+                <string>ASSISTANT DÉCISIONNEL</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignCenter</set>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">background:#1B4332;color:#ffffff;font-weight:700;padding:6px;border-radius:6px;</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QTextEdit" name="textEdit_rapportIdea">
+               <property name="readOnly">
+                <bool>true</bool>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">background:transparent;border:none;</string>
+               </property>
+              </widget>
+             </item>
+              <item>
+               <widget class="QPushButton" name="pushButton_exportIdea">
+                <property name="text">
+                 <string>Exporter l'idée</string>
+                </property>
+               </widget>
+              </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <spacer name="verticalSpacer_rapport">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
         </widget>
        </item>
       </layout>

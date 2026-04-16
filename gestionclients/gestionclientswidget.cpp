@@ -4,6 +4,76 @@
 #include <QTableWidgetItem>
 #include <QBrush>
 #include <QRegularExpression>
+#include <QMenu>
+#include <QWidgetAction>
+#include <QLabel>
+#include <QTimer>
+#include <QClipboard>
+#include <QApplication>
+#include <QGraphicsDropShadowEffect>
+#include <QAbstractItemView>
+
+namespace {
+struct SmartAction {
+    QString action;
+    QString message;
+};
+
+QString inferFidelite(double totalOlives)
+{
+    if (totalOlives >= 5000) return "haute";
+    if (totalOlives >= 2000) return "moyenne";
+    return "faible";
+}
+
+SmartAction computeSmartAction(const QString &prenom, const QString &type,
+                               const QString &statut, double totalOlives,
+                               const QDate &dateCreation)
+{
+    const QString fidelite = inferFidelite(totalOlives);
+    const bool isImportant = (statut.compare("Important", Qt::CaseInsensitive) == 0);
+    const bool isStandard = (statut.compare("Standard", Qt::CaseInsensitive) == 0);
+    const bool isSociete = (type.compare("Société", Qt::CaseInsensitive) == 0);
+    const bool isVolume = (totalOlives > 1000000);
+    const bool isRecent = dateCreation.isValid() && dateCreation.daysTo(QDate::currentDate()) < 30;
+    const bool isAncien = dateCreation.isValid() && dateCreation.daysTo(QDate::currentDate()) > 365;
+
+    if (isVolume) {
+        return {"🎁 Offre volume",
+                QString("Bonjour %1, merci pour votre volume. Une offre spéciale vous attend.")
+                    .arg(prenom)};
+    }
+    if (isRecent) {
+        return {"👋 Bienvenue",
+                QString("Bonjour %1, bienvenue chez nous ! Voici votre offre de bienvenue.")
+                    .arg(prenom)};
+    }
+    if (isImportant && fidelite == "haute") {
+        return {"📞 Appel VIP",
+                QString("Bonjour %1, client fidèle, offre spéciale pour vous. On peut vous appeler quand vous voulez.")
+                    .arg(prenom)};
+    }
+    if (isImportant && fidelite == "moyenne") {
+        return {"💬 SMS relance",
+                QString("Bonjour %1, une offre est en cours. Répondez à ce message pour en profiter.")
+                    .arg(prenom)};
+    }
+    if (isSociete && isStandard) {
+        return {"📧 Email offre société",
+                QString("Bonjour %1, offre spéciale pour votre société. Souhaitez-vous recevoir le devis par email ?")
+                    .arg(prenom)};
+    }
+    if (isStandard && isAncien) {
+        return {"🔔 Réactivation",
+                QString("Bonjour %1, cela fait un moment. Souhaitez-vous reprendre vos livraisons d'olives ?")
+                    .arg(prenom)};
+    }
+
+    return {"💬 Suivi client",
+            QString("Bonjour %1, nous restons à votre disposition pour vos prochaines livraisons.")
+                .arg(prenom)};
+}
+}
 
 GestionClientsWidget::GestionClientsWidget(QWidget *parent)
     : QWidget(parent)
@@ -13,6 +83,12 @@ GestionClientsWidget::GestionClientsWidget(QWidget *parent)
 {
     ui->setupUi(this);
     currentSelectedClient.id_client = -1;
+
+    ui->tableWidget_clients->setSelectionBehavior(QAbstractItemView::SelectRows);
+    ui->tableWidget_clients->setSelectionMode(QAbstractItemView::SingleSelection);
+    ui->tableWidget_clients->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(ui->tableWidget_clients, &QTableWidget::customContextMenuRequested,
+            this, &GestionClientsWidget::on_tableWidget_clients_customContextMenuRequested);
 
     // Initialiser le dateEdit à la date du jour
     ui->dateEdit_creation->setDate(QDate::currentDate());
@@ -588,4 +664,88 @@ void GestionClientsWidget::on_tableWidget_clients_clicked(const QModelIndex &ind
 
     // Activer les boutons Modifier et Supprimer
     activerBoutons();
+}
+
+void GestionClientsWidget::on_tableWidget_clients_customContextMenuRequested(const QPoint &pos)
+{
+    QTableWidgetItem *item = ui->tableWidget_clients->itemAt(pos);
+    if (!item) return;
+
+    const int row = item->row();
+    ui->tableWidget_clients->selectRow(row);
+    on_tableWidget_clients_clicked(ui->tableWidget_clients->model()->index(row, 0));
+
+    const QString nom = ui->tableWidget_clients->item(row, 1)->text();
+    const QString prenom = ui->tableWidget_clients->item(row, 2)->text();
+    const QString type = ui->tableWidget_clients->item(row, 6)->text();
+    const QString totalText = ui->tableWidget_clients->item(row, 7)->text();
+    const QString dateText = ui->tableWidget_clients->item(row, 8)->text();
+    const QString statut = ui->tableWidget_clients->item(row, 9)->text();
+
+    bool okTotal = false;
+    const double totalOlives = totalText.toDouble(&okTotal);
+    const QDate dateCreation = QDate::fromString(dateText, "dd/MM/yyyy");
+
+    const SmartAction smart = computeSmartAction(prenom, type, statut, okTotal ? totalOlives : 0, dateCreation);
+
+    QMenu menu(this);
+    menu.setFont(QFont("Arial", 10));
+    menu.setStyleSheet(
+        "QMenu { background: #ffffff; border: 1px solid #bdbdbd; }"
+        "QMenu::item { padding: 6px 12px; }"
+        "QMenu::item:selected { background: #e8f5e9; }"
+    );
+
+    QGraphicsDropShadowEffect *shadow = new QGraphicsDropShadowEffect(&menu);
+    shadow->setBlurRadius(12);
+    shadow->setOffset(0, 2);
+    shadow->setColor(QColor(0, 0, 0, 60));
+    menu.setGraphicsEffect(shadow);
+
+    QWidgetAction *nameAction = new QWidgetAction(&menu);
+    QLabel *nameLabel = new QLabel(QString("Client: %1 %2").arg(prenom, nom));
+    nameLabel->setStyleSheet("padding: 6px 10px; font-weight: 700;");
+    nameLabel->setMinimumWidth(320);
+    nameAction->setDefaultWidget(nameLabel);
+    menu.addAction(nameAction);
+
+    QWidgetAction *actionInfo = new QWidgetAction(&menu);
+    QLabel *actionLabel = new QLabel(QString("Action recommandée: %1").arg(smart.action));
+    actionLabel->setStyleSheet("padding: 4px 10px;");
+    actionLabel->setWordWrap(true);
+    actionInfo->setDefaultWidget(actionLabel);
+    menu.addAction(actionInfo);
+
+    QWidgetAction *messageInfo = new QWidgetAction(&menu);
+    QLabel *messageLabel = new QLabel(QString("Message: %1").arg(smart.message));
+    messageLabel->setStyleSheet("padding: 4px 10px; color: #333;");
+    messageLabel->setWordWrap(true);
+    messageLabel->setMinimumWidth(320);
+    messageInfo->setDefaultWidget(messageLabel);
+    menu.addAction(messageInfo);
+
+    menu.addSeparator();
+    QAction *copyAction = menu.addAction("📋 Copier le message");
+
+    QAction *selected = menu.exec(ui->tableWidget_clients->viewport()->mapToGlobal(pos));
+    if (selected == copyAction) {
+        QClipboard *clipboard = QApplication::clipboard();
+        clipboard->setText(smart.message);
+        showToastMessage("Message copié !");
+    }
+}
+
+void GestionClientsWidget::showToastMessage(const QString &message)
+{
+    QLabel *toast = new QLabel(message, this);
+    toast->setStyleSheet("background: rgba(0,0,0,180); color: white; padding: 6px 14px; border-radius: 6px;");
+    toast->setAttribute(Qt::WA_TransparentForMouseEvents);
+    toast->adjustSize();
+    const int x = (width() - toast->width()) / 2;
+    const int y = height() - toast->height() - 20;
+    toast->move(x, y);
+    toast->raise();
+    toast->show();
+
+    QTimer::singleShot(2000, toast, &QWidget::deleteLater);
 }

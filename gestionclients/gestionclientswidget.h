@@ -33,6 +33,7 @@ private slots:
     void on_pushButton_modifier_clicked();
     void on_pushButton_supprimer_clicked();
     void on_tableWidget_clients_clicked(const QModelIndex &index);
+    void on_tableWidget_clients_customContextMenuRequested(const QPoint &pos);
     void calculerStatutEnTempsReel();
 
 signals:
@@ -64,6 +65,7 @@ private:
     bool isTotalValid(const QString &value) const;
     void setFieldState(QWidget *widget, bool valid);
     void setErrorHint(const QString &message);
+    void showToastMessage(const QString &message);
 };
 
 #endif // GESTIONCLIENTSWIDGET_H
