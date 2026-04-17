@@ -38,6 +38,7 @@ signals:
 
 private slots:
     void onBackClicked();
+    void onToggleFullScreen();
     void updateDateTime();
     
     // CRUD Operations
@@ -68,6 +69,9 @@ private slots:
     // Rapports
     void onGenererRapportClicked();
     void onExportRapportPDFClicked();
+    void onAjouterFournisseurClicked();
+    void onLierHuileFournisseurClicked();
+    void onGenererCommandeAlerteClicked();
     
     // Synchronisation
     void onSynchroniserClicked();
@@ -90,6 +94,7 @@ private:
     Ui::Stock *ui;
     QTimer *dateTimeTimer;
     QTimer *calendarRefreshTimer;
+    QTimer *historiqueRefreshTimer;
     Connexion* connexion;
     QMap<QDate, QString> dateStatutMap;
     QSerialPort *m_serial;
@@ -113,6 +118,7 @@ private:
     QPushButton *m_btnPlusOneL;
     QPushButton *m_btnConfirmWeight;
     QPushButton *m_btnValiderPoids;
+    QPushButton *m_btnToggleFullScreen;
     const double m_minWeightThresholdL = 10.0;
     
     // Méthodes utilitaires
@@ -137,6 +143,11 @@ private:
     void afficherStocksParDate(const QDate &date);
     void mettreAJourKpiCalendrier();
     void animerResumeCalendrier();
+    void refreshHistoriqueEtatTemps(bool userTriggered);
+    void ensureProcurementSchema();
+    void refreshProcurementUi();
+    bool envoyerEmailFournisseur(const QString &destinataire, const QString &sujet, const QString &contenu);
+    bool envoyerWhatsAppFournisseur(const QString &telephone, const QString &contenu);
 };
 
 #endif // STOCK_H

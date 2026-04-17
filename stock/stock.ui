@@ -1424,6 +1424,51 @@ QGroupBox::title {
              </item>
             </widget>
            </item>
+                    <item>
+                     <widget class="QLabel" name="labelTypeGraphique">
+                        <property name="styleSheet">
+                         <string notr="true">color: #2c3e50; font-size: 13px; font-weight: 600;</string>
+                        </property>
+                        <property name="text">
+                         <string>Type de graphique :</string>
+                        </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QComboBox" name="comboTypeGraphique">
+                        <property name="styleSheet">
+                         <string notr="true">QComboBox {
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 6px;
+        background: white;
+        color: #2c3e50;
+        font-size: 13px;
+        min-width: 150px;
+}</string>
+                        </property>
+                        <item>
+                         <property name="text">
+                            <string>Barres</string>
+                         </property>
+                        </item>
+                        <item>
+                         <property name="text">
+                            <string>Courbe</string>
+                         </property>
+                        </item>
+                        <item>
+                         <property name="text">
+                            <string>Histogramme</string>
+                         </property>
+                        </item>
+                        <item>
+                         <property name="text">
+                            <string>Camembert</string>
+                         </property>
+                        </item>
+                     </widget>
+                    </item>
            <item>
             <widget class="QPushButton" name="btnCalculer">
              <property name="styleSheet">
@@ -2410,6 +2455,188 @@ QGroupBox::title {
                  </property>
                  <property name="readOnly">
                   <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QGroupBox" name="groupFournisseursERP">
+              <property name="styleSheet">
+               <string notr="true">QGroupBox {
+    font-weight: bold;
+    border: 2px solid #1B4332;
+    border-radius: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    background-color: #fafafa;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px;
+    color: #1B4332;
+}</string>
+              </property>
+              <property name="title">
+               <string>🏭 Fournisseurs et commandes (ERP)</string>
+              </property>
+              <layout class="QVBoxLayout" name="layoutFournisseursERP">
+               <item>
+                <layout class="QGridLayout" name="gridFournisseursERP">
+                 <item row="0" column="0">
+                  <widget class="QLabel" name="labelNomFournisseur">
+                   <property name="text">
+                    <string>Fournisseur :</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="1">
+                  <widget class="QLineEdit" name="lineNomFournisseur">
+                   <property name="placeholderText">
+                    <string>Nom du fournisseur</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="2">
+                  <widget class="QLabel" name="labelEmailFournisseur">
+                   <property name="text">
+                    <string>Email :</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="3">
+                  <widget class="QLineEdit" name="lineEmailFournisseur">
+                   <property name="placeholderText">
+                    <string>contact@fournisseur.tn</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="0">
+                  <widget class="QLabel" name="labelTelFournisseur">
+                   <property name="text">
+                    <string>Téléphone :</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="1">
+                  <widget class="QLineEdit" name="lineTelFournisseur">
+                   <property name="placeholderText">
+                    <string>+216 ...</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="2">
+                  <widget class="QPushButton" name="btnAjouterFournisseur">
+                   <property name="text">
+                    <string>➕ Ajouter fournisseur</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="3">
+                  <spacer name="horizontalSpacerFournisseurERP">
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>40</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item row="2" column="0">
+                  <widget class="QLabel" name="labelHuileFournisseur">
+                   <property name="text">
+                    <string>Type d'huile :</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="2" column="1">
+                  <widget class="QComboBox" name="comboHuileFournisseur"/>
+                 </item>
+                 <item row="2" column="2">
+                  <widget class="QLabel" name="labelFournisseurAffectation">
+                   <property name="text">
+                    <string>Fournisseur :</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="2" column="3">
+                  <widget class="QComboBox" name="comboFournisseurAffectation"/>
+                 </item>
+                </layout>
+               </item>
+               <item>
+                <layout class="QHBoxLayout" name="layoutActionsFournisseurERP">
+                 <item>
+                  <widget class="QPushButton" name="btnLierHuileFournisseur">
+                   <property name="text">
+                    <string>🔗 Lier huile ↔ fournisseur</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="btnGenererCommandeAlerte">
+                   <property name="text">
+                    <string>🧾 Générer commandes depuis alertes</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="horizontalSpacerFournisseurERP2">
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>40</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                </layout>
+               </item>
+                            <item>
+                             <widget class="QLabel" name="labelTableFournisseursIndependant">
+                                <property name="styleSheet">
+                                 <string notr="true">color: #14532d; font-size: 13px; font-weight: 700;</string>
+                                </property>
+                                <property name="text">
+                                 <string>📋 Fournisseurs affectés (table indépendante)</string>
+                                </property>
+                             </widget>
+                            </item>
+                            <item>
+                             <widget class="QTableWidget" name="tableFournisseursIndependant">
+                                <property name="alternatingRowColors">
+                                 <bool>true</bool>
+                                </property>
+                                <property name="selectionBehavior">
+                                 <enum>QAbstractItemView::SelectRows</enum>
+                                </property>
+                             </widget>
+                            </item>
+                            <item>
+                             <widget class="QLabel" name="labelTableHistoriqueCommandes">
+                                <property name="styleSheet">
+                                 <string notr="true">color: #14532d; font-size: 13px; font-weight: 700;</string>
+                                </property>
+                                <property name="text">
+                                 <string>🧾 Historique des commandes</string>
+                                </property>
+                             </widget>
+                            </item>
+               <item>
+                <widget class="QTableWidget" name="tableHistoriqueCommandesAchat">
+                 <property name="alternatingRowColors">
+                  <bool>true</bool>
+                 </property>
+                 <property name="selectionBehavior">
+                  <enum>QAbstractItemView::SelectRows</enum>
                  </property>
                 </widget>
                </item>

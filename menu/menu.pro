@@ -24,6 +24,7 @@ SOURCES += \
     ../gestionclients/metierswidget.cpp \
     ../gestionclients/client.cpp \
     ../gestionclients/clientconnection.cpp \
+    ../stock/fournisseur.cpp \
     ../stock/stock.cpp \
     ../stock/connexion.cpp \
     ../machine/machine.cpp \
