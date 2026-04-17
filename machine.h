@@ -13,6 +13,7 @@
 #include <QLabel>
 #include <QMainWindow>
 #include <QPair>
+#include <QPixmap>
 #include <QPushButton>
 #include <QStandardItemModel>
 #include <QTimer>
@@ -24,6 +25,9 @@ namespace Ui {
 class machine;
 };
 QT_END_NAMESPACE
+
+class MachineServer;
+class Assistant;
 
 // Navigation Bar Class Declaration
 class NavigationBar : public QWidget {
@@ -69,10 +73,11 @@ private:
 
 // Todo item for maintenance list
 struct TodoItem {
+  QString machineId;
   QString machineName;
-  QString fabricant;
-  QString priority; // "Urgent" or "Normal"
-  bool done;
+  QString machineType;
+  QString tag;
+  QString priority;
 };
 
 // Historique entry for live timer
@@ -101,6 +106,8 @@ signals:
 private slots:
   void onBackButtonClicked();
   void updateDateTime();
+  void onThemeToggleClicked();
+  void onLanguageToggleClicked();
   void onNavigationTabClicked(int index);
   void on_pushButton_enregistrer_machine_clicked();
   void on_btnReinitialiser_machine_clicked();
@@ -109,6 +116,8 @@ private slots:
   void on_btnModifierMachine_machine_clicked();
   void on_btnFiltrer_clicked();
   void on_btnGenererStats_machine_clicked();
+  void on_btnGenererQrMachine_clicked();
+  void onMachineRequestedFromHttp(const QString &machineId);
 
 private:
   struct MachineData {
@@ -154,12 +163,17 @@ private:
                                const QString &problematicName);
 
   void setupNavigationBar();
+  QString resolveLocalIpv4() const;
+  QPixmap generateMachineQrPixmap(const QString &payload,
+                                  int moduleSize = 4,
+                                  int margin = 2) const;
+  void resetQrPreviewLabel();
+  void refreshNavigationTabs();
+  void applyTheme();
+  void applyLanguage();
   void setupTodoList();
+  void reloadTodoFromMachineData();
   void refreshTodoList();
-  void addTodoItem(const QString &machineName, const QString &fabricant,
-                   const QString &priority);
-  void onTodoCheckToggled(int index, bool checked);
-  void showAddTodoDialog();
   QWidget *createTodoItemWidget(int index);
 
   Ui::machine *ui;
@@ -169,6 +183,7 @@ private:
   QStandardItemModel *machineTableModel;
   QStandardItemModel *employeeTableModel;
   QStandardItemModel *historiqueTableModel;
+  QStandardItemModel *statsComparisonModel;
   QList<MachineData> m_allMachines; // Stockage global pour le filtrage
   QString m_selectedMachineId;
   int m_selectedRow;
@@ -177,8 +192,20 @@ private:
   QTimer *countsTimer;
   QTimer *historiqueTimer;
   QVector<HistoriqueEntry> m_historiqueEntries;
+  MachineServer *m_machineServer;
+  Assistant *m_assistant;
+  QString m_serverHostIp;
+  bool m_isDarkMode = false;
+  bool m_isFrench = true;
+  QString m_lightStyleSheet;
+  QString m_darkStyleSheet;
   void setupMachineTable();
   void setupEmployeesTable();
+  void setupStatsComparisonTable();
+  void populateStatsComparisonTable();
+  void normalizeLowPriorityTags();
+  void refreshAIMachineSelector();
+  void updateAICarnetForSelectedMachine();
   void chargerMachines();
   void chargerEmployees();
   void refreshResponsableFilterOptions();
@@ -203,5 +230,6 @@ private:
   void showMachineCard();
   void updateMachineCounts();
   void updateHistoriqueDisplay();
+  bool selectMachineInTableById(const QString &machineId);
 };
 #endif // MACHINE_H

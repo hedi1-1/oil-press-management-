@@ -1,8 +1,9 @@
 #include "machine.h"
+#include "MachineServer.h"
+#include "assistant.h"
 #include "connexionmachine.h"
 #include "ui_machine.h"
 #include <QBrush>
-#include <QCheckBox>
 #include <QComboBox>
 #include <QDateEdit>
 #include <QDateTime>
@@ -13,17 +14,27 @@
 #include <QFileDialog>
 #include <QFormLayout>
 #include <QHeaderView>
+#include <QHostAddress>
+#include <QImage>
 #include <QMap>
 #include <QMessageBox>
+#include <QNetworkInterface>
+#include <QNetworkAccessManager>
+#include <QNetworkReply>
+#include <QNetworkRequest>
+#include <QEventLoop>
 #include <QPainter>
 #include <QPrinter>
 #include <QRegularExpression>
+#include <QScrollBar>
+#include <QSignalBlocker>
 #include <QSpacerItem>
 #include <QSpinBox>
 #include <QSet>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QTextDocumentWriter>
+#include <QTableWidgetItem>
 #include <QButtonGroup>
 #include <QRadioButton>
 #include <QFile>
@@ -39,6 +50,123 @@
 #include <QtCharts/QPieSeries>
 #include <QtCharts/QPieSlice>
 #include <QtCharts/QValueAxis>
+
+#ifdef MACHINE_USE_QRENCODE
+#include <qrencode.h>
+#endif
+
+namespace {
+struct CardVisualStyle {
+  QString borderColor;
+  QString backgroundStart;
+  QString backgroundEnd;
+};
+
+CardVisualStyle cardVisualForState(const QString &fonctionnementRaw) {
+  const QString fonctionnement = fonctionnementRaw.trimmed().toLower();
+  if (fonctionnement == "normal") {
+    return {"#4CAF50", "#174036", "#0F2E27"};
+  }
+  if (fonctionnement == "alerte") {
+    return {"#FF9800", "#5A3A17", "#3F2810"};
+  }
+  if (fonctionnement == "panne") {
+    return {"#F44336", "#5C252B", "#3F171C"};
+  }
+  return {"#607D8B", "#2E3D45", "#1F2A30"};
+}
+
+QString veilleButtonStyle(bool active) {
+  if (active) {
+    return "QPushButton { min-width: 0px; padding: 4px; font-size: 18px; "
+           "background-color: #FF9800; color: white; border-radius: 4px; "
+           "border: 2px solid #C96F00; } "
+           "QPushButton:disabled { background-color: #e0e0e0; color: #9e9e9e; "
+           "border: none; }";
+  }
+
+  return "QPushButton { min-width: 0px; padding: 4px; font-size: 18px; "
+         "background-color: #607D8B; color: white; border-radius: 4px; border: none; } "
+         "QPushButton:disabled { background-color: #e0e0e0; color: #9e9e9e; }";
+}
+
+QString onOffButtonStyle(const QString &etatMarcheRaw) {
+  const QString etatMarche = etatMarcheRaw.trimmed().toUpper();
+  if (etatMarche == "ON") {
+    return "QPushButton { min-width: 0px; padding: 4px; font-size: 18px; "
+           "background-color: #F44336; color: white; border-radius: 4px; "
+           "border: 2px solid #B71C1C; } "
+           "QPushButton:disabled { background-color: #e0e0e0; color: #9e9e9e; "
+           "border: none; }";
+  }
+  if (etatMarche == "OFF") {
+    return "QPushButton { min-width: 0px; padding: 4px; font-size: 18px; "
+           "background-color: #4CAF50; color: white; border-radius: 4px; "
+           "border: 2px solid #2E7D32; } "
+           "QPushButton:disabled { background-color: #e0e0e0; color: #9e9e9e; "
+           "border: none; }";
+  }
+  if (etatMarche == "VEILLE") {
+    return "QPushButton { min-width: 0px; padding: 4px; font-size: 18px; "
+           "background-color: #FF9800; color: white; border-radius: 4px; "
+           "border: 2px solid #C96F00; } "
+           "QPushButton:disabled { background-color: #e0e0e0; color: #9e9e9e; "
+           "border: none; }";
+  }
+
+  return "QPushButton { min-width: 0px; padding: 4px; font-size: 18px; "
+         "background-color: #607D8B; color: white; border-radius: 4px; border: none; } "
+         "QPushButton:disabled { background-color: #e0e0e0; color: #9e9e9e; }";
+}
+
+int priorityScore(const QString &priorityRaw) {
+  const QString p = priorityRaw.trimmed().toLower();
+  if (p.contains("urgent") || p.contains("critique")) {
+    return 3;
+  }
+  if (p.contains("haute") || p.contains("élev") || p.contains("eleve")) {
+    return 2;
+  }
+  if (p.contains("moy") || p.contains("normal")) {
+    return 1;
+  }
+  return 0;
+}
+
+bool tagImpliesPriority(const QString &tagRaw) {
+  const QString t = tagRaw.trimmed().toLower();
+  return t.contains("urgent") || t.contains("critique") ||
+         t.contains("maintenance") || t.contains("reparer") ||
+         t.contains("réparer") || t.contains("priorit") || t.contains("panne");
+}
+
+bool isLowPriorityLabel(const QString &priorityRaw) {
+  const QString p = priorityRaw.trimmed().toLower();
+  return p.contains("basse") || p.contains("faible") || p.contains("low");
+}
+
+QString makeDarkStyleFromLight(QString style) {
+  const QVector<QPair<QString, QString>> replacements = {
+      {"#f5f5f5", "#12161C"},   {"#f8f9fa", "#1B222C"},
+      {"#f0f0f0", "#2A333F"},   {"#e8e8e8", "#333F4E"},
+      {"#ddd", "#3A4657"},       {"#eee", "#334253"},
+      {"#444", "#D5DDEA"},       {"#333", "#E5EAF2"},
+      {"background-color: white", "background-color: #1D2632"},
+      {"color: white", "color: #F3F6FB"},
+      {"#1B4D3E", "#224A42"},   {"#1A3C2F", "#1D4652"},
+      {"#0D3B2E", "#173742"},   {"#2D5F47", "#355972"},
+      {"#FAFAFA", "#1D2632"},   {"#F5F5F5", "#1A2330"},
+      {"#E8F5E9", "#1F3340"},   {"#C8E6C9", "#2D4D56"},
+      {"#FFEBEE", "#3C2A31"},   {"#FFCDD2", "#53333C"},
+      {"#FFF9C4", "#3C382A"},   {"#FFF59D", "#544D33"},
+      {"#E0E0E0", "#394657"},   {"#9e9e9e", "#AEB9C9"}};
+
+  for (const auto &entry : replacements) {
+    style.replace(entry.first, entry.second, Qt::CaseInsensitive);
+  }
+  return style;
+}
+} // namespace
 // ============================================================================
 // NavigationBar Implementation
 // ============================================================================
@@ -190,16 +318,22 @@ void NavigationBar::onTabButtonClicked() {
 
 machine::machine(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::machine), navigationBar(nullptr),
-  employeeTableModel(nullptr), historiqueTableModel(nullptr), m_selectedRow(-1),
+  employeeTableModel(nullptr), historiqueTableModel(nullptr), statsComparisonModel(nullptr), m_selectedRow(-1),
       machineCardPollingTimer(nullptr), machineCardDialog(nullptr),
-      countsTimer(nullptr), historiqueTimer(nullptr) {
+      countsTimer(nullptr), historiqueTimer(nullptr), m_machineServer(nullptr), m_assistant(nullptr) {
   ui->setupUi(this);
+
+  m_lightStyleSheet = styleSheet();
+  m_darkStyleSheet = makeDarkStyleFromLight(m_lightStyleSheet);
 
   // Disable toolbar buttons initially
   ui->btnModifierMachine_machine->setEnabled(false);
   ui->btnSupprimerMachine_machine->setEnabled(false);
   ui->btnExporter_machine->setEnabled(false);
   ui->btnToggleOnOff_machine->setEnabled(false);
+  ui->btnToggleOnOff_machine->setStyleSheet(onOffButtonStyle(""));
+  ui->btnSetVeille_machine->setEnabled(false);
+  ui->btnSetVeille_machine->setStyleSheet(veilleButtonStyle(false));
   ui->btnCarteMachine->setEnabled(false);
 
   // Connect carte machine button
@@ -232,18 +366,32 @@ machine::machine(QWidget *parent)
   // Connect back button
   connect(ui->btnBackToMenu_machine, &QPushButton::clicked, this,
           &machine::onBackButtonClicked);
+    connect(ui->btnThemeToggle_machine, &QPushButton::clicked, this,
+      &machine::onThemeToggleClicked);
+    connect(ui->btnLanguageToggle_machine, &QPushButton::clicked, this,
+      &machine::onLanguageToggleClicked);
+
+  m_assistant = new Assistant(this);
+  m_assistant->setTalkButton(ui->btnVoiceAssistant_machine);
+  connect(ui->btnVoiceAssistant_machine, &QPushButton::clicked,
+          m_assistant, &Assistant::startVoiceCycle);
 
   // Setup date/time timer
   dateTimeTimer = new QTimer(this);
   connect(dateTimeTimer, &QTimer::timeout, this, &machine::updateDateTime);
   dateTimeTimer->start(1000); // Update every second
-  updateDateTime();           // Initial update
+
+  applyTheme();
+  applyLanguage();
+  updateDateTime(); // Initial update
 
   onNavigationTabClicked(0);
 
   // Initialize and load data
   setupMachineTable();
   setupEmployeesTable();
+  setupStatsComparisonTable();
+  normalizeLowPriorityTags();
   
   // Initialize date filters to show all machines by default
   ui->date_debut->setDate(QDate(2000, 1, 1));
@@ -271,6 +419,37 @@ machine::machine(QWidget *parent)
 
   chargerMachines();
   chargerEmployees();
+  populateStatsComparisonTable();
+
+    ui->tableCarnetMachine_machine->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    ui->tableCarnetMachine_machine->verticalHeader()->setVisible(false);
+    ui->tableCarnetMachine_machine->horizontalHeader()->setStretchLastSection(true);
+    ui->tableCarnetMachine_machine->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+    ui->tableCarnetMachine_machine->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
+    ui->tableCarnetMachine_machine->setWordWrap(true);
+
+    connect(ui->comboDecisionMachine, QOverload<int>::of(&QComboBox::currentIndexChanged),
+      this, [this](int) {
+        updateAICarnetForSelectedMachine();
+        if (ui->comboDecisionMachine->currentData().toString().trimmed().isEmpty()) {
+          resetQrPreviewLabel();
+        }
+      });
+    refreshAIMachineSelector();
+    connect(ui->btnGenererQrMachine, &QPushButton::clicked,
+            this, &machine::on_btnGenererQrMachine_clicked);
+    resetQrPreviewLabel();
+        ui->lblQrPreviewMachine->setCursor(Qt::PointingHandCursor);
+        ui->lblQrPreviewMachine->installEventFilter(this);
+
+    m_serverHostIp = resolveLocalIpv4();
+    m_machineServer = new MachineServer(this);
+    connect(m_machineServer, &MachineServer::machineRequested,
+            this, &machine::onMachineRequestedFromHttp, Qt::UniqueConnection);
+    m_machineServer->setHostIp(m_serverHostIp);
+    if (!m_machineServer->start(8181)) {
+      qDebug() << "[MachineServer] Echec au demarrage du serveur HTTP sur le port 8181.";
+    }
 
   // Export PDF button
   connect(ui->btnExporter_machine, &QPushButton::clicked, this,
@@ -278,7 +457,8 @@ machine::machine(QWidget *parent)
 
   // Connect Historique toggle button
   ui->btnHistoriqueToggle_machine->setText(
-      QString::fromUtf8("\xF0\x9F\x93\x9C Historique"));
+      m_isFrench ? QString::fromUtf8("\xF0\x9F\x93\x9C Historique")
+                 : QString::fromUtf8("\xF0\x9F\x93\x9C History"));
   connect(ui->btnHistoriqueToggle_machine, &QPushButton::toggled, this,
           [this](bool checked) {
             if (checked) {
@@ -344,10 +524,16 @@ machine::machine(QWidget *parent)
     query.bindValue(":id", m_selectedMachineId);
 
     if (query.exec()) {
+      ui->btnToggleOnOff_machine->setStyleSheet(onOffButtonStyle(newState));
+      ui->btnSetVeille_machine->setStyleSheet(veilleButtonStyle(false));
       QMessageBox msgBox(this);
-      msgBox.setWindowTitle("Succès");
-      msgBox.setText(QString("✅ Machine %1 avec succès !")
-                         .arg(newState == "ON" ? "allumée" : "éteinte"));
+      msgBox.setWindowTitle(m_isFrench ? "Succès" : "Success");
+      msgBox.setText(
+          m_isFrench
+          ? QString("✅ Machine %1 avec succès !")
+            .arg(newState == "ON" ? "allumée" : "éteinte")
+          : QString("✅ Machine turned %1 successfully!")
+            .arg(newState == "ON" ? "ON" : "OFF"));
       msgBox.setIcon(QMessageBox::Information);
       msgBox.setStyleSheet(R"(
         QMessageBox { background-color: #f8f9fa; border: 2px solid #1A3C2F; }
@@ -359,8 +545,47 @@ machine::machine(QWidget *parent)
       msgBox.exec();
       chargerMachines();
     } else {
-      QMessageBox::critical(this, "Erreur",
-                            "Erreur lors du changement d'état : " +
+      QMessageBox::critical(this, m_isFrench ? "Erreur" : "Error",
+                            (m_isFrench
+                                 ? "Erreur lors du changement d'état : "
+                                 : "Error while changing state: ") +
+                                query.lastError().text());
+    }
+  });
+
+  connect(ui->btnSetVeille_machine, &QPushButton::clicked, this, [this]() {
+    if (m_selectedMachineId.isEmpty() || m_selectedRow < 0)
+      return;
+
+    QSqlQuery query(ConnectionMachine::getInstance().getDatabase());
+    query.prepare("UPDATE MACHINE SET ETAT_MARCHE = 'VEILLE', DATE_MISE_A_JOUR = "
+                  "SYSTIMESTAMP WHERE ID_MACHINE = :id");
+    query.bindValue(":id", m_selectedMachineId);
+
+    if (query.exec()) {
+      ui->btnToggleOnOff_machine->setStyleSheet(onOffButtonStyle("VEILLE"));
+      ui->btnSetVeille_machine->setStyleSheet(veilleButtonStyle(true));
+      QMessageBox msgBox(this);
+      msgBox.setWindowTitle(m_isFrench ? "Succès" : "Success");
+      msgBox.setText(
+          m_isFrench
+              ? "✅ Machine passée en mode veille avec succès !"
+              : "✅ Machine switched to standby successfully!");
+      msgBox.setIcon(QMessageBox::Information);
+      msgBox.setStyleSheet(R"(
+        QMessageBox { background-color: #f8f9fa; border: 2px solid #1A3C2F; }
+        QLabel { color: #1A3C2F; font-size: 14px; font-weight: bold; padding: 10px; }
+        QPushButton { background-color: #1A3C2F; color: white; border: none;
+          border-radius: 5px; padding: 8px 20px; font-weight: bold; min-width: 100px; }
+        QPushButton:hover { background-color: #0F241E; }
+      )");
+      msgBox.exec();
+      chargerMachines();
+    } else {
+      QMessageBox::critical(this, m_isFrench ? "Erreur" : "Error",
+                            (m_isFrench
+                                 ? "Erreur lors du passage en veille : "
+                                 : "Error while switching to standby: ") +
                                 query.lastError().text());
     }
   });
@@ -381,12 +606,12 @@ machine::machine(QWidget *parent)
   updateMachineCounts();     // Initial call
 
   // Statistics setup
-  if (ui->type_statistique_machine->findText("Type machine") == -1) {
-    ui->type_statistique_machine->addItem("Type machine");
-  }
   connect(ui->btnGenererStats_machine, &QPushButton::clicked, this,
           &machine::on_btnGenererStats_machine_clicked);
-  clearStatsChartArea("Sélectionnez un type de statistique et un type de graphique, puis cliquez sur Générer.");
+  clearStatsChartArea(
+      m_isFrench
+          ? "Sélectionnez un type de statistique et un type de graphique, puis cliquez sur Générer."
+          : "Select a statistics type and a chart type, then click Generate.");
 }
 
 machine::~machine() {
@@ -399,10 +624,12 @@ machine::~machine() {
 void machine::updateDateTime() {
   QDateTime now = QDateTime::currentDateTime();
 
-  // Noms des mois en français
   QStringList monthsFR = {"janvier",   "février", "mars",     "avril",
                           "mai",       "juin",    "juillet",  "août",
                           "septembre", "octobre", "novembre", "décembre"};
+  QStringList monthsEN = {"January",   "February", "March",    "April",
+                          "May",       "June",     "July",     "August",
+                          "September", "October",  "November", "December"};
 
   int day = now.date().day();
   int month = now.date().month();
@@ -411,20 +638,450 @@ void machine::updateDateTime() {
   int minute = now.time().minute();
   int second = now.time().second();
 
-  // Format: "📅 04 Février 2026 • 14:30:45"
   QString dateStr = QString::number(day).rightJustified(2, '0');
-  QString monthStr = monthsFR[month - 1];
-  monthStr[0] = monthStr[0].toUpper();
+  QString monthStr = m_isFrench ? monthsFR[month - 1] : monthsEN[month - 1];
+  if (m_isFrench && !monthStr.isEmpty()) {
+    monthStr[0] = monthStr[0].toUpper();
+  }
 
   QString timeStr = QString::number(hour).rightJustified(2, '0') + ":" +
                     QString::number(minute).rightJustified(2, '0') + ":" +
                     QString::number(second).rightJustified(2, '0');
 
-  QString dateTimeStr =
-      QString("📅 %1 %2 %3 • %4")
-          .arg(dateStr, monthStr, QString::number(year), timeStr);
+  QString dateTimeStr;
+  if (m_isFrench) {
+    dateTimeStr = QString("📅 %1 %2 %3 • %4")
+                      .arg(dateStr, monthStr, QString::number(year), timeStr);
+  } else {
+    dateTimeStr = QString("📅 %1 %2 %3 • %4")
+                      .arg(monthStr, dateStr, QString::number(year), timeStr);
+  }
 
   ui->lblDateTime_machine->setText(dateTimeStr);
+}
+
+void machine::onThemeToggleClicked() {
+  m_isDarkMode = !m_isDarkMode;
+  applyTheme();
+}
+
+void machine::onLanguageToggleClicked() {
+  m_isFrench = !m_isFrench;
+  applyLanguage();
+  updateDateTime();
+}
+
+void machine::applyTheme() {
+  setStyleSheet(m_isDarkMode ? m_darkStyleSheet : m_lightStyleSheet);
+
+  const QString headerLight =
+    "QWidget#headerWidget { background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #1B4332, stop:0.5 #234E3E, stop:1 #1B4332); border-bottom: 4px solid #C9A227; }";
+  const QString headerDark =
+    "QWidget#headerWidget { background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #121A24, stop:0.5 #1A2430, stop:1 #121A24); border-bottom: 4px solid #8F7A2F; }";
+  ui->headerWidget->setStyleSheet(m_isDarkMode ? headerDark : headerLight);
+
+  const QString iconButtonStyle = m_isDarkMode
+    ? "QPushButton { background-color: rgba(30, 39, 51, 0.75); color: #C9A227; border: 1px solid rgba(201, 162, 39, 0.40); border-radius: 8px; font-size: 14px; font-weight: 700; } QPushButton:hover { background-color: rgba(42, 56, 73, 0.90); }"
+      : "QPushButton { background-color: rgba(255, 255, 255, 0.12); color: #C9A227; border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 8px; font-size: 14px; font-weight: 700; } QPushButton:hover { background-color: rgba(255, 255, 255, 0.20); }";
+
+  ui->btnThemeToggle_machine->setStyleSheet(iconButtonStyle);
+  ui->btnLanguageToggle_machine->setStyleSheet(iconButtonStyle);
+  if (ui->btnVoiceAssistant_machine) {
+    ui->btnVoiceAssistant_machine->setStyleSheet(iconButtonStyle);
+  }
+  ui->btnThemeToggle_machine->setText(m_isDarkMode ? "☀" : "🌙");
+
+  const QString lightDateStyle =
+      "color: rgba(255, 255, 255, 0.9); font-size: 14px; font-weight: 500; font-family: 'Segoe UI', Arial, sans-serif; padding: 8px 16px; background-color: rgba(0, 0, 0, 0.2); border-radius: 20px;";
+  const QString darkDateStyle =
+      "color: #EAEFF6; font-size: 14px; font-weight: 500; font-family: 'Segoe UI', Arial, sans-serif; padding: 8px 16px; background-color: rgba(10, 13, 18, 0.62); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.12);";
+  ui->lblDateTime_machine->setStyleSheet(m_isDarkMode ? darkDateStyle
+                                                      : lightDateStyle);
+
+    const QString lightOnlineStyle =
+      "color: #4ADE80; font-weight: bold; font-size: 14px; padding: 6px 14px; background-color: rgba(74, 222, 128, 0.15); border-radius: 15px; border: 1px solid rgba(74, 222, 128, 0.3);";
+    const QString darkOnlineStyle =
+      "color: #61E39A; font-weight: bold; font-size: 14px; padding: 6px 14px; background-color: rgba(31, 91, 61, 0.30); border-radius: 15px; border: 1px solid rgba(97, 227, 154, 0.35);";
+    ui->lblOnlineStatus_machine->setStyleSheet(m_isDarkMode ? darkOnlineStyle
+                                 : lightOnlineStyle);
+
+      const QString lightMachineTableStyle = R"(
+        QTableView {
+          border: 2px solid #1A3C2F;
+          border-radius: 6px;
+          background-color: #FFFFFF;
+          alternate-background-color: #F0F7F4;
+          gridline-color: #D5E8D4;
+          font-size: 12px;
+          font-family: 'Segoe UI', Arial, sans-serif;
+          selection-background-color: #C8E6C9;
+          selection-color: #1A3C2F;
+        }
+        QTableView::item { padding: 8px 12px; border-bottom: 1px solid #E8E8E8; }
+        QTableView::item:hover { background-color: #E0F2E9; }
+        QTableView::item:selected { background-color: #C8E6C9; color: #1A3C2F; }
+        QHeaderView::section {
+          background-color: #1B4D3E;
+          color: white;
+          padding: 10px 8px;
+          border: none;
+          border-right: 1px solid #2C5F4F;
+          font-weight: bold;
+          font-size: 12px;
+          font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        QHeaderView::section:last { border-right: none; }
+      )";
+
+      const QString darkMachineTableStyle = R"(
+        QTableView {
+          border: 2px solid #2A3F5A;
+          border-radius: 6px;
+          background-color: #111821;
+          alternate-background-color: #182332;
+          gridline-color: #30445B;
+          font-size: 12px;
+          font-family: 'Segoe UI', Arial, sans-serif;
+          selection-background-color: #24506A;
+          selection-color: #EAF0F8;
+        }
+        QTableView::item { padding: 8px 12px; border-bottom: 1px solid #27384C; color: #DCE4EF; }
+        QTableView::item:hover { background-color: #213447; }
+        QTableView::item:selected { background-color: #2A4F66; color: #F2F6FC; }
+        QHeaderView::section {
+          background-color: #1A2B3F;
+          color: #F2F6FC;
+          padding: 10px 8px;
+          border: none;
+          border-right: 1px solid #2D425A;
+          font-weight: bold;
+          font-size: 12px;
+          font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        QHeaderView::section:last { border-right: none; }
+      )";
+
+      const QString lightEmployeesTableStyle = R"(
+        QTableView {
+          border: 2px solid #1A3C2F;
+          border-radius: 6px;
+          background-color: #FFFFFF;
+          alternate-background-color: #F0F7F4;
+          gridline-color: #D5E8D4;
+          font-size: 11px;
+          font-family: 'Segoe UI', Arial, sans-serif;
+          selection-background-color: #C8E6C9;
+          selection-color: #1A3C2F;
+        }
+        QTableView::item { padding: 6px 10px; border-bottom: 1px solid #E8E8E8; }
+        QHeaderView::section {
+          background-color: #1B4D3E;
+          color: white;
+          padding: 8px;
+          border: none;
+          border-right: 1px solid #2C5F4F;
+          font-weight: bold;
+          font-size: 11px;
+          font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        QHeaderView::section:last { border-right: none; }
+      )";
+
+      const QString darkEmployeesTableStyle = R"(
+        QTableView {
+          border: 2px solid #2A3F5A;
+          border-radius: 6px;
+          background-color: #111821;
+          alternate-background-color: #182332;
+          gridline-color: #30445B;
+          font-size: 11px;
+          font-family: 'Segoe UI', Arial, sans-serif;
+          selection-background-color: #24506A;
+          selection-color: #EAF0F8;
+        }
+        QTableView::item { padding: 6px 10px; border-bottom: 1px solid #27384C; color: #DCE4EF; }
+        QHeaderView::section {
+          background-color: #1A2B3F;
+          color: #F2F6FC;
+          padding: 8px;
+          border: none;
+          border-right: 1px solid #2D425A;
+          font-weight: bold;
+          font-size: 11px;
+          font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        QHeaderView::section:last { border-right: none; }
+      )";
+
+      ui->tableMachines_machine->setStyleSheet(
+        m_isDarkMode ? darkMachineTableStyle : lightMachineTableStyle);
+      ui->tableEmployees_machine->setStyleSheet(
+        m_isDarkMode ? darkEmployeesTableStyle : lightEmployeesTableStyle);
+      ui->tableCarnetMachine_machine->setStyleSheet(
+        m_isDarkMode ? darkEmployeesTableStyle : lightEmployeesTableStyle);
+      ui->tableComparaisonStats_machine->setStyleSheet(
+        m_isDarkMode ? darkEmployeesTableStyle : lightEmployeesTableStyle);
+      ui->tableHistorique_machine->setStyleSheet(
+        m_isDarkMode
+          ? "QTableView { border: 1px solid #2E435A; background-color: #111821; color: #EAF0F8; gridline-color: #30445B; } QTableView::item { background-color: transparent; color: #EAF0F8; padding: 6px; } QHeaderView::section { background-color: #1A2B3F; color: #F2F6FC; font-weight: 600; }"
+          : "QTableView { border: 1px solid #C9D4D0; background-color: #FFFFFF; color: #1F2933; gridline-color: #D8E0DC; } QTableView::item { background-color: transparent; color: #1F2933; padding: 6px; } QHeaderView::section { background-color: #F3F6F4; color: #0F1720; font-weight: 600; }");
+
+      ui->scrollHistoriqueOnOff_machine->setStyleSheet("");
+
+      ui->zoneGraphique_machine->setStyleSheet(
+        m_isDarkMode
+          ? "background-color: #101722; border: 1px solid #2E435A; border-radius: 4px;"
+          : "background-color: white; border: 1px solid #ddd; border-radius: 4px;");
+
+      ui->tabWidgetMachineManagement->setStyleSheet(
+        m_isDarkMode
+          ? "QTabWidget::pane { border: 1px solid #2E435A; background-color: #101722; }"
+          : "");
+
+      ui->tabWidgetAIDetails->setStyleSheet(
+        m_isDarkMode
+          ? "QTabWidget::pane { border: 1px solid #2E435A; background-color: #101722; }"
+          : "");
+
+      // Premium dark status cards: keep same structure, only harmonize colors.
+      if (m_isDarkMode) {
+        ui->lblMachinesNormales_machine->setStyleSheet(
+            "background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #162633, stop:1 #101B24);"
+            "color: #75E3A6; border-left: 5px solid #2BC47A; border-radius: 10px;");
+        ui->lblMachinesAlerte_machine->setStyleSheet(
+            "background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #2A2418, stop:1 #1B1812);"
+            "color: #FFB35C; border-left: 5px solid #F58A2C; border-radius: 10px;");
+        ui->lblMachinesPanne_machine->setStyleSheet(
+            "background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #2B171D, stop:1 #1D1116);"
+            "color: #FF7A86; border-left: 5px solid #E34C5D; border-radius: 10px;");
+      } else {
+        ui->lblMachinesNormales_machine->setStyleSheet("");
+        ui->lblMachinesAlerte_machine->setStyleSheet("");
+        ui->lblMachinesPanne_machine->setStyleSheet("");
+      }
+
+      refreshTodoList();
+}
+
+void machine::applyLanguage() {
+  setWindowTitle(m_isFrench ? "Gestion des Machines & Alertes"
+                            : "Machine Management & Alerts");
+  ui->btnBackToMenu_machine->setText(m_isFrench ? "← Retour" : "← Back");
+  ui->lblAppTitle_machine->setText(m_isFrench ? "GESTION DES MACHINES"
+                                              : "MACHINE MANAGEMENT");
+  ui->lblAppSubtitle->setText(m_isFrench ? "SURVEILLANCE & ALERTES"
+                                         : "MONITORING & ALERTS");
+  ui->lblOnlineStatus_machine->setText(m_isFrench ? "● EN LIGNE" : "● ONLINE");
+
+  ui->btnThemeToggle_machine->setToolTip(
+      m_isFrench ? "Basculer thème sombre / clair"
+                 : "Toggle dark / light mode");
+  ui->btnLanguageToggle_machine->setToolTip(
+      m_isFrench ? "Changer la langue (FR / EN)"
+                 : "Change language (FR / EN)");
+  if (ui->btnVoiceAssistant_machine) {
+    ui->btnVoiceAssistant_machine->setToolTip(
+        m_isFrench ? "Assistant vocal IA" : "AI voice assistant");
+  }
+
+    ui->groupRecherche_machine->setTitle(m_isFrench ? "Filtrage & Tri"
+                            : "Filters & Sorting");
+    ui->lblFiltresAvances->setText(m_isFrench ? "⚙ Filtres avancés:"
+                        : "⚙ Advanced filters:");
+    ui->lblPeriodeDu->setText(m_isFrench ? "Période Du:" : "Period From:");
+    ui->lblPeriodeAu->setText(m_isFrench ? "Au:" : "To:");
+    ui->btnFiltrer->setText(m_isFrench ? "⚙ Filtrer" : "⚙ Filter");
+    ui->btnActualiserGlobal->setToolTip(
+      m_isFrench ? "Actualiser et réinitialiser les filtres"
+           : "Refresh and reset filters");
+
+    ui->lblRechercheRapide->setText(m_isFrench ? "Recherche:" : "Search:");
+    ui->recherche_nom_machine->setPlaceholderText(
+      m_isFrench ? "Rechercher par nom..." : "Search by name...");
+    ui->btnRechercher->setToolTip(m_isFrench ? "Rechercher" : "Search");
+    ui->btnModifierMachine_machine->setToolTip(
+      m_isFrench ? "Modifier la machine sélectionnée"
+           : "Edit selected machine");
+    ui->btnSupprimerMachine_machine->setToolTip(
+      m_isFrench ? "Supprimer la machine sélectionnée"
+           : "Delete selected machine");
+    ui->btnToggleOnOff_machine->setToolTip(
+      m_isFrench ? "Allumer / Éteindre la machine"
+           : "Power ON / OFF machine");
+    ui->btnSetVeille_machine->setToolTip(
+      m_isFrench ? "Mettre la machine en veille"
+           : "Set machine to standby");
+    ui->btnCarteMachine->setToolTip(
+      m_isFrench ? "Fiche machine" : "Machine card");
+    ui->btnHistoriqueToggle_machine->setText(
+      m_isFrench ? "📜 Historique" : "📜 History");
+    ui->btnExporter_machine->setText(m_isFrench ? "📤 Exporter" : "📤 Export");
+    ui->lblHistoriqueTitle->setText(m_isFrench ? "Historique ON / OFF des machines"
+                         : "Machines ON / OFF history");
+
+    ui->pushButton_enregistrer_machine->setText(
+      m_isFrench ? "💾 Enregistrer" : "💾 Save");
+    ui->btnReinitialiser_machine->setText(
+      m_isFrench ? "🔄 Réinitialiser" : "🔄 Reset");
+    ui->groupEmployeesActions->setTitle(
+      m_isFrench ? "Employés enregistrés" : "Registered employees");
+    ui->labelEmployeesHint->setText(
+      m_isFrench ? "Liste synchronisée depuis la table EMPLOYEES"
+           : "List synchronized from EMPLOYEES table");
+
+    ui->groupOptionsStats->setTitle(
+      m_isFrench ? "Options de visualisation" : "Visualization options");
+    ui->lblTypeStats->setText(
+      m_isFrench ? "Type de statistique:" : "Statistics type:");
+    ui->lblTypeGraphique->setText(
+      m_isFrench ? "Type de graphique:" : "Chart type:");
+    ui->btnGenererStats_machine->setText(
+      m_isFrench ? "📊 Générer" : "📊 Generate");
+    ui->groupComparaisonStats->setTitle(
+      m_isFrench ? "Comparaison des machines" : "Machine comparison");
+    ui->groupSelectionAIMachine->setTitle(
+      m_isFrench ? "Sélection de la machine" : "Machine selection");
+    ui->lblSelectionMachineIA->setText(
+      m_isFrench ? "Machine:" : "Machine:");
+    ui->btnGenererQrMachine->setText(
+      m_isFrench ? "▦ Générer QR" : "▦ Generate QR");
+    ui->btnGenererQrMachine->setToolTip(
+      m_isFrench ? "Générer le QR code de la machine sélectionnée"
+                 : "Generate the selected machine QR code");
+    if (ui->lblQrPreviewMachine->pixmap(Qt::ReturnByValue).isNull()) {
+      resetQrPreviewLabel();
+    }
+    ui->groupAIDetails->setTitle(
+      m_isFrench ? "Carnet / Arduino" : "Journal / Arduino");
+    ui->tabWidgetAIDetails->setTabText(
+      0, m_isFrench ? "Carnet / Journal" : "Journal");
+    ui->tabWidgetAIDetails->setTabText(
+      1, "Arduino");
+
+    if (statsComparisonModel) {
+    statsComparisonModel->setHorizontalHeaderLabels(
+      m_isFrench
+        ? QStringList{"Segment", "Rang urgence", "Machine", "Type", "Dernière maintenance", "Tag", "Priorité", "Analyse"}
+        : QStringList{"Segment", "Urgency rank", "Machine", "Type", "Last maintenance", "Tag", "Priority", "Analysis"});
+    }
+
+    const auto replaceComboItems = [](QComboBox *combo,
+                    const QStringList &items) {
+    if (!combo || combo->count() != items.size()) {
+      return;
+    }
+    for (int i = 0; i < items.size(); ++i) {
+      combo->setItemText(i, items.at(i));
+    }
+    };
+
+    replaceComboItems(
+      ui->filtre_type_machine,
+      m_isFrench ? QStringList{"-- Type machine --", "Presse", "Broyeur",
+                   "Malaxeur", "Chauffeur"}
+           : QStringList{"-- Machine type --", "Press", "Crusher",
+                   "Mixer", "Heater"});
+    ui->filtre_type_machine->setItemData(1, "Presse");
+    ui->filtre_type_machine->setItemData(2, "Broyeur");
+    ui->filtre_type_machine->setItemData(3, "Malaxeur");
+    ui->filtre_type_machine->setItemData(4, "Chauffeur");
+
+    replaceComboItems(ui->filtre_etat_marche_machine,
+            m_isFrench
+              ? QStringList{"-- État marche --", "ON", "OFF", "VEILLE"}
+              : QStringList{"-- Running state --", "ON", "OFF", "STANDBY"});
+    ui->filtre_etat_marche_machine->setItemData(1, "ON");
+    ui->filtre_etat_marche_machine->setItemData(2, "OFF");
+    ui->filtre_etat_marche_machine->setItemData(3, "VEILLE");
+
+    replaceComboItems(ui->filtre_type_alerte,
+            m_isFrench ? QStringList{"-- Type alerte --", "Aucune",
+                         "Température", "Surcharge", "Panne"}
+                   : QStringList{"-- Alert type --", "None",
+                         "Temperature", "Overload", "Failure"});
+    ui->filtre_type_alerte->setItemData(1, "Aucune");
+    ui->filtre_type_alerte->setItemData(2, "Température");
+    ui->filtre_type_alerte->setItemData(3, "Surcharge");
+    ui->filtre_type_alerte->setItemData(4, "Panne");
+
+    replaceComboItems(ui->filtre_alerte_criticite,
+            m_isFrench ? QStringList{"-- Criticité --", "Faible",
+                         "Moyen", "Élevé", "Critique"}
+                   : QStringList{"-- Severity --", "Low", "Medium",
+                         "High", "Critical"});
+    ui->filtre_alerte_criticite->setItemData(1, "Faible");
+    ui->filtre_alerte_criticite->setItemData(2, "Moyen");
+    ui->filtre_alerte_criticite->setItemData(3, "Élevé");
+    ui->filtre_alerte_criticite->setItemData(4, "Critique");
+    replaceComboItems(ui->tri_par,
+            m_isFrench
+              ? QStringList{"-- Trier par --", "nom_machine", "type_machine",
+                      "etat_fonctionnement", "temperature_actuelle",
+                      "date_derniere_maintenance", "niveau_criticite"}
+              : QStringList{"-- Sort by --", "nom_machine", "type_machine",
+                      "etat_fonctionnement", "temperature_actuelle",
+                      "date_derniere_maintenance", "niveau_criticite"});
+
+    const int statsTypeIndex = ui->type_statistique_machine->currentIndex();
+    ui->type_statistique_machine->clear();
+    if (m_isFrench) {
+    ui->type_statistique_machine->addItems(
+      {"État fonctionnement", "Types alertes", "Température moyenne", "Type machine"});
+    } else {
+    ui->type_statistique_machine->addItems(
+      {"Operating state", "Alert types", "Average temperature", "Machine type"});
+    }
+    ui->type_statistique_machine->setCurrentIndex(
+      qBound(0, statsTypeIndex, ui->type_statistique_machine->count() - 1));
+
+    const int chartTypeIndex = ui->type_graphique_machine->currentIndex();
+    ui->type_graphique_machine->clear();
+    if (m_isFrench) {
+    ui->type_graphique_machine->addItems({"Histogramme (barres)", "Camembert", "Courbe"});
+    } else {
+    ui->type_graphique_machine->addItems({"Bar chart", "Pie chart", "Line chart"});
+    }
+    ui->type_graphique_machine->setCurrentIndex(
+      qBound(0, chartTypeIndex, ui->type_graphique_machine->count() - 1));
+
+    // Clarify chart choices to avoid ambiguity.
+    ui->type_graphique_machine->setItemData(
+      0,
+      m_isFrench ? "Colonnes verticales pour comparer les valeurs"
+                 : "Vertical columns to compare values",
+      Qt::ToolTipRole);
+    ui->type_graphique_machine->setItemData(
+      1,
+      m_isFrench ? "Parts d'un total en pourcentage"
+                 : "Parts of a whole in percentage",
+      Qt::ToolTipRole);
+    ui->type_graphique_machine->setItemData(
+      2,
+      m_isFrench ? "Évolution ou tendance entre catégories"
+                 : "Evolution or trend across categories",
+      Qt::ToolTipRole);
+
+    refreshResponsableFilterOptions();
+
+    clearStatsChartArea(
+      m_isFrench
+        ? "Sélectionnez un type de statistique et un type de graphique, puis cliquez sur Générer."
+        : "Select a statistics type and a chart type, then click Generate.");
+
+    refreshTodoList();
+
+  refreshNavigationTabs();
+
+  ui->tabWidgetMachineManagement->setTabText(
+      0, m_isFrench ? "🏭 Parc machines" : "🏭 Machine fleet");
+  ui->tabWidgetMachineManagement->setTabText(
+      1, m_isFrench ? "⚙️ Actions" : "⚙️ Actions");
+  ui->tabWidgetMachineManagement->setTabText(
+      2, m_isFrench ? "📊 Statistiques" : "📊 Statistics");
+  ui->tabWidgetMachineManagement->setTabText(
+      3, m_isFrench ? "📘 Carnet IA" : "📘 AI Logbook");
+
+  updateAICarnetForSelectedMachine();
 }
 
 void machine::onBackButtonClicked() {
@@ -438,12 +1095,7 @@ void machine::setupNavigationBar() {
 
   // Create the custom navigation bar
   navigationBar = new NavigationBar(this);
-
-  // Add tabs to the navigation bar
-  navigationBar->addTab("🏭", "Parc machines");
-  navigationBar->addTab("⚙️", "Actions");
-  navigationBar->addTab("📊", "Statistiques");
-  navigationBar->addTab("🤖", "Décision IA");
+  refreshNavigationTabs();
 
   // Insert the navigation bar at the top of the central widget
   QVBoxLayout *mainLayout =
@@ -459,6 +1111,30 @@ void machine::setupNavigationBar() {
 
   // Set the first tab as active
   navigationBar->setActiveTab(0);
+}
+
+void machine::refreshNavigationTabs() {
+  if (!navigationBar) {
+    return;
+  }
+
+  const int activeIndex = ui->tabWidgetMachineManagement->currentIndex();
+  QSignalBlocker blocker(navigationBar);
+  navigationBar->clear();
+
+  if (m_isFrench) {
+    navigationBar->addTab("🏭", "Parc machines");
+    navigationBar->addTab("⚙️", "Actions");
+    navigationBar->addTab("📊", "Statistiques");
+    navigationBar->addTab("📘", "Carnet IA");
+  } else {
+    navigationBar->addTab("🏭", "Machine fleet");
+    navigationBar->addTab("⚙️", "Actions");
+    navigationBar->addTab("📊", "Statistics");
+    navigationBar->addTab("📘", "AI Logbook");
+  }
+
+  navigationBar->setActiveTab(activeIndex < 0 ? 0 : activeIndex);
 }
 
 void machine::setupMachineTable() {
@@ -585,6 +1261,637 @@ void machine::setupEmployeesTable() {
             }
             onEmployeeRowChosen(index.row());
           });
+}
+
+void machine::setupStatsComparisonTable() {
+  statsComparisonModel = new QStandardItemModel(0, 8, this);
+  statsComparisonModel->setHorizontalHeaderLabels(
+      {"Segment", "Rang urgence", "Machine", "Type", "Dernière maintenance", "Tag", "Priorité", "Analyse"});
+
+  ui->tableComparaisonStats_machine->setModel(statsComparisonModel);
+  ui->tableComparaisonStats_machine->setAlternatingRowColors(true);
+  ui->tableComparaisonStats_machine->setSelectionBehavior(QAbstractItemView::SelectRows);
+  ui->tableComparaisonStats_machine->setSelectionMode(QAbstractItemView::SingleSelection);
+  ui->tableComparaisonStats_machine->setEditTriggers(QAbstractItemView::NoEditTriggers);
+  ui->tableComparaisonStats_machine->verticalHeader()->setVisible(false);
+  ui->tableComparaisonStats_machine->horizontalHeader()->setStretchLastSection(true);
+  ui->tableComparaisonStats_machine->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+}
+
+void machine::normalizeLowPriorityTags() {
+  QSqlQuery query(ConnectionMachine::getInstance().getDatabase());
+  query.prepare(
+      "UPDATE MACHINE "
+      "SET TAG = '-' "
+      "WHERE (TAG IS NULL OR TRIM(TAG) = '') "
+      "AND ("
+      "LOWER(TRIM(NVL(PRIORITE, ''))) LIKE '%basse%' "
+      "OR LOWER(TRIM(NVL(PRIORITE, ''))) LIKE '%faible%' "
+      "OR LOWER(TRIM(NVL(PRIORITE, ''))) LIKE '%low%'"
+      ")");
+
+  if (!query.exec()) {
+    qDebug() << "Erreur normalisation TAG/priorité :" << query.lastError().text();
+  }
+}
+
+void machine::populateStatsComparisonTable() {
+  if (!statsComparisonModel) {
+    return;
+  }
+
+  statsComparisonModel->setRowCount(0);
+
+  struct EvalRow {
+    QString machine;
+    QString type;
+    QString maintenance;
+    QString tag;
+    QString priorite;
+    QString segment;
+    QString urgence;
+    QString analyse;
+    int score = 0;
+    int ageDays = 0;
+  };
+
+  if (m_allMachines.isEmpty()) {
+    return;
+  }
+
+  const QDate today = QDate::currentDate();
+  QMap<QString, int> maxAgeByType;
+
+  auto normalized = [](const QString &v) -> QString {
+    return v.trimmed().toLower();
+  };
+
+  auto maintenanceAgeDays = [&](const QDate &d) -> int {
+    if (!d.isValid()) {
+      return 9999;
+    }
+    return qMax(0, d.daysTo(today));
+  };
+
+  auto isTagCritical = [&](const QString &tag) -> bool {
+    const QString t = normalized(tag);
+    return t.contains("anomal") || t.contains("crit") || t.contains("panne") ||
+           t.contains("urgent") || t.contains("recurrent") || t.contains("récurrent") ||
+           t.contains("surcharge") || t.contains("defaut") || t.contains("défaut");
+  };
+
+  auto isTagNeutral = [&](const QString &tag) -> bool {
+    const QString t = normalized(tag);
+    return t.isEmpty() || t == "-" || t == "ok" || t == "normal" ||
+           t == "aucune" || t == "none" || t == "neutre";
+  };
+
+  auto isPriorityHigh = [&](const QString &priorite) -> bool {
+    const QString p = normalized(priorite);
+    return p.contains("haute") || p.contains("élev") || p.contains("eleve") ||
+           p.contains("crit") || p.contains("urgent") || p.contains("high");
+  };
+
+  auto isPriorityLow = [&](const QString &priorite) -> bool {
+    const QString p = normalized(priorite);
+    return p.isEmpty() || p == "-" || p.contains("basse") || p.contains("faible") ||
+           p.contains("low") || p.contains("normale") || p.contains("normal");
+  };
+
+  for (const MachineData &m : m_allMachines) {
+    const QString type = m.type.trimmed().isEmpty() ? QString("Non défini") : m.type.trimmed();
+    const int age = maintenanceAgeDays(m.maintenance);
+    maxAgeByType[type] = qMax(maxAgeByType.value(type, 0), age);
+  }
+
+  QVector<EvalRow> urgenceRows;
+  QVector<EvalRow> performerRows;
+
+  for (const MachineData &m : m_allMachines) {
+    EvalRow row;
+    row.machine = QString("%1 (%2)").arg(m.nom.trimmed().isEmpty() ? QString("Machine") : m.nom.trimmed(), m.id);
+    row.type = m.type.trimmed().isEmpty() ? QString("Non défini") : m.type.trimmed();
+    row.maintenance = m.maintenance.isValid() ? m.maintenance.toString("yyyy-MM-dd") : "-";
+    row.tag = m.tag.trimmed().isEmpty() ? "-" : m.tag.trimmed();
+    row.priorite = m.priorite.trimmed().isEmpty() ? "-" : m.priorite.trimmed();
+    row.ageDays = maintenanceAgeDays(m.maintenance);
+
+    const bool oldestInType = (row.ageDays >= maxAgeByType.value(row.type));
+    const bool tagCritical = isTagCritical(row.tag);
+    const bool highPriority = isPriorityHigh(row.priorite);
+
+    row.score = 0;
+    QStringList reasons;
+
+    if (oldestInType) {
+      row.score += 3;
+      reasons << (m_isFrench ? "Plus ancienne maintenance du type"
+                             : "Oldest maintenance in this type");
+    }
+    if (row.ageDays > 180) {
+      row.score += 2;
+      reasons << (m_isFrench ? "Maintenance très ancienne (>180j)"
+                             : "Very old maintenance (>180d)");
+    } else if (row.ageDays > 90) {
+      row.score += 1;
+      reasons << (m_isFrench ? "Maintenance ancienne (>90j)"
+                             : "Old maintenance (>90d)");
+    }
+    if (tagCritical) {
+      row.score += 3;
+      reasons << (m_isFrench ? "TAG signale anomalie/criticité"
+                             : "TAG indicates anomaly/critical issue");
+    }
+    if (highPriority) {
+      row.score += 4;
+      reasons << (m_isFrench ? "Priorité élevée/critique"
+                             : "High/critical priority");
+    }
+
+    if (row.score >= 8) {
+      row.urgence = m_isFrench ? "Critique" : "Critical";
+    } else if (row.score >= 5) {
+      row.urgence = m_isFrench ? "Élevée" : "High";
+    } else if (row.score >= 3) {
+      row.urgence = m_isFrench ? "Moyenne" : "Medium";
+    } else {
+      row.urgence = m_isFrench ? "Faible" : "Low";
+    }
+
+    row.segment = m_isFrench ? "Urgence" : "Urgency";
+    row.analyse = reasons.isEmpty()
+                      ? (m_isFrench ? "RAS" : "No major risk")
+                      : reasons.join(" • ");
+    urgenceRows.append(row);
+
+    const bool recentMaintenance = row.ageDays <= 30;
+    const bool neutralTag = isTagNeutral(row.tag);
+    const bool lowPriority = isPriorityLow(row.priorite);
+    if (recentMaintenance && neutralTag && lowPriority) {
+      EvalRow best = row;
+      best.segment = m_isFrench ? "Best performer" : "Best performer";
+      best.urgence = "-";
+      best.analyse = m_isFrench
+                         ? "Maintenance récente + TAG neutre + priorité basse"
+                         : "Recent maintenance + neutral TAG + low priority";
+      performerRows.append(best);
+    }
+  }
+
+  std::sort(urgenceRows.begin(), urgenceRows.end(), [](const EvalRow &a, const EvalRow &b) {
+    if (a.score != b.score) {
+      return a.score > b.score;
+    }
+    return a.ageDays > b.ageDays;
+  });
+
+  std::sort(performerRows.begin(), performerRows.end(), [](const EvalRow &a, const EvalRow &b) {
+    return a.ageDays < b.ageDays;
+  });
+
+  auto appendRow = [&](const EvalRow &r, int rank) {
+    QList<QStandardItem *> items;
+    items << new QStandardItem(r.segment)
+          << new QStandardItem(r.segment == (m_isFrench ? "Urgence" : "Urgency") ? QString::number(rank) + " - " + r.urgence : "-")
+          << new QStandardItem(r.machine)
+          << new QStandardItem(r.type)
+          << new QStandardItem(r.maintenance)
+          << new QStandardItem(r.tag)
+          << new QStandardItem(r.priorite)
+          << new QStandardItem(r.analyse);
+
+    QColor fg = m_isDarkMode ? QColor("#EAF0F8") : QColor("#2B2B2B");
+    QColor bg = Qt::transparent;
+    if (r.segment == (m_isFrench ? "Best performer" : "Best performer")) {
+      bg = m_isDarkMode ? QColor("#163126") : QColor("#E8F5E9");
+      fg = m_isDarkMode ? QColor("#8BE2B4") : QColor("#1B5E20");
+    } else if (r.urgence == (m_isFrench ? "Critique" : "Critical")) {
+      bg = m_isDarkMode ? QColor("#3B1F25") : QColor("#FFEBEE");
+      fg = m_isDarkMode ? QColor("#FF9EA8") : QColor("#B71C1C");
+    } else if (r.urgence == (m_isFrench ? "Élevée" : "High")) {
+      bg = m_isDarkMode ? QColor("#3A2A1A") : QColor("#FFF3E0");
+      fg = m_isDarkMode ? QColor("#FFC98A") : QColor("#E65100");
+    }
+
+    for (int i = 0; i < items.size(); ++i) {
+      items[i]->setEditable(false);
+      items[i]->setTextAlignment(i >= 2 ? Qt::AlignLeft | Qt::AlignVCenter : Qt::AlignCenter);
+      items[i]->setForeground(fg);
+      if (bg != Qt::transparent) {
+        items[i]->setBackground(bg);
+      }
+    }
+    statsComparisonModel->appendRow(items);
+  };
+
+  int rank = 1;
+  for (const EvalRow &r : urgenceRows) {
+    appendRow(r, rank++);
+  }
+  for (const EvalRow &r : performerRows) {
+    appendRow(r, -1);
+  }
+}
+
+void machine::refreshAIMachineSelector() {
+  if (!ui->comboDecisionMachine) {
+    return;
+  }
+
+  const QString previousId = ui->comboDecisionMachine->currentData().toString();
+  QSignalBlocker blocker(ui->comboDecisionMachine);
+  ui->comboDecisionMachine->clear();
+
+  ui->comboDecisionMachine->addItem(m_isFrench ? "Aucune" : "None", QString());
+
+  for (const MachineData &m : m_allMachines) {
+    const QString machineName = m.nom.trimmed().isEmpty() ? QString("Machine") : m.nom.trimmed();
+    const QString machineType = m.type.trimmed().isEmpty() ? QString("Non défini") : m.type.trimmed();
+    ui->comboDecisionMachine->addItem(
+        QString("%1 (%2)").arg(machineName, machineType), m.id);
+  }
+
+  const int previousIndex = ui->comboDecisionMachine->findData(previousId);
+  if (previousIndex >= 0) {
+    ui->comboDecisionMachine->setCurrentIndex(previousIndex);
+  } else if (ui->comboDecisionMachine->count() > 0) {
+    ui->comboDecisionMachine->setCurrentIndex(0);
+  }
+
+  updateAICarnetForSelectedMachine();
+}
+
+QString machine::resolveLocalIpv4() const {
+  const QList<QHostAddress> addresses = QNetworkInterface::allAddresses();
+  for (const QHostAddress &address : addresses) {
+    if (address.protocol() != QAbstractSocket::IPv4Protocol) {
+      continue;
+    }
+    if (address.isLoopback()) {
+      continue;
+    }
+    const QString ip = address.toString();
+    if (!ip.startsWith("169.254.")) {
+      return ip;
+    }
+  }
+  return "127.0.0.1";
+}
+
+QPixmap machine::generateMachineQrPixmap(const QString &payload,
+                                         int moduleSize,
+                                         int margin) const {
+  if (payload.trimmed().isEmpty()) {
+    return QPixmap();
+  }
+
+#ifdef MACHINE_USE_QRENCODE
+  QRcode *qr = QRcode_encodeString(payload.toUtf8().constData(), 0,
+                                   QR_ECLEVEL_M, QR_MODE_8, 1);
+  if (!qr || qr->width <= 0 || !qr->data) {
+    if (qr) {
+      QRcode_free(qr);
+    }
+    return QPixmap();
+  }
+
+  const int qrWidth = qr->width;
+  const int pixelSize = (qrWidth + margin * 2) * moduleSize;
+
+  QImage image(pixelSize, pixelSize, QImage::Format_RGB32);
+  image.fill(Qt::white);
+
+  QPainter painter(&image);
+  painter.setPen(Qt::NoPen);
+  painter.setBrush(Qt::black);
+
+  for (int y = 0; y < qrWidth; ++y) {
+    for (int x = 0; x < qrWidth; ++x) {
+      const unsigned char value = qr->data[y * qrWidth + x];
+      if (value & 0x1) {
+        const int px = (x + margin) * moduleSize;
+        const int py = (y + margin) * moduleSize;
+        painter.drawRect(px, py, moduleSize, moduleSize);
+      }
+    }
+  }
+
+  QRcode_free(qr);
+  return QPixmap::fromImage(image);
+#else
+  Q_UNUSED(moduleSize);
+
+  const int side = 200;
+  const QString encodedData = QString::fromUtf8(QUrl::toPercentEncoding(payload));
+  const QUrl qrServiceUrl(QString("https://api.qrserver.com/v1/create-qr-code/?size=%1x%1&margin=%2&data=%3")
+                              .arg(side)
+                              .arg(qMax(0, margin))
+                              .arg(encodedData));
+
+  QNetworkAccessManager manager;
+  QNetworkRequest request(qrServiceUrl);
+  QNetworkReply *reply = manager.get(request);
+
+  QEventLoop loop;
+  QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+  loop.exec();
+
+  QPixmap pixmap;
+  if (reply->error() == QNetworkReply::NoError) {
+    pixmap.loadFromData(reply->readAll());
+  }
+  reply->deleteLater();
+
+  return pixmap;
+#endif
+}
+
+void machine::resetQrPreviewLabel() {
+  if (!ui || !ui->lblQrPreviewMachine) {
+    return;
+  }
+
+  ui->lblQrPreviewMachine->setPixmap(QPixmap());
+  ui->lblQrPreviewMachine->setText(m_isFrench ? "QR\nen attente" : "QR\nwaiting");
+  ui->lblQrPreviewMachine->setProperty("qrUrl", QString());
+  ui->lblQrPreviewMachine->setProperty("machineId", QString());
+  ui->lblQrPreviewMachine->setToolTip(
+      m_isFrench ? "Générez un QR puis cliquez pour ouvrir la fiche"
+                 : "Generate a QR then click to open machine sheet");
+  ui->lblQrPreviewMachine->setStyleSheet(
+      "QLabel { background-color: #FFFFFF; border: 1px solid #C5D3CC; border-radius: 6px; color: #2F5247; font-weight: 600; }");
+}
+
+void machine::on_btnGenererQrMachine_clicked() {
+  const QString machineId = ui->comboDecisionMachine->currentData().toString();
+  if (machineId.isEmpty()) {
+    QMessageBox::warning(this,
+                         m_isFrench ? "Machine requise" : "Machine required",
+                         m_isFrench
+                             ? "Veuillez choisir une machine avant de generer le QR code."
+                             : "Please choose a machine before generating the QR code.");
+    return;
+  }
+
+  if (!m_machineServer) {
+    m_machineServer = new MachineServer(this);
+    connect(m_machineServer, &MachineServer::machineRequested,
+            this, &machine::onMachineRequestedFromHttp, Qt::UniqueConnection);
+  }
+  if (m_serverHostIp.isEmpty()) {
+    m_serverHostIp = resolveLocalIpv4();
+  }
+  m_machineServer->setHostIp(m_serverHostIp);
+  if (!m_machineServer->start(8181)) {
+    QMessageBox::warning(this,
+                         m_isFrench ? "Serveur HTTP" : "HTTP server",
+                         m_isFrench
+                             ? "Le serveur HTTP n'a pas pu demarrer sur le port 8181."
+                             : "HTTP server could not start on port 8181.");
+    return;
+  }
+
+  const QString targetUrl = m_machineServer->machineUrlForId(machineId);
+  const QPixmap qrPixmap = generateMachineQrPixmap(targetUrl, 4, 2);
+  if (qrPixmap.isNull()) {
+    QMessageBox::critical(this,
+                          m_isFrench ? "Erreur QR" : "QR error",
+                          m_isFrench
+                              ? "Impossible de generer le QR code."
+                              : "Unable to generate the QR code.");
+    return;
+  }
+
+  const QSize targetSize(140, 140);
+  ui->lblQrPreviewMachine->setPixmap(
+      qrPixmap.scaled(targetSize, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+  ui->lblQrPreviewMachine->setText(QString());
+  ui->lblQrPreviewMachine->setProperty("qrUrl", targetUrl);
+  ui->lblQrPreviewMachine->setProperty("machineId", machineId);
+  ui->lblQrPreviewMachine->setToolTip(
+      m_isFrench
+          ? QString("%1\n(Cliquez pour ouvrir la fiche complète)").arg(targetUrl)
+          : QString("%1\n(Click to open full machine sheet)").arg(targetUrl));
+}
+
+void machine::onMachineRequestedFromHttp(const QString &machineId) {
+  if (machineId.trimmed().isEmpty()) {
+    return;
+  }
+
+  m_selectedMachineId = machineId.trimmed();
+
+  if (!selectMachineInTableById(machineId)) {
+    chargerMachines();
+    if (!selectMachineInTableById(machineId)) {
+      m_selectedRow = -1;
+    }
+  }
+
+  raise();
+  activateWindow();
+
+  if (navigationBar) {
+    navigationBar->setActiveTab(0);
+  }
+}
+
+bool machine::selectMachineInTableById(const QString &machineId) {
+  if (!machineTableModel || !ui->tableMachines_machine) {
+    return false;
+  }
+
+  const QString wanted = machineId.trimmed();
+  if (wanted.isEmpty()) {
+    return false;
+  }
+
+  for (int row = 0; row < machineTableModel->rowCount(); ++row) {
+    QStandardItem *idItem = machineTableModel->item(row, 0);
+    if (!idItem || idItem->text().trimmed() != wanted) {
+      continue;
+    }
+
+    m_selectedMachineId = wanted;
+    m_selectedRow = row;
+
+    ui->tableMachines_machine->selectRow(row);
+    ui->tableMachines_machine->scrollTo(machineTableModel->index(row, 0));
+
+    ui->btnModifierMachine_machine->setEnabled(true);
+    ui->btnSupprimerMachine_machine->setEnabled(true);
+    ui->btnExporter_machine->setEnabled(true);
+    ui->btnToggleOnOff_machine->setEnabled(true);
+    ui->btnSetVeille_machine->setEnabled(true);
+    ui->btnCarteMachine->setEnabled(true);
+
+    const QString etatMarche = machineTableModel->item(row, 3)
+                                   ? machineTableModel->item(row, 3)->text()
+                                   : QString();
+    ui->btnToggleOnOff_machine->setStyleSheet(onOffButtonStyle(etatMarche));
+    ui->btnSetVeille_machine->setStyleSheet(
+        veilleButtonStyle(etatMarche.trimmed().toUpper() == "VEILLE"));
+    return true;
+  }
+
+  return false;
+}
+
+void machine::updateAICarnetForSelectedMachine() {
+  if (!ui->tableCarnetMachine_machine) {
+    return;
+  }
+
+  ui->tableCarnetMachine_machine->clearContents();
+  ui->tableCarnetMachine_machine->setColumnCount(2);
+  ui->tableCarnetMachine_machine->setHorizontalHeaderLabels(
+      m_isFrench ? QStringList{"Date & heure", "Carnet de vie"}
+                 : QStringList{"Date & time", "Life journal"});
+  ui->tableCarnetMachine_machine->setRowCount(0);
+
+  const QString selectedId = ui->comboDecisionMachine->currentData().toString();
+  if (selectedId.isEmpty()) {
+    ui->tableCarnetMachine_machine->setRowCount(1);
+    ui->tableCarnetMachine_machine->setItem(0, 0, new QTableWidgetItem("-"));
+    ui->tableCarnetMachine_machine->setItem(
+        0, 1,
+        new QTableWidgetItem(m_isFrench
+                                 ? "Sélectionnez une machine pour afficher son carnet de vie."
+                                 : "Select a machine to display its life journal."));
+    return;
+  }
+
+  MachineData selectedMachine;
+  bool found = false;
+  for (const MachineData &m : m_allMachines) {
+    if (m.id == selectedId) {
+      selectedMachine = m;
+      found = true;
+      break;
+    }
+  }
+
+  if (!found) {
+    return;
+  }
+
+  QDateTime baseTime = QDateTime::currentDateTime();
+  QSqlQuery query(ConnectionMachine::getInstance().getDatabase());
+  query.prepare("SELECT DATE_MISE_A_JOUR FROM MACHINE WHERE ID_MACHINE = :id");
+  query.bindValue(":id", selectedId);
+  if (query.exec() && query.next()) {
+    const QDateTime dbDateTime = query.value(0).toDateTime();
+    if (dbDateTime.isValid()) {
+      baseTime = dbDateTime;
+    }
+  }
+
+  QList<QPair<QDateTime, QString>> events;
+  const QString machineName = selectedMachine.nom.trimmed().isEmpty() ? QString("Machine") : selectedMachine.nom.trimmed();
+  const QString machineType = selectedMachine.type.trimmed().isEmpty() ? QString("Non défini") : selectedMachine.type.trimmed();
+
+  events.append(qMakePair(
+      baseTime.addSecs(-900),
+      m_isFrench
+          ? QString("Machine %1 de type %2 prise en suivi dans le carnet de vie.")
+                .arg(machineName, machineType)
+          : QString("Machine %1 (%2) added to life journal monitoring.")
+                .arg(machineName, machineType)));
+
+  const QString etatMarche = selectedMachine.etatMarche.trimmed().toUpper();
+  if (etatMarche == "ON") {
+    events.append(qMakePair(baseTime.addSecs(-780),
+                            m_isFrench ? "Passage en marche: machine allumée."
+                                       : "Switched to ON state."));
+  } else if (etatMarche == "OFF") {
+    events.append(qMakePair(baseTime.addSecs(-780),
+                            m_isFrench ? "Arrêt de la machine confirmé."
+                                       : "Machine was stopped."));
+  } else if (etatMarche == "VEILLE") {
+    events.append(qMakePair(baseTime.addSecs(-780),
+                            m_isFrench ? "Machine passée en mode veille."
+                                       : "Machine switched to standby."));
+  }
+
+  const QString alerte = selectedMachine.alerte.trimmed();
+  if (!alerte.isEmpty() && alerte != "Aucune" && alerte != "None" && alerte != "-") {
+    events.append(qMakePair(
+        baseTime.addSecs(-540),
+        m_isFrench ? QString("Alerte détectée: %1.").arg(alerte)
+                   : QString("Alert detected: %1.").arg(alerte)));
+  }
+
+  const QString etatFonct = selectedMachine.fonctionnement.trimmed();
+  if (etatFonct == "Panne") {
+    events.append(qMakePair(baseTime.addSecs(-420),
+                            m_isFrench ? "Machine passée en panne, intervention recommandée."
+                                       : "Machine entered failure state, intervention recommended."));
+  } else if (etatFonct == "Alerte") {
+    events.append(qMakePair(baseTime.addSecs(-420),
+                            m_isFrench ? "Comportement instable observé, surveillance renforcée."
+                                       : "Unstable behavior observed, reinforced monitoring."));
+  } else {
+    events.append(qMakePair(baseTime.addSecs(-420),
+                            m_isFrench ? "Retour progressif à un fonctionnement normal."
+                                       : "Progressive return to normal operation."));
+  }
+
+  if (selectedMachine.temperature >= 80.0) {
+    events.append(qMakePair(
+        baseTime.addSecs(-240),
+        m_isFrench
+            ? QString("Machine surchauffée puis refroidie en 4 min (%.1f °C max).")
+                  .arg(selectedMachine.temperature)
+            : QString("Overheat detected then cooled down in 4 min (%.1f °C peak).")
+                  .arg(selectedMachine.temperature)));
+  } else if (selectedMachine.temperature >= 65.0) {
+    events.append(qMakePair(
+        baseTime.addSecs(-240),
+        m_isFrench
+            ? QString("Hausse thermique surveillée: %.1f °C.").arg(selectedMachine.temperature)
+            : QString("Thermal increase under monitoring: %.1f °C.").arg(selectedMachine.temperature)));
+  } else {
+    events.append(qMakePair(
+        baseTime.addSecs(-240),
+        m_isFrench
+            ? QString("Température stable autour de %.1f °C.").arg(selectedMachine.temperature)
+            : QString("Temperature remained stable around %.1f °C.").arg(selectedMachine.temperature)));
+  }
+
+  const QString maintText = selectedMachine.maintenance.isValid()
+                                ? selectedMachine.maintenance.toString("dd/MM/yyyy")
+                                : (m_isFrench ? "date non définie" : "undefined date");
+  events.append(qMakePair(
+      baseTime.addSecs(-120),
+      m_isFrench
+          ? QString("Dernière maintenance enregistrée le %1.").arg(maintText)
+          : QString("Last maintenance recorded on %1.").arg(maintText)));
+
+  events.append(qMakePair(
+      baseTime,
+      m_isFrench ? "Mise à jour des indicateurs machine et clôture du cycle courant."
+                 : "Machine indicators updated and current cycle closed."));
+
+  std::sort(events.begin(), events.end(),
+            [](const QPair<QDateTime, QString> &a, const QPair<QDateTime, QString> &b) {
+              return a.first < b.first;
+            });
+
+  ui->tableCarnetMachine_machine->setRowCount(events.size());
+  const QColor carnetTextColor = m_isDarkMode ? QColor("#EAF0F8") : QColor("#1B2F2A");
+  for (int i = 0; i < events.size(); ++i) {
+    auto *timeItem = new QTableWidgetItem(events[i].first.toString("dd/MM/yyyy HH:mm"));
+    auto *eventItem = new QTableWidgetItem(events[i].second);
+    timeItem->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+    eventItem->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+    timeItem->setForeground(QBrush(carnetTextColor));
+    eventItem->setForeground(QBrush(carnetTextColor));
+    timeItem->setTextAlignment(Qt::AlignCenter);
+    eventItem->setTextAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    ui->tableCarnetMachine_machine->setItem(i, 0, timeItem);
+    ui->tableCarnetMachine_machine->setItem(i, 1, eventItem);
+    ui->tableCarnetMachine_machine->setRowHeight(i, 38);
+  }
 }
 
 void machine::chargerEmployees() {
@@ -765,32 +2072,54 @@ void machine::onNavigationTabClicked(int index) {
 // ============================================================================
 
 void machine::setupTodoList() {
-  // Connect the "+ Ajouter" button
-  connect(ui->btnAjouterTodo_machine, &QPushButton::clicked, this,
-          &machine::showAddTodoDialog);
+  connect(ui->btnSummaryActualiser_machine, &QPushButton::clicked, this,
+          [this]() { chargerMachines(); });
 
-  // Add sample entries for demonstration
-  addTodoItem("Presse Hydraulique A3", "Siemens", "Urgent");
-  addTodoItem("Convoyeur B12", "Bosch", "Normal");
-  addTodoItem("Compresseur C7", "Atlas Copco", "Urgent");
+  // Liste alimentee automatiquement depuis la base de donnees (TAG/PRIORITE)
+  ui->btnAjouterTodo_machine->setVisible(false);
+
+  reloadTodoFromMachineData();
 }
 
-void machine::addTodoItem(const QString &machineName, const QString &fabricant,
-                          const QString &priority) {
-  TodoItem item;
-  item.machineName = machineName;
-  item.fabricant = fabricant;
-  item.priority = priority;
-  item.done = false;
-  m_todoItems.append(item);
-  refreshTodoList();
-}
+void machine::reloadTodoFromMachineData() {
+  m_todoItems.clear();
 
-void machine::onTodoCheckToggled(int index, bool checked) {
-  if (index >= 0 && index < m_todoItems.size()) {
-    m_todoItems[index].done = checked;
-    refreshTodoList();
+  for (const MachineData &m : m_allMachines) {
+    const QString rawPriority = m.priorite.trimmed();
+    const QString rawTag = m.tag.trimmed();
+
+    const bool hasPriority = (priorityScore(rawPriority) >= 2);
+    const bool hasPriorityTag = tagImpliesPriority(rawTag);
+    if (!hasPriority && !hasPriorityTag) {
+      continue;
+    }
+
+    TodoItem item;
+    item.machineId = m.id;
+    item.machineName = m.nom;
+    item.machineType = m.type;
+    if (isLowPriorityLabel(rawPriority)) {
+      item.tag = "-";
+    } else {
+      item.tag = (rawTag.isEmpty() || rawTag == "-") ? "-" : rawTag;
+    }
+    item.priority = (rawPriority.isEmpty() || rawPriority == "-")
+                        ? "A definir"
+                        : rawPriority;
+    m_todoItems.append(item);
   }
+
+  std::sort(m_todoItems.begin(), m_todoItems.end(),
+            [](const TodoItem &a, const TodoItem &b) {
+              const int pa = priorityScore(a.priority);
+              const int pb = priorityScore(b.priority);
+              if (pa != pb) {
+                return pa > pb;
+              }
+              return a.machineName.toLower() < b.machineName.toLower();
+            });
+
+  refreshTodoList();
 }
 
 QWidget *machine::createTodoItemWidget(int index) {
@@ -799,95 +2128,71 @@ QWidget *machine::createTodoItemWidget(int index) {
   QWidget *row = new QWidget();
   row->setObjectName("todoRow");
 
-  // Styles based on done state
-  if (item.done) {
-    row->setStyleSheet("QWidget#todoRow { background-color: #F5F5F5; "
-                       "border-radius: 4px; padding: 2px; }");
-  } else {
-    row->setStyleSheet("QWidget#todoRow { background-color: white; border: 1px "
-                       "solid #E8E8E8; border-radius: 4px; padding: 2px; }");
-  }
+  const int score = priorityScore(item.priority);
+  const QString leftAccent =
+      (score >= 3) ? "#B42318" : ((score >= 2) ? "#EA580C" : "#1B4D3E");
+  const QString rowBg = m_isDarkMode ? "#121C28" : "#FFFFFF";
+  const QString rowBorder = m_isDarkMode ? "#2B3E54" : "#DDE5DF";
+  row->setStyleSheet(QString("QWidget#todoRow { background-color: %1; "
+                             "border: 1px solid %2; border-left: 5px solid %3; "
+                             "border-radius: 9px; }")
+                        .arg(rowBg, rowBorder, leftAccent));
 
   QHBoxLayout *rowLayout = new QHBoxLayout(row);
-  rowLayout->setContentsMargins(10, 6, 10, 6);
-  rowLayout->setSpacing(10);
+  rowLayout->setContentsMargins(8, 5, 8, 5);
+  rowLayout->setSpacing(8);
 
-  // Checkbox
-  QCheckBox *cb = new QCheckBox();
-  cb->setChecked(item.done);
-  cb->setStyleSheet("QCheckBox::indicator { width: 18px; height: 18px; }"
-                    "QCheckBox::indicator:unchecked { border: 2px solid #999; "
-                    "border-radius: 4px; background: white; }"
-                    "QCheckBox::indicator:checked { border: 2px solid #2E7D32; "
-                    "border-radius: 4px; background: #2E7D32; }");
-  // Capture index for lambda
-  int idx = index;
-  connect(cb, &QCheckBox::toggled, this,
-          [this, idx](bool checked) { onTodoCheckToggled(idx, checked); });
-  rowLayout->addWidget(cb);
+  QVBoxLayout *infoLayout = new QVBoxLayout();
+  infoLayout->setSpacing(1);
+  infoLayout->setContentsMargins(0, 0, 0, 0);
 
-  // Machine name label
   QLabel *lblName = new QLabel(item.machineName);
-  if (item.done) {
-    lblName->setStyleSheet(
-        "font-size: 12px; color: #AAA; text-decoration: line-through; "
-        "background: transparent; border: none;");
-  } else {
-    lblName->setStyleSheet("font-size: 12px; font-weight: bold; color: #333; "
-                           "background: transparent; border: none;");
-  }
-  rowLayout->addWidget(lblName);
+  lblName->setStyleSheet(QString("font-size: 12px; font-weight: 700; color: %1; "
+                                 "background: transparent; border: none;")
+                             .arg(m_isDarkMode ? "#E6EDF8" : "#143A2A"));
 
-  // Fabricant label
-  QLabel *lblFab = new QLabel(item.fabricant);
-  if (item.done) {
-    lblFab->setStyleSheet(
-        "font-size: 11px; color: #BBB; text-decoration: line-through; "
-        "background: transparent; border: none;");
-  } else {
-    lblFab->setStyleSheet(
-        "font-size: 11px; color: #777; background: transparent; border: none;");
-  }
-  rowLayout->addWidget(lblFab);
+  QLabel *lblType = new QLabel(
+      QString("%1: %2")
+          .arg(m_isFrench ? "Type" : "Type")
+          .arg(item.machineType));
+    lblType->setStyleSheet(QString("font-size: 11px; color: %1; "
+                   "background: transparent; border: none;")
+                 .arg(m_isDarkMode ? "#9EB0C4" : "#5A6B62"));
 
-  // Spacer
-  rowLayout->addStretch();
+  infoLayout->addWidget(lblName);
+  infoLayout->addWidget(lblType);
+  rowLayout->addLayout(infoLayout, 1);
 
-  // Priority badge
   QLabel *badge = new QLabel(item.priority);
-  if (item.done) {
+  if (score >= 3) {
     badge->setStyleSheet(
-        "font-size: 10px; font-weight: bold; color: #CCC; background-color: "
-        "#F0F0F0;"
-        "border-radius: 4px; padding: 2px 10px; border: none;");
-  } else if (item.priority == "Urgent") {
+        "font-size: 10px; font-weight: 700; color: #FFFFFF; "
+        "background-color: #B42318; border-radius: 10px; "
+        "padding: 3px 10px; border: none;");
+  } else if (score >= 2) {
     badge->setStyleSheet(
-        "font-size: 10px; font-weight: bold; color: white; background-color: "
-        "#D32F2F;"
-        "border-radius: 4px; padding: 2px 10px; border: none;");
+        "font-size: 10px; font-weight: 700; color: #FFFFFF; "
+        "background-color: #EA580C; border-radius: 10px; "
+        "padding: 3px 10px; border: none;");
   } else {
     badge->setStyleSheet(
-        "font-size: 10px; font-weight: bold; color: white; background-color: "
-        "#F57F17;"
-        "border-radius: 4px; padding: 2px 10px; border: none;");
+        "font-size: 10px; font-weight: 700; color: #FFFFFF; "
+        "background-color: #1B4D3E; border-radius: 10px; "
+        "padding: 3px 10px; border: none;");
   }
   badge->setAlignment(Qt::AlignCenter);
   rowLayout->addWidget(badge);
 
-  // Delete button
-  QPushButton *btnDel = new QPushButton("✕");
-  btnDel->setFixedSize(22, 22);
-  btnDel->setCursor(Qt::PointingHandCursor);
-  btnDel->setStyleSheet("QPushButton { background: transparent; color: #999; "
-                        "font-size: 13px; border: none; padding: 0px; }"
-                        "QPushButton:hover { color: #D32F2F; }");
-  connect(btnDel, &QPushButton::clicked, this, [this, idx]() {
-    if (idx >= 0 && idx < m_todoItems.size()) {
-      m_todoItems.removeAt(idx);
-      refreshTodoList();
-    }
-  });
-  rowLayout->addWidget(btnDel);
+  QLabel *tagBadge = new QLabel(item.tag);
+  tagBadge->setAlignment(Qt::AlignCenter);
+  tagBadge->setStyleSheet(QString(
+      "font-size: 10px; font-weight: 600; color: %1; "
+      "background-color: %2; border: 1px solid %3; "
+      "border-radius: 10px; padding: 3px 10px;")
+                              .arg(m_isDarkMode ? "#9EC5E3" : "#1B4D3E",
+                                   m_isDarkMode ? "#1A2A3A" : "#EAF4EF",
+                                   m_isDarkMode ? "#35506C" : "#C7DACF"));
+  rowLayout->addWidget(tagBadge);
 
   return row;
 }
@@ -907,38 +2212,25 @@ void machine::refreshTodoList() {
     }
   }
 
-  // Sort: Urgent+not done first, Normal+not done next, done items last
-  QVector<int> indices;
-  for (int i = 0; i < m_todoItems.size(); ++i) {
-    indices.append(i);
-  }
-  std::sort(indices.begin(), indices.end(), [this](int a, int b) {
-    const TodoItem &ia = m_todoItems[a];
-    const TodoItem &ib = m_todoItems[b];
-    // Done items go last
-    if (ia.done != ib.done)
-      return !ia.done;
-    // Among not-done, Urgent first
-    if (!ia.done && !ib.done) {
-      if (ia.priority == "Urgent" && ib.priority != "Urgent")
-        return true;
-      if (ia.priority != "Urgent" && ib.priority == "Urgent")
-        return false;
-    }
-    return false;
-  });
-
-  // Reorder m_todoItems according to sorted indices
-  QVector<TodoItem> sorted;
-  for (int idx : indices) {
-    sorted.append(m_todoItems[idx]);
-  }
-  m_todoItems = sorted;
-
-  // Create widgets in sorted order
+  // Create widgets
   for (int i = 0; i < m_todoItems.size(); ++i) {
     QWidget *w = createTodoItemWidget(i);
     ui->layoutTodoContent->addWidget(w);
+  }
+
+  if (m_todoItems.isEmpty()) {
+    QLabel *emptyLabel = new QLabel(
+        m_isFrench ? "Aucune machine prioritaire pour le moment."
+                   : "No priority machine at the moment.");
+    emptyLabel->setAlignment(Qt::AlignCenter);
+    emptyLabel->setMinimumHeight(56);
+    emptyLabel->setStyleSheet(QString(
+      "font-size: 12px; color: %1; background-color: %2; "
+      "border: 1px dashed %3; border-radius: 8px; padding: 10px;")
+                    .arg(m_isDarkMode ? "#B8C7D8" : "#6F7D75",
+                       m_isDarkMode ? "#111A25" : "#F7FAF8",
+                       m_isDarkMode ? "#3A4F67" : "#C7D6CD"));
+    ui->layoutTodoContent->addWidget(emptyLabel);
   }
 
   // Add spacer at bottom to push items up
@@ -946,75 +2238,13 @@ void machine::refreshTodoList() {
       new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding));
 
   // Update counter in title
-  int pending = 0;
-  for (const auto &item : m_todoItems) {
-    if (!item.done)
-      pending++;
-  }
-  ui->lblTodoTitle->setText(QString("🔧 Machines à réparer (%1)").arg(pending));
-}
+  int pending = m_todoItems.size();
+  ui->lblTodoTitle->setText(
+      m_isFrench ? QString("🔧 Machines à réparer (%1)").arg(pending)
+                 : QString("🔧 Machines to repair (%1)").arg(pending));
 
-void machine::showAddTodoDialog() {
-  QDialog dialog(this);
-  dialog.setWindowTitle("🔧 Ajouter une intervention");
-  dialog.setFixedSize(380, 240);
-  dialog.setStyleSheet(
-      "QDialog { background-color: #1A3C2F; }"
-      "QLabel { font-size: 12px; color: #E0E0E0; font-weight: bold; }"
-      "QLineEdit { padding: 6px 10px; border: 1px solid #2D5F47; "
-      "border-radius: 5px; font-size: 12px; background-color: #F5F5F5; color: "
-      "#333; }"
-      "QComboBox { padding: 6px 10px; border: 1px solid #2D5F47; "
-      "border-radius: 5px; font-size: 12px; background-color: #F5F5F5; color: "
-      "#333; }"
-      "QComboBox::drop-down { border: none; }"
-      "QComboBox QAbstractItemView { background: white; color: #333; "
-      "selection-background-color: #2D5F47; selection-color: white; }");
-
-  QFormLayout *form = new QFormLayout(&dialog);
-  form->setSpacing(14);
-  form->setContentsMargins(20, 20, 20, 16);
-
-  QLineEdit *editMachine = new QLineEdit();
-  editMachine->setPlaceholderText("Ex: Presse Hydraulique A3");
-  form->addRow("Machine :", editMachine);
-
-  QLineEdit *editFabricant = new QLineEdit();
-  editFabricant->setPlaceholderText("Ex: Siemens");
-  form->addRow("Fabricant :", editFabricant);
-
-  QComboBox *comboPriority = new QComboBox();
-  comboPriority->addItems({"Urgent", "Normal"});
-  form->addRow("Priorité :", comboPriority);
-
-  QDialogButtonBox *buttons =
-      new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-  buttons->button(QDialogButtonBox::Ok)->setText("Ajouter");
-  buttons->button(QDialogButtonBox::Cancel)->setText("Annuler");
-  buttons->button(QDialogButtonBox::Ok)
-      ->setStyleSheet("QPushButton { background-color: #C9A227; color: "
-                      "#1A3C2F; font-weight: bold; font-size: 12px;"
-                      "border: none; border-radius: 5px; padding: 8px 20px; }"
-                      "QPushButton:hover { background-color: #B8911F; }");
-  buttons->button(QDialogButtonBox::Cancel)
-      ->setStyleSheet(
-          "QPushButton { background-color: rgba(255,255,255,0.15); color: "
-          "#CCC; font-size: 12px;"
-          "border: 1px solid #4A7A66; border-radius: 5px; padding: 8px 20px; }"
-          "QPushButton:hover { background-color: rgba(255,255,255,0.25); "
-          "color: white; }");
-  form->addRow(buttons);
-
-  connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
-  connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
-
-  if (dialog.exec() == QDialog::Accepted) {
-    QString name = editMachine->text().trimmed();
-    QString fab = editFabricant->text().trimmed();
-    QString prio = comboPriority->currentText();
-    if (!name.isEmpty() && !fab.isEmpty()) {
-      addTodoItem(name, fab, prio);
-    }
+  if (ui->scrollTodoList_machine && ui->scrollTodoList_machine->verticalScrollBar()) {
+    ui->scrollTodoList_machine->verticalScrollBar()->setValue(0);
   }
 }
 
@@ -1149,19 +2379,26 @@ bool machine::saveMachineWithName(const QString &name,
 
   QString errorMessage;
   if (!insertMachine(finalData, &errorMessage)) {
-    QMessageBox::critical(this, "Erreur",
-                          "Échec de l'ajout dans la base de données : " +
+    QMessageBox::critical(this, m_isFrench ? "Erreur" : "Error",
+                          (m_isFrench
+                               ? "Échec de l'ajout dans la base de données : "
+                               : "Failed to insert into database: ") +
                               errorMessage);
     return false;
   }
 
   QMessageBox msgBox(this);
-  msgBox.setWindowTitle("Succès");
+  msgBox.setWindowTitle(m_isFrench ? "Succès" : "Success");
   if (m_selectedEmployeeId >= 0) {
-    msgBox.setText(QString("✅ Machine ajoutée avec succès (ID employé responsable: %1) !")
-                       .arg(m_selectedEmployeeId));
+    msgBox.setText(
+        m_isFrench
+            ? QString("✅ Machine ajoutée avec succès (ID employé responsable: %1) !")
+                  .arg(m_selectedEmployeeId)
+            : QString("✅ Machine added successfully (responsible employee ID: %1)!")
+                  .arg(m_selectedEmployeeId));
   } else {
-    msgBox.setText("✅ Machine ajoutée avec succès !");
+    msgBox.setText(m_isFrench ? "✅ Machine ajoutée avec succès !"
+                              : "✅ Machine added successfully!");
   }
   msgBox.setIcon(QMessageBox::Information);
   msgBox.setStyleSheet(R"(
@@ -1660,16 +2897,25 @@ void machine::chargerMachines() {
     m.miseAJour = query.value(12).toDate();
     m.responsable = query.value(13).toString();
     m.refroidissement = query.value(14).toString();
-    m.tag = query.value(15).toString();
-    m.priorite = query.value(16).toString();
+    m.tag = query.value(15).toString().trimmed();
+    m.priorite = query.value(16).toString().trimmed();
+    if (isLowPriorityLabel(m.priorite)) {
+      m.tag = "-";
+    } else if (m.tag.isEmpty()) {
+      m.tag = "-";
+    }
 
     m_allMachines.append(m);
   }
+
+  reloadTodoFromMachineData();
 
   refreshResponsableFilterOptions();
 
   // 3. Appliquer le filtrage initial avec les valeurs par défaut (tout afficher)
   appliquerFiltres();
+  populateStatsComparisonTable();
+  refreshAIMachineSelector();
 }
 
 void machine::refreshResponsableFilterOptions() {
@@ -1692,7 +2938,8 @@ void machine::refreshResponsableFilterOptions() {
 
   ui->filtre_responsable->blockSignals(true);
   ui->filtre_responsable->clear();
-  ui->filtre_responsable->addItem("-- Responsable --");
+  ui->filtre_responsable->addItem(
+      m_isFrench ? "-- Responsable --" : "-- Responsible --");
   ui->filtre_responsable->addItems(responsables);
 
   const int previousIndex = ui->filtre_responsable->findText(previous);
@@ -1709,24 +2956,35 @@ void machine::appliquerFiltres() {
   machineTableModel->setRowCount(0);
 
   // 2. Lire les valeurs des filtres de l'interface
-  QString fType = ui->filtre_type_machine->currentText();
-  QString fEtat = ui->filtre_etat_marche_machine->currentText();
-  QString fAlerte = ui->filtre_type_alerte->currentText();
-  QString fCriticite = ui->filtre_alerte_criticite->currentText();
+  QString fType = ui->filtre_type_machine->currentData().toString();
+  if (fType.isEmpty()) fType = ui->filtre_type_machine->currentText();
+  QString fEtat = ui->filtre_etat_marche_machine->currentData().toString();
+  if (fEtat.isEmpty()) fEtat = ui->filtre_etat_marche_machine->currentText();
+  QString fAlerte = ui->filtre_type_alerte->currentData().toString();
+  if (fAlerte.isEmpty()) fAlerte = ui->filtre_type_alerte->currentText();
+  QString fCriticite = ui->filtre_alerte_criticite->currentData().toString();
+  if (fCriticite.isEmpty()) fCriticite = ui->filtre_alerte_criticite->currentText();
   QString fResponsable = ui->filtre_responsable->currentText();
   
   QDate dateDu = ui->date_debut->date();
   QDate dateAu = ui->date_fin->date();
   QString triPar = ui->tri_par->currentText();
 
+  const QColor premiumGreen = m_isDarkMode ? QColor("#6ED6A2") : QColor("#2E7D32");
+  const QColor premiumOrange = m_isDarkMode ? QColor("#F3A35A") : QColor("#E65100");
+  const QColor premiumRed = m_isDarkMode ? QColor("#EF6B77") : QColor("#C62828");
+  const QColor baseText = m_isDarkMode ? QColor("#DCE4EF") : QColor("#333333");
+  const QColor disabledBg = m_isDarkMode ? QColor("#1A2533") : QColor("#E8E8E8");
+  const QColor disabledFg = m_isDarkMode ? QColor("#6F8197") : QColor("#999999");
+
   // 3. Filtrer la liste des machines avec une logique ET (AND)
   QList<MachineData> filteredMachines;
   for (const MachineData &m : m_allMachines) {
-      if (fType != "-- Type machine --" && m.type != fType) continue;
-      if (fEtat != "-- État marche --" && m.etatMarche != fEtat) continue;
-      if (fAlerte != "-- Type alerte --" && m.alerte != fAlerte) continue;
-      if (fCriticite != "-- Criticité --" && m.criticite != fCriticite) continue;
-      if (fResponsable != "-- Responsable --" && m.responsable != fResponsable) continue;
+      if (ui->filtre_type_machine->currentIndex() != 0 && m.type != fType) continue;
+      if (ui->filtre_etat_marche_machine->currentIndex() != 0 && m.etatMarche != fEtat) continue;
+      if (ui->filtre_type_alerte->currentIndex() != 0 && m.alerte != fAlerte) continue;
+      if (ui->filtre_alerte_criticite->currentIndex() != 0 && m.criticite != fCriticite) continue;
+      if (ui->filtre_responsable->currentIndex() != 0 && m.responsable != fResponsable) continue;
       
       // Filtre sur la date de mise à jour (inclusivement entre dateDu et dateAu)
       // Ne filtrer que si la date est valide
@@ -1781,7 +3039,7 @@ void machine::appliquerFiltres() {
       auto *item = new QStandardItem(values[i]);
       item->setEditable(false);
       item->setTextAlignment(Qt::AlignCenter);
-      item->setForeground(QColor("#333333")); // Force sombre
+      item->setForeground(baseText);
       row.append(item);
     }
 
@@ -1794,9 +3052,8 @@ void machine::appliquerFiltres() {
     const QList<int> colsADesactiver = {4, 5, 6, 7, 8, 11};
 
     if (machineInactive) {
-      const QColor bgGrise("#E8E8E8");     // fond gris clair
-      const QColor fgGrise("#AAAAAA");     // texte gris
-      const QColor fgBoldGrise("#999999"); // texte gras grisé
+      const QColor bgGrise = disabledBg;
+      const QColor fgBoldGrise = disabledFg;
 
       for (int col : colsADesactiver) {
         // Retirer Qt::ItemIsEnabled pour le grisage natif Qt
@@ -1811,39 +3068,39 @@ void machine::appliquerFiltres() {
     // -- État Marche (Colonne 3) — toujours coloré pour indiquer l'état
     row[3]->setFont(boldFont);
     if (m.etatMarche == "ON")
-      row[3]->setForeground(QColor("#2E7D32")); // Vert
+      row[3]->setForeground(premiumGreen);
     else if (m.etatMarche == "VEILLE")
-      row[3]->setForeground(QColor("#E65100")); // Orange
+      row[3]->setForeground(premiumOrange);
     else if (m.etatMarche == "OFF")
-      row[3]->setForeground(QColor("#C62828")); // Rouge
+      row[3]->setForeground(premiumRed);
 
     if (!machineInactive) {
       // -- Etat Fonctionnement (Colonne 6)
       row[6]->setFont(boldFont);
       if (m.fonctionnement == "Normal")
-        row[6]->setForeground(QColor("#2E7D32")); // Vert
+        row[6]->setForeground(premiumGreen);
       else if (m.fonctionnement == "Alerte")
-        row[6]->setForeground(QColor("#E65100")); // Orange
+        row[6]->setForeground(premiumOrange);
       else if (m.fonctionnement == "Panne")
-        row[6]->setForeground(QColor("#C62828")); // Rouge
+        row[6]->setForeground(premiumRed);
 
       // -- Type Alerte (Colonne 7)
       row[7]->setFont(boldFont);
       if (m.alerte == "Aucune")
-        row[7]->setForeground(QColor("#2E7D32")); // Vert
+        row[7]->setForeground(premiumGreen);
       else if (m.alerte == "Panne")
-        row[7]->setForeground(QColor("#E65100")); // Orange
+        row[7]->setForeground(premiumOrange);
       else if (m.alerte == "Surcharge")
-        row[7]->setForeground(QColor("#C62828")); // Rouge
+        row[7]->setForeground(premiumRed);
 
       // -- Niveau Criticité (Colonne 8)
       row[8]->setFont(boldFont);
       if (m.criticite == "Faible")
-        row[8]->setForeground(QColor("#2E7D32")); // Vert
+        row[8]->setForeground(premiumGreen);
       else if (m.criticite == QString::fromUtf8("Élevé"))
-        row[8]->setForeground(QColor("#E65100")); // Orange
+        row[8]->setForeground(premiumOrange);
       else if (m.criticite == "Critique")
-        row[8]->setForeground(QColor("#C62828")); // Rouge
+        row[8]->setForeground(premiumRed);
     }
 
     machineTableModel->appendRow(row);
@@ -1873,10 +3130,10 @@ void machine::clearStatsChartArea(const QString &message) {
   QLabel *placeholder = new QLabel(message, ui->zoneGraphique_machine);
   placeholder->setAlignment(Qt::AlignCenter);
   placeholder->setWordWrap(true);
-  placeholder->setStyleSheet(
-      "QLabel { color: #4A4A4A; font-size: 13px; font-weight: 600; "
-      "background-color: #F8FBFA; border: 1px dashed #9BB8AA; border-radius: 10px; "
-      "padding: 22px; }");
+    placeholder->setStyleSheet(
+      m_isDarkMode
+        ? "QLabel { color: #C7D4E4; font-size: 13px; font-weight: 600; background-color: #0F1722; border: 1px dashed #3A4F67; border-radius: 10px; padding: 22px; }"
+        : "QLabel { color: #4A4A4A; font-size: 13px; font-weight: 600; background-color: #F8FBFA; border: 1px dashed #9BB8AA; border-radius: 10px; padding: 22px; }");
   layout->addWidget(placeholder);
 }
 
@@ -1931,7 +3188,8 @@ void machine::renderStatisticsChart(const QList<QPair<QString, double>> &data,
                                     const QString &statsType,
                                     const QString &chartType) {
   if (data.isEmpty()) {
-    clearStatsChartArea("Aucune donnée disponible pour cette statistique.");
+    clearStatsChartArea(m_isFrench ? "Aucune donnée disponible pour cette statistique."
+                                   : "No data available for this statistic.");
     return;
   }
 
@@ -1952,9 +3210,28 @@ void machine::renderStatisticsChart(const QList<QPair<QString, double>> &data,
 
   auto *chart = new QChart();
   chart->setAnimationOptions(QChart::SeriesAnimations);
-  chart->setBackgroundBrush(QColor("#FFFFFF"));
+  chart->setBackgroundBrush(QColor(m_isDarkMode ? "#0F1722" : "#FFFFFF"));
 
-  const bool isTemperatureStats = (statsType == "Température moyenne");
+  const QString canonStatsType =
+      (statsType == "Average temperature") ? "Température moyenne"
+      : (statsType == "Operating state") ? "État fonctionnement"
+      : (statsType == "Alert types") ? "Types alertes"
+      : (statsType == "Machine type") ? "Type machine"
+      : statsType;
+
+  const QString canonChartType =
+      (chartType == "Barres" || chartType == "Histogramme (barres)" || chartType == "Bar chart") ? "BarChart"
+      : (chartType == "Secteur" || chartType == "Camembert" || chartType == "Pie chart") ? "PieChart"
+      : (chartType == "Ligne" || chartType == "Courbe" || chartType == "Line chart") ? "LineChart"
+      : chartType;
+
+  const bool isTemperatureStats = (canonStatsType == "Température moyenne");
+  const bool showPercentages = !isTemperatureStats;
+
+  double totalValue = 0.0;
+  for (const auto &entry : data) {
+    totalValue += entry.second;
+  }
 
   const QMap<QString, QColor> etatPalette = {
       {"Normal", QColor("#2E7D32")},
@@ -1981,21 +3258,22 @@ void machine::renderStatisticsChart(const QList<QPair<QString, double>> &data,
   };
 
   QColor themeColor("#1A3C2F");
-  if (statsType == "État fonctionnement") {
+  if (canonStatsType == "État fonctionnement") {
     themeColor = QColor("#2E7D32");
-  } else if (statsType == "Types alertes") {
+  } else if (canonStatsType == "Types alertes") {
     themeColor = QColor("#E65100");
-  } else if (statsType == "Température moyenne") {
+  } else if (canonStatsType == "Température moyenne") {
     themeColor = QColor("#0277BD");
-  } else if (statsType == "Type machine") {
+  } else if (canonStatsType == "Type machine") {
     themeColor = QColor("#1565C0");
   }
 
-  chart->setTitle(QString("Statistique: %1").arg(statsType));
+  chart->setTitle(
+      QString(m_isFrench ? "Statistique: %1" : "Statistic: %1").arg(statsType));
   chart->setTitleBrush(QBrush(themeColor));
   chart->legend()->setVisible(true);
   chart->legend()->setAlignment(Qt::AlignBottom);
-  chart->legend()->setLabelColor(QColor("#2B2B2B"));
+  chart->legend()->setLabelColor(QColor(m_isDarkMode ? "#DCE4EF" : "#2B2B2B"));
 
   const QList<QColor> fallbackPalette = {
       QColor("#2E7D32"), QColor("#1565C0"), QColor("#6A1B9A"), QColor("#EF6C00"),
@@ -2003,17 +3281,39 @@ void machine::renderStatisticsChart(const QList<QPair<QString, double>> &data,
 
   auto colorForLabel = [&](const QString &label, int index) -> QColor {
     const QString key = label.trimmed();
-    if (statsType == "État fonctionnement" && etatPalette.contains(key)) {
+    if (canonStatsType == "État fonctionnement" && etatPalette.contains(key)) {
       return etatPalette.value(key);
     }
-    if (statsType == "Types alertes" && alertePalette.contains(key)) {
+    if (canonStatsType == "Types alertes" && alertePalette.contains(key)) {
       return alertePalette.value(key);
     }
-    if ((statsType == "Type machine" || statsType == "Température moyenne") &&
+    if ((canonStatsType == "Type machine" || canonStatsType == "Température moyenne") &&
         typeMachinePalette.contains(key)) {
       return typeMachinePalette.value(key);
     }
     return fallbackPalette[index % fallbackPalette.size()];
+  };
+
+  auto percentageForValue = [&](double value) -> double {
+    if (totalValue <= 0.0) {
+      return 0.0;
+    }
+    return (value * 100.0) / totalValue;
+  };
+
+  auto valueText = [&](double value) -> QString {
+    return isTemperatureStats
+               ? QString::number(value, 'f', 2) + " °C"
+               : QString::number(value, 'f', 0);
+  };
+
+  auto valueWithPercentageText = [&](double value) -> QString {
+    if (!showPercentages) {
+      return valueText(value);
+    }
+    return QString("%1 (%2%)")
+        .arg(valueText(value))
+        .arg(QString::number(percentageForValue(value), 'f', 1));
   };
 
   double maxValue = 0.0;
@@ -2023,19 +3323,48 @@ void machine::renderStatisticsChart(const QList<QPair<QString, double>> &data,
     }
   }
 
-  if (chartType == "PieChart") {
+  QString summaryHtml = QString("<div style='font-weight:700; margin-bottom:4px;'>%1</div>")
+                            .arg(m_isFrench ? "Résumé" : "Summary");
+  summaryHtml += QString("<div style='margin-bottom:6px;'>%1: <b>%2</b> • %3: <b>%4</b></div>")
+                     .arg(m_isFrench ? "Catégories" : "Categories")
+                     .arg(data.size())
+                     .arg(m_isFrench ? "Total" : "Total")
+                     .arg(valueText(totalValue));
+
+  summaryHtml += "<table cellpadding='3' cellspacing='0' style='width:100%;'>";
+  for (int i = 0; i < data.size(); ++i) {
+    const auto &entry = data[i];
+    const QColor itemColor = colorForLabel(entry.first, i);
+    summaryHtml += QString("<tr><td><span style='color:%1; font-size:14px;'>●</span> %2</td><td align='right'><b>%3</b></td></tr>")
+                       .arg(itemColor.name(), entry.first, valueWithPercentageText(entry.second));
+  }
+  summaryHtml += "</table>";
+
+  QLabel *summaryLabel = new QLabel(summaryHtml, ui->zoneGraphique_machine);
+  summaryLabel->setWordWrap(true);
+  summaryLabel->setTextFormat(Qt::RichText);
+  summaryLabel->setStyleSheet(
+      m_isDarkMode
+          ? "QLabel { color: #DCE4EF; background-color: #111B29; border: 1px solid #2E435A; border-radius: 8px; padding: 10px; font-size: 12px; }"
+          : "QLabel { color: #2D3A37; background-color: #F6FBF9; border: 1px solid #CFE2D9; border-radius: 8px; padding: 10px; font-size: 12px; }");
+
+  if (canonChartType == "PieChart") {
     auto *series = new QPieSeries();
+    series->setPieSize(0.72);
     for (int i = 0; i < data.size(); ++i) {
       const auto &entry = data[i];
       QPieSlice *slice = series->append(entry.first, entry.second);
-      const QString suffix = isTemperatureStats ? " °C" : "";
-      slice->setLabel(QString("%1: %2%3").arg(entry.first).arg(entry.second, 0, 'f', isTemperatureStats ? 2 : 0).arg(suffix));
+      slice->setLabel(QString("%1: %2")
+                          .arg(entry.first)
+                          .arg(valueWithPercentageText(entry.second)));
       slice->setLabelVisible(true);
+      slice->setLabelPosition(QPieSlice::LabelOutside);
+      slice->setLabelColor(QColor(m_isDarkMode ? "#EAF0F8" : "#1F1F1F"));
       slice->setBrush(colorForLabel(entry.first, i));
       slice->setPen(QPen(QColor("#FFFFFF"), 1));
     }
     chart->addSeries(series);
-  } else if (chartType == "LineChart") {
+  } else if (canonChartType == "LineChart") {
     auto *series = new QLineSeries();
     series->setName(statsType);
     series->setColor(themeColor);
@@ -2046,7 +3375,7 @@ void machine::renderStatisticsChart(const QList<QPair<QString, double>> &data,
     auto *axisX = new QCategoryAxis();
     axisX->setLabelsPosition(QCategoryAxis::AxisLabelsPositionOnValue);
     axisX->setLabelsAngle(-35);
-    axisX->setLabelsColor(QColor("#2B2B2B"));
+    axisX->setLabelsColor(QColor(m_isDarkMode ? "#DCE4EF" : "#2B2B2B"));
 
     for (int i = 0; i < data.size(); ++i) {
       series->append(i, data[i].second);
@@ -2059,12 +3388,15 @@ void machine::renderStatisticsChart(const QList<QPair<QString, double>> &data,
     axisX->setRange(0, data.size() > 1 ? data.size() - 1 : 1);
 
     auto *axisY = new QValueAxis();
-    axisY->setTitleText(isTemperatureStats ? "Température moyenne (°C)"
-                                           : "Nombre de machines");
+    axisY->setTitleText(
+      isTemperatureStats ? (m_isFrench ? "Température moyenne (°C)"
+                       : "Average temperature (°C)")
+                 : (m_isFrench ? "Nombre de machines"
+                       : "Number of machines"));
     axisY->setRange(0, maxValue > 0 ? maxValue * 1.2 : 10);
     axisY->setLabelFormat(isTemperatureStats ? "%.2f" : "%.0f");
-    axisY->setLabelsColor(QColor("#2B2B2B"));
-    axisY->setGridLineColor(QColor("#DCE7E2"));
+    axisY->setLabelsColor(QColor(m_isDarkMode ? "#DCE4EF" : "#2B2B2B"));
+    axisY->setGridLineColor(QColor(m_isDarkMode ? "#2B3E55" : "#DCE7E2"));
     chart->addAxis(axisY, Qt::AlignLeft);
     series->attachAxis(axisY);
   } else {
@@ -2072,65 +3404,107 @@ void machine::renderStatisticsChart(const QList<QPair<QString, double>> &data,
     QStringList categories;
 
     for (int i = 0; i < data.size(); ++i) {
-      const auto &entry = data[i];
-      auto *set = new QBarSet(entry.first);
-      *set << entry.second;
-      set->setColor(colorForLabel(entry.first, i));
-      set->setLabelColor(QColor("#1F1F1F"));
-      series->append(set);
-      categories << entry.first;
+      categories << data[i].first;
     }
 
-    series->setLabelsVisible(true);
-    series->setLabelsPosition(QAbstractBarSeries::LabelsOutsideEnd);
-    series->setLabelsFormat(isTemperatureStats ? "@value °C" : "@value");
+    for (int i = 0; i < data.size(); ++i) {
+      auto *set = new QBarSet(data[i].first);
+      for (int j = 0; j < data.size(); ++j) {
+        *set << (i == j ? data[i].second : 0.0);
+      }
+      set->setColor(colorForLabel(data[i].first, i));
+      set->setLabelColor(QColor(m_isDarkMode ? "#EAF0F8" : "#1F1F1F"));
+      series->append(set);
+    }
+
+    series->setBarWidth(0.75);
+    series->setLabelsVisible(false);
     chart->addSeries(series);
 
     auto *axisX = new QBarCategoryAxis();
     axisX->append(categories);
     axisX->setLabelsAngle(-30);
-    axisX->setLabelsColor(QColor("#2B2B2B"));
+    axisX->setLabelsColor(QColor(m_isDarkMode ? "#DCE4EF" : "#2B2B2B"));
     chart->addAxis(axisX, Qt::AlignBottom);
     series->attachAxis(axisX);
 
     auto *axisY = new QValueAxis();
-    axisY->setTitleText(isTemperatureStats ? "Température moyenne (°C)"
-                                           : "Nombre de machines");
+    axisY->setTitleText(
+      isTemperatureStats ? (m_isFrench ? "Température moyenne (°C)"
+                       : "Average temperature (°C)")
+                 : (m_isFrench ? "Nombre de machines"
+                       : "Number of machines"));
     axisY->setRange(0, maxValue > 0 ? maxValue * 1.2 : 10);
     axisY->setLabelFormat(isTemperatureStats ? "%.2f" : "%.0f");
-    axisY->setLabelsColor(QColor("#2B2B2B"));
-    axisY->setGridLineColor(QColor("#DCE7E2"));
+    axisY->setLabelsColor(QColor(m_isDarkMode ? "#DCE4EF" : "#2B2B2B"));
+    axisY->setGridLineColor(QColor(m_isDarkMode ? "#2B3E55" : "#DCE7E2"));
     chart->addAxis(axisY, Qt::AlignLeft);
     series->attachAxis(axisY);
   }
 
   auto *chartView = new QChartView(chart, ui->zoneGraphique_machine);
   chartView->setRenderHint(QPainter::Antialiasing);
-  chartView->setStyleSheet(
-      "QChartView { background-color: #FFFFFF; border: 1px solid #D7E5DF; "
-      "border-radius: 8px; padding: 6px; }");
+    chartView->setStyleSheet(
+      m_isDarkMode
+        ? "QChartView { background-color: #111B29; border: 1px solid #2E435A; border-radius: 8px; padding: 6px; }"
+        : "QChartView { background-color: #FFFFFF; border: 1px solid #D7E5DF; border-radius: 8px; padding: 6px; }");
 
   QLabel *legendHelp = new QLabel(
-      QString("Affichage %1 • %2").arg(chartType, statsType),
+      QString(m_isFrench ? "Affichage %1 • %2" : "Display %1 • %2")
+        .arg(chartType, statsType),
       ui->zoneGraphique_machine);
   legendHelp->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-  legendHelp->setStyleSheet("QLabel { color: #47695D; font-size: 11px; font-weight: 600; }");
+  legendHelp->setStyleSheet(
+      m_isDarkMode
+          ? "QLabel { color: #9FB2C6; font-size: 11px; font-weight: 600; }"
+          : "QLabel { color: #47695D; font-size: 11px; font-weight: 600; }");
 
-  layout->addWidget(chartView);
+  auto *splitWidget = new QWidget(ui->zoneGraphique_machine);
+  auto *splitLayout = new QHBoxLayout(splitWidget);
+  splitLayout->setContentsMargins(0, 0, 0, 0);
+  splitLayout->setSpacing(10);
+  summaryLabel->setMinimumWidth(320);
+  summaryLabel->setMaximumWidth(380);
+  splitLayout->addWidget(summaryLabel);
+  splitLayout->addWidget(chartView, 1);
+
+  layout->addWidget(splitWidget);
   layout->addWidget(legendHelp);
 }
 
 void machine::on_btnGenererStats_machine_clicked() {
-  const QString statsType = ui->type_statistique_machine->currentText();
-  const QString chartType = ui->type_graphique_machine->currentText();
+  QString statsType = ui->type_statistique_machine->currentText();
+  QString chartType = ui->type_graphique_machine->currentText();
+
+  if (statsType == "Operating state") {
+    statsType = "État fonctionnement";
+  } else if (statsType == "Alert types") {
+    statsType = "Types alertes";
+  } else if (statsType == "Average temperature") {
+    statsType = "Température moyenne";
+  } else if (statsType == "Machine type") {
+    statsType = "Type machine";
+  }
+
+  if (chartType == "Barres" || chartType == "Histogramme (barres)" || chartType == "Bar chart") {
+    chartType = "BarChart";
+  } else if (chartType == "Secteur" || chartType == "Camembert" || chartType == "Pie chart") {
+    chartType = "PieChart";
+  } else if (chartType == "Ligne" || chartType == "Courbe" || chartType == "Line chart") {
+    chartType = "LineChart";
+  }
 
   const QList<QPair<QString, double>> data = loadStatisticsData(statsType);
   if (data.isEmpty()) {
-    clearStatsChartArea("Aucune donnée trouvée pour ce type de statistique.");
+    clearStatsChartArea(
+        m_isFrench ? "Aucune donnée trouvée pour ce type de statistique."
+                   : "No data found for this statistics type.");
+    populateStatsComparisonTable();
     return;
   }
 
   renderStatisticsChart(data, statsType, chartType);
+  populateStatsComparisonTable();
 }
 
 void machine::on_tableMachines_machine_doubleClicked(const QModelIndex &index) {
@@ -2146,6 +3520,10 @@ void machine::on_tableMachines_machine_doubleClicked(const QModelIndex &index) {
   ui->btnSupprimerMachine_machine->setEnabled(true);
   ui->btnExporter_machine->setEnabled(true);
   ui->btnToggleOnOff_machine->setEnabled(true);
+  ui->btnSetVeille_machine->setEnabled(true);
+  const QString etatMarche = machineTableModel->item(m_selectedRow, 3)->text().trimmed().toUpper();
+  ui->btnToggleOnOff_machine->setStyleSheet(onOffButtonStyle(etatMarche));
+  ui->btnSetVeille_machine->setStyleSheet(veilleButtonStyle(etatMarche == "VEILLE"));
   ui->btnCarteMachine->setEnabled(true);
 
   qDebug() << "Machine sélectionnée:" << m_selectedMachineId << "à la ligne"
@@ -2159,8 +3537,10 @@ void machine::on_btnSupprimerMachine_machine_clicked() {
   // Demander confirmation
   QMessageBox::StandardButton reply;
   reply = QMessageBox::question(
-      this, "Confirmation de suppression",
-      QString("Êtes-vous sûr de vouloir supprimer la machine %1 ?")
+      this, m_isFrench ? "Confirmation de suppression" : "Delete confirmation",
+      (m_isFrench
+         ? QString("Êtes-vous sûr de vouloir supprimer la machine %1 ?")
+         : QString("Are you sure you want to delete machine %1?"))
           .arg(m_selectedMachineId),
       QMessageBox::Yes | QMessageBox::No);
 
@@ -2170,8 +3550,9 @@ void machine::on_btnSupprimerMachine_machine_clicked() {
     query.bindValue(":id", m_selectedMachineId);
 
     if (query.exec()) {
-      QMessageBox::information(this, "Succès",
-                               "Machine supprimée avec succès.");
+      QMessageBox::information(this, m_isFrench ? "Succès" : "Success",
+                               m_isFrench ? "Machine supprimée avec succès."
+                                          : "Machine deleted successfully.");
       // Rafraîchir le tableau
       chargerMachines();
       // Désactiver les boutons
@@ -2179,12 +3560,17 @@ void machine::on_btnSupprimerMachine_machine_clicked() {
       ui->btnSupprimerMachine_machine->setEnabled(false);
       ui->btnExporter_machine->setEnabled(false);
       ui->btnToggleOnOff_machine->setEnabled(false);
+      ui->btnToggleOnOff_machine->setStyleSheet(onOffButtonStyle(""));
+      ui->btnSetVeille_machine->setEnabled(false);
+      ui->btnSetVeille_machine->setStyleSheet(veilleButtonStyle(false));
       ui->btnCarteMachine->setEnabled(false);
       m_selectedMachineId = "";
       m_selectedRow = -1;
     } else {
-      QMessageBox::critical(this, "Erreur",
-                            "Erreur lors de la suppression de la machine : " +
+      QMessageBox::critical(this, m_isFrench ? "Erreur" : "Error",
+                            (m_isFrench
+                                 ? "Erreur lors de la suppression de la machine : "
+                                 : "Error while deleting machine: ") +
                                 query.lastError().text());
     }
   }
@@ -2196,7 +3582,8 @@ void machine::on_btnModifierMachine_machine_clicked() {
 
   // 1. Créer la boîte de dialogue modale
   QDialog dialog(this);
-  dialog.setWindowTitle("Modifier la machine — " +
+  dialog.setWindowTitle((m_isFrench ? "Modifier la machine — "
+                                     : "Edit machine - ") +
                         machineTableModel->item(m_selectedRow, 1)->text());
   dialog.setMinimumWidth(450);
   dialog.setModal(true);
@@ -2333,13 +3720,16 @@ void machine::on_btnModifierMachine_machine_clicked() {
     query.bindValue(":id", m_selectedMachineId);
 
     if (query.exec()) {
-      QMessageBox::information(this, "Succès",
-                               "La machine a été modifiée avec succès.");
+      QMessageBox::information(
+          this, m_isFrench ? "Succès" : "Success",
+          m_isFrench ? "La machine a été modifiée avec succès."
+                     : "Machine updated successfully.");
       chargerMachines(); // Rafraîchir le tableau
       dialog.accept();
     } else {
-      QMessageBox::critical(this, "Erreur",
-                            "Erreur lors de la modification : " +
+      QMessageBox::critical(this, m_isFrench ? "Erreur" : "Error",
+                            (m_isFrench ? "Erreur lors de la modification : "
+                                        : "Error while updating machine: ") +
                                 query.lastError().text());
     }
   });
@@ -2407,6 +3797,11 @@ void machine::rechercherMachines() {
   QFont boldFont;
   boldFont.setBold(true);
 
+  const QColor premiumGreen = m_isDarkMode ? QColor("#6ED6A2") : QColor("#2E7D32");
+  const QColor premiumOrange = m_isDarkMode ? QColor("#F3A35A") : QColor("#E65100");
+  const QColor premiumRed = m_isDarkMode ? QColor("#EF6B77") : QColor("#C62828");
+  const QColor baseText = m_isDarkMode ? QColor("#DCE4EF") : QColor("#333333");
+
   while (query.next()) {
     QList<QStandardItem *> row;
 
@@ -2436,42 +3831,42 @@ void machine::rechercherMachines() {
       auto *item = new QStandardItem(values[i]);
       item->setEditable(false);
       item->setTextAlignment(Qt::AlignCenter);
-      item->setForeground(QColor("#333333"));
+      item->setForeground(baseText);
       row.append(item);
     }
 
     // Coloration conditionnelle
     row[3]->setFont(boldFont);
     if (etatMarche == "ON")
-      row[3]->setForeground(QColor("#2E7D32"));
+      row[3]->setForeground(premiumGreen);
     else if (etatMarche == "VEILLE")
-      row[3]->setForeground(QColor("#E65100"));
+      row[3]->setForeground(premiumOrange);
     else if (etatMarche == "OFF")
-      row[3]->setForeground(QColor("#C62828"));
+      row[3]->setForeground(premiumRed);
 
     row[6]->setFont(boldFont);
     if (fonction == "Normal")
-      row[6]->setForeground(QColor("#2E7D32"));
+      row[6]->setForeground(premiumGreen);
     else if (fonction == "Alerte")
-      row[6]->setForeground(QColor("#E65100"));
+      row[6]->setForeground(premiumOrange);
     else if (fonction == "Panne")
-      row[6]->setForeground(QColor("#C62828"));
+      row[6]->setForeground(premiumRed);
 
     row[7]->setFont(boldFont);
     if (alerte == "Aucune")
-      row[7]->setForeground(QColor("#2E7D32"));
+      row[7]->setForeground(premiumGreen);
     else if (alerte == "Panne")
-      row[7]->setForeground(QColor("#E65100"));
+      row[7]->setForeground(premiumOrange);
     else if (alerte == "Surcharge")
-      row[7]->setForeground(QColor("#C62828"));
+      row[7]->setForeground(premiumRed);
 
     row[8]->setFont(boldFont);
     if (criticite == "Faible")
-      row[8]->setForeground(QColor("#2E7D32"));
+      row[8]->setForeground(premiumGreen);
     else if (criticite == "Élevé")
-      row[8]->setForeground(QColor("#E65100"));
+      row[8]->setForeground(premiumOrange);
     else if (criticite == "Critique")
-      row[8]->setForeground(QColor("#C62828"));
+      row[8]->setForeground(premiumRed);
 
     machineTableModel->appendRow(row);
   }
@@ -2487,6 +3882,25 @@ void machine::rechercherMachines() {
 }
 
 bool machine::eventFilter(QObject *obj, QEvent *event) {
+  if (obj == ui->lblQrPreviewMachine &&
+      event->type() == QEvent::MouseButtonRelease) {
+    const QString qrUrl =
+        ui->lblQrPreviewMachine->property("qrUrl").toString().trimmed();
+
+    if (qrUrl.isEmpty()) {
+      QMessageBox::information(
+          this,
+          m_isFrench ? "QR indisponible" : "QR unavailable",
+          m_isFrench ? "Générez d'abord un QR code pour une machine."
+                     : "Generate a QR code for a machine first.");
+      return true;
+    }
+
+    QDesktopServices::openUrl(QUrl(qrUrl));
+
+    return true;
+  }
+
   if (event->type() == QEvent::KeyPress) {
     QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
     if (keyEvent->key() == Qt::Key_Escape) {
@@ -2582,10 +3996,16 @@ QString ExportDialog::getSelectedFormat() const {
 // ============================================================================
 
 void machine::afficherDialogExport() {
+  const auto tr = [this](const QString &fr, const QString &en) {
+    return m_isFrench ? fr : en;
+  };
+
   if (m_selectedRow < 0) {
-    QMessageBox::warning(this, "Aucune machine sélectionnée",
-                         "Veuillez double-cliquer sur une machine dans le "
-                         "tableau avant d'exporter.");
+    QMessageBox::warning(this, m_isFrench ? "Aucune machine sélectionnée"
+                                          : "No machine selected",
+                         m_isFrench
+                             ? "Veuillez double-cliquer sur une machine dans le tableau avant d'exporter."
+                             : "Please double-click a machine in the table before exporting.");
     return;
   }
 
@@ -2633,8 +4053,10 @@ void machine::afficherDialogExport() {
   query.bindValue(":id", machineId);
 
   if (!query.exec() || !query.next()) {
-    QMessageBox::critical(this, "Erreur",
-                          "Impossible de récupérer les données de la machine.");
+    QMessageBox::critical(this, m_isFrench ? "Erreur" : "Error",
+                          m_isFrench
+                              ? "Impossible de récupérer les données de la machine."
+                              : "Unable to load machine data.");
     return;
   }
 
@@ -2657,25 +4079,30 @@ void machine::afficherDialogExport() {
   QString priorite = query.value(16).toString();
 
   QDateTime now = QDateTime::currentDateTime();
-  QString genDate = now.toString("dd/MM/yyyy") + QString::fromUtf8(" à ") + now.toString("HH:mm:ss");
+    QString genDate = now.toString("dd/MM/yyyy") +
+            (m_isFrench ? QString::fromUtf8(" à ") : QString(" at ")) +
+            now.toString("HH:mm:ss");
 
   QString defaultName, filter, ext;
   if (format == "Word") {
-      defaultName = QString("Fiche_Machine_%1_%2.odt").arg(id, nom);
-      filter = "Word/ODF Document (*.odt)";
+      defaultName = QString("%1_%2_%3.odt")
+              .arg(m_isFrench ? "Fiche_Machine" : "Machine_Sheet", id, nom);
+      filter = tr("Document Word/ODF (*.odt)", "Word/ODF Document (*.odt)");
       ext = "odt";
   } else if (format == "Excel") {
-      defaultName = QString("Fiche_Machine_%1_%2.csv").arg(id, nom);
+      defaultName = QString("%1_%2_%3.csv")
+              .arg(m_isFrench ? "Fiche_Machine" : "Machine_Sheet", id, nom);
       filter = "Excel CSV (*.csv)";
       ext = "csv";
   } else {
-      defaultName = QString("Fiche_Machine_%1_%2.txt").arg(id, nom);
-      filter = "Texte brut (*.txt)";
+      defaultName = QString("%1_%2_%3.txt")
+              .arg(m_isFrench ? "Fiche_Machine" : "Machine_Sheet", id, nom);
+      filter = tr("Texte brut (*.txt)", "Plain text (*.txt)");
       ext = "txt";
   }
 
   QString filePath = QFileDialog::getSaveFileName(
-      this, "Enregistrer la fiche machine",
+      this, m_isFrench ? "Enregistrer la fiche machine" : "Save machine sheet",
       QDir::homePath() + "/Desktop/" + defaultName, filter);
 
   if (filePath.isEmpty()) return;
@@ -2767,6 +4194,30 @@ void machine::afficherDialogExport() {
                   .arg(criticiteColor, criticite, scoreSante, maintenance, installation, miseAJour,
                     responsable, refroidissement, tag, priorite, genDate);
 
+      if (!m_isFrench) {
+        html.replace("Fiche Machine", "Machine Sheet");
+        html.replace("Informations générales", "General Information");
+        html.replace("Nom</span>", "Name</span>");
+        html.replace("État de marche", "Running state");
+        html.replace("Paramètres techniques", "Technical Parameters");
+        html.replace("Température (°C)", "Temperature (°C)");
+        html.replace("Charge (%)", "Load (%)");
+        html.replace("Fonctionnement", "Operation");
+        html.replace("Alerte", "Alert");
+        html.replace("Criticité", "Severity");
+        html.replace("Score Santé", "Health Score");
+        html.replace("Dernière maintenance", "Last maintenance");
+        html.replace("Date d'installation", "Installation date");
+        html.replace("Date mise à jour", "Update date");
+        html.replace("Suivi et métadonnées", "Tracking and metadata");
+        html.replace("Responsable", "Responsible");
+        html.replace("Refroidissement", "Cooling");
+        html.replace("Priorité", "Priority");
+        html.replace("Document généré le", "Document generated on");
+        html.replace("Système de Gestion des Machines — Zitouna",
+                     "Machine Management System - Zitouna");
+      }
+
       QTextDocument doc;
       doc.setHtml(html);
       QTextDocumentWriter writer(filePath);
@@ -2784,25 +4235,25 @@ void machine::afficherDialogExport() {
 #endif
           out.setGenerateByteOrderMark(true); // Excel needs UTF-8 BOM to read accents
           
-          out << "Attribut;Valeur\n";
-          out << "ID Machine;" << id << "\n";
-          out << "Nom;" << nom << "\n";
-          out << "Type;" << type << "\n";
-          out << QString::fromUtf8("État de marche;") << etatMarche << "\n";
-          out << QString::fromUtf8("Température (°C);") << temperature << "\n";
-          out << "Charge (%);" << charge << "\n";
-          out << "Fonctionnement;" << fonctionnement << "\n";
-          out << "Alerte;" << alerte << "\n";
-          out << QString::fromUtf8("Criticité;") << criticite << "\n";
-          out << QString::fromUtf8("Score Santé;") << scoreSante << "\n";
-          out << QString::fromUtf8("Dernière maintenance;") << maintenance << "\n";
-          out << "Date d'installation;" << installation << "\n";
-          out << QString::fromUtf8("Date mise à jour;") << miseAJour << "\n";
-          out << "Responsable;" << responsable << "\n";
-          out << "Refroidissement;" << refroidissement << "\n";
-          out << "Tag;" << tag << "\n";
-          out << QString::fromUtf8("Priorité;") << priorite << "\n";
-          out << QString::fromUtf8("Document généré le;") << genDate << "\n";
+          out << tr("Attribut", "Attribute") << ";" << tr("Valeur", "Value") << "\n";
+          out << tr("ID Machine", "Machine ID") << ";" << id << "\n";
+          out << tr("Nom", "Name") << ";" << nom << "\n";
+          out << tr("Type", "Type") << ";" << type << "\n";
+          out << tr(QString::fromUtf8("État de marche"), "Running state") << ";" << etatMarche << "\n";
+          out << tr(QString::fromUtf8("Température (°C)"), "Temperature (°C)") << ";" << temperature << "\n";
+          out << tr("Charge (%)", "Load (%)") << ";" << charge << "\n";
+          out << tr("Fonctionnement", "Operation") << ";" << fonctionnement << "\n";
+          out << tr("Alerte", "Alert") << ";" << alerte << "\n";
+          out << tr(QString::fromUtf8("Criticité"), "Severity") << ";" << criticite << "\n";
+          out << tr(QString::fromUtf8("Score Santé"), "Health score") << ";" << scoreSante << "\n";
+          out << tr(QString::fromUtf8("Dernière maintenance"), "Last maintenance") << ";" << maintenance << "\n";
+          out << tr("Date d'installation", "Installation date") << ";" << installation << "\n";
+          out << tr(QString::fromUtf8("Date mise à jour"), "Update date") << ";" << miseAJour << "\n";
+          out << tr("Responsable", "Responsible") << ";" << responsable << "\n";
+          out << tr("Refroidissement", "Cooling") << ";" << refroidissement << "\n";
+          out << tr("Tag", "Tag") << ";" << tag << "\n";
+          out << tr(QString::fromUtf8("Priorité"), "Priority") << ";" << priorite << "\n";
+          out << tr(QString::fromUtf8("Document généré le"), "Document generated on") << ";" << genDate << "\n";
           csvFile.close();
           success = true;
       }
@@ -2817,37 +4268,39 @@ void machine::afficherDialogExport() {
 #endif
           int w = 30;
           out << "============================================================\n";
-          out << QString("FICHE MACHINE: %1").arg(nom).rightJustified(40, ' ') << "\n";
+          out << tr(QString("FICHE MACHINE: %1").arg(nom),
+                    QString("MACHINE SHEET: %1").arg(nom)).rightJustified(40, ' ') << "\n";
           out << "============================================================\n\n";
 
-          out << "--- INFORMATIONS GENERALES ---\n";
-          out << QString("ID Machine:").leftJustified(w, ' ') << id << "\n";
-          out << QString("Nom:").leftJustified(w, ' ') << nom << "\n";
-          out << QString("Type:").leftJustified(w, ' ') << type << "\n";
-          out << QString::fromUtf8("État de marche:").leftJustified(w, ' ') << etatMarche << "\n\n";
+          out << tr("--- INFORMATIONS GENERALES ---", "--- GENERAL INFORMATION ---") << "\n";
+          out << tr("ID Machine:", "Machine ID:").leftJustified(w, ' ') << id << "\n";
+          out << tr("Nom:", "Name:").leftJustified(w, ' ') << nom << "\n";
+          out << tr("Type:", "Type:").leftJustified(w, ' ') << type << "\n";
+          out << tr(QString::fromUtf8("État de marche:"), "Running state:").leftJustified(w, ' ') << etatMarche << "\n\n";
 
-          out << "--- PARAMETRES TECHNIQUES ---\n";
-          out << QString::fromUtf8("Température (°C):").leftJustified(w, ' ') << temperature << "\n";
-          out << QString("Charge (%):").leftJustified(w, ' ') << charge << "\n";
-          out << QString("Fonctionnement:").leftJustified(w, ' ') << fonctionnement << "\n";
-          out << QString("Alerte:").leftJustified(w, ' ') << alerte << "\n";
-          out << QString::fromUtf8("Criticité:").leftJustified(w, ' ') << criticite << "\n";
-          out << QString::fromUtf8("Score Santé:").leftJustified(w, ' ') << scoreSante << "\n\n";
+          out << tr("--- PARAMETRES TECHNIQUES ---", "--- TECHNICAL PARAMETERS ---") << "\n";
+          out << tr(QString::fromUtf8("Température (°C):"), "Temperature (°C):").leftJustified(w, ' ') << temperature << "\n";
+          out << tr("Charge (%):", "Load (%):").leftJustified(w, ' ') << charge << "\n";
+          out << tr("Fonctionnement:", "Operation:").leftJustified(w, ' ') << fonctionnement << "\n";
+          out << tr("Alerte:", "Alert:").leftJustified(w, ' ') << alerte << "\n";
+          out << tr(QString::fromUtf8("Criticité:"), "Severity:").leftJustified(w, ' ') << criticite << "\n";
+          out << tr(QString::fromUtf8("Score Santé:"), "Health score:").leftJustified(w, ' ') << scoreSante << "\n\n";
 
-          out << "--- DATES ---\n";
-          out << QString::fromUtf8("Dernière maintenance:").leftJustified(w, ' ') << maintenance << "\n";
-          out << QString("Date d'installation:").leftJustified(w, ' ') << installation << "\n";
-          out << QString::fromUtf8("Date mise à jour:").leftJustified(w, ' ') << miseAJour << "\n\n";
+          out << tr("--- DATES ---", "--- DATES ---") << "\n";
+          out << tr(QString::fromUtf8("Dernière maintenance:"), "Last maintenance:").leftJustified(w, ' ') << maintenance << "\n";
+          out << tr("Date d'installation:", "Installation date:").leftJustified(w, ' ') << installation << "\n";
+          out << tr(QString::fromUtf8("Date mise à jour:"), "Update date:").leftJustified(w, ' ') << miseAJour << "\n\n";
 
-          out << "--- SUIVI ET META ---\n";
-          out << QString("Responsable:").leftJustified(w, ' ') << responsable << "\n";
-          out << QString("Refroidissement:").leftJustified(w, ' ') << refroidissement << "\n";
-          out << QString("Tag:").leftJustified(w, ' ') << tag << "\n";
-          out << QString::fromUtf8("Priorité:").leftJustified(w, ' ') << priorite << "\n\n";
+          out << tr("--- SUIVI ET META ---", "--- TRACKING & META ---") << "\n";
+          out << tr("Responsable:", "Responsible:").leftJustified(w, ' ') << responsable << "\n";
+          out << tr("Refroidissement:", "Cooling:").leftJustified(w, ' ') << refroidissement << "\n";
+          out << tr("Tag:", "Tag:").leftJustified(w, ' ') << tag << "\n";
+          out << tr(QString::fromUtf8("Priorité:"), "Priority:").leftJustified(w, ' ') << priorite << "\n\n";
 
           out << "============================================================\n";
-          out << QString::fromUtf8("Document généré le ") << genDate << "\n";
-          out << QString::fromUtf8("Système de Gestion des Machines — Zitouna\n");
+          out << tr(QString::fromUtf8("Document généré le "), "Document generated on ") << genDate << "\n";
+          out << tr(QString::fromUtf8("Système de Gestion des Machines — Zitouna\n"),
+                    "Machine Management System - Zitouna\n");
           
           txtFile.close();
           success = true;
@@ -2856,8 +4309,11 @@ void machine::afficherDialogExport() {
 
   if (success) {
       QMessageBox msgBox(this);
-      msgBox.setWindowTitle(QString::fromUtf8("Succès"));
-      msgBox.setText(QString::fromUtf8("✅ Fiche machine exportée avec succès en ") + format + " !");
+      msgBox.setWindowTitle(m_isFrench ? "Succès" : "Success");
+      msgBox.setText((m_isFrench
+                ? QString::fromUtf8("✅ Fiche machine exportée avec succès en ")
+                : QString::fromUtf8("✅ Machine sheet exported successfully as ")) +
+             format + " !");
       msgBox.setIcon(QMessageBox::Information);
       msgBox.setStyleSheet(R"(
         QMessageBox { background-color: #f8f9fa; border: 2px solid #1A3C2F; }
@@ -2870,16 +4326,21 @@ void machine::afficherDialogExport() {
 
       QDesktopServices::openUrl(QUrl::fromLocalFile(filePath));
   } else {
-      QMessageBox::critical(this, "Erreur", "L'export a échoué. Vérifiez vos permissions de fichiers.");
+      QMessageBox::critical(this, m_isFrench ? "Erreur" : "Error",
+                m_isFrench
+                  ? "L'export a échoué. Vérifiez vos permissions de fichiers."
+                  : "Export failed. Check your file permissions.");
   }
 }
 
 void machine::exporterPDF() {
   // 1. Check that a machine is selected
   if (m_selectedRow < 0) {
-    QMessageBox::warning(this, "Aucune machine s\xC3\xa9lectionn\xC3\xa9e",
-                         "Veuillez double-cliquer sur une machine dans le "
-                         "tableau avant d'exporter.");
+    QMessageBox::warning(this, m_isFrench ? "Aucune machine sélectionnée"
+                                          : "No machine selected",
+                         m_isFrench
+                             ? "Veuillez double-cliquer sur une machine dans le tableau avant d'exporter."
+                             : "Please double-click a machine in the table before exporting.");
     return;
   }
 
@@ -2917,9 +4378,10 @@ void machine::exporterPDF() {
   query.bindValue(":id", machineId);
 
   if (!query.exec() || !query.next()) {
-    QMessageBox::critical(this, "Erreur",
-                          "Impossible de r\xC3\xa9cup\xC3\xa9rer les "
-                          "donn\xC3\xa9es de la machine.");
+    QMessageBox::critical(this, m_isFrench ? "Erreur" : "Error",
+                          m_isFrench
+                              ? "Impossible de récupérer les données de la machine."
+                              : "Unable to load machine data.");
     return;
   }
 
@@ -2943,9 +4405,10 @@ void machine::exporterPDF() {
   QString priorite = query.value(16).toString();
 
   // 4. Ask user where to save
-  QString defaultName = QString("Fiche_Machine_%1_%2.pdf").arg(id, nom);
+  QString defaultName = QString("%1_%2_%3.pdf")
+                            .arg(m_isFrench ? "Fiche_Machine" : "Machine_Sheet", id, nom);
   QString filePath = QFileDialog::getSaveFileName(
-      this, "Enregistrer la fiche machine",
+      this, m_isFrench ? "Enregistrer la fiche machine" : "Save machine sheet",
       QDir::homePath() + "/Desktop/" + defaultName, "PDF (*.pdf)");
 
   if (filePath.isEmpty())
@@ -2964,7 +4427,8 @@ void machine::exporterPDF() {
   // 6. Generate timestamp
   QDateTime now = QDateTime::currentDateTime();
   QString genDate = now.toString("dd/MM/yyyy") +
-                    QString::fromUtf8(" \xC3\xA0 ") + now.toString("HH:mm:ss");
+                    (m_isFrench ? QString::fromUtf8(" à ") : QString(" at ")) +
+                    now.toString("HH:mm:ss");
 
   // 7. Build HTML content matching the reference image exactly
   QString html =
@@ -3089,6 +4553,30 @@ void machine::exporterPDF() {
           .arg(criticiteColor, criticite, scoreSante, maintenance, installation, miseAJour,
             responsable, refroidissement, tag, priorite, genDate);
 
+  if (!m_isFrench) {
+    html.replace("Fiche Machine", "Machine Sheet");
+    html.replace("Informations générales", "General Information");
+    html.replace("Nom</span>", "Name</span>");
+    html.replace("État de marche", "Running state");
+    html.replace("Paramètres techniques", "Technical Parameters");
+    html.replace("Température (°C)", "Temperature (°C)");
+    html.replace("Charge (%)", "Load (%)");
+    html.replace("Fonctionnement", "Operation");
+    html.replace("Alerte", "Alert");
+    html.replace("Criticité", "Severity");
+    html.replace("Score Santé", "Health Score");
+    html.replace("Dernière maintenance", "Last maintenance");
+    html.replace("Date d'installation", "Installation date");
+    html.replace("Date mise à jour", "Update date");
+    html.replace("Suivi et métadonnées", "Tracking and metadata");
+    html.replace("Responsable", "Responsible");
+    html.replace("Refroidissement", "Cooling");
+    html.replace("Priorité", "Priority");
+    html.replace("Document généré le", "Document generated on");
+    html.replace("Système de Gestion des Machines — Zitouna",
+                 "Machine Management System - Zitouna");
+  }
+
   // 8. Setup printer and render HTML to PDF
   QPrinter printer(QPrinter::HighResolution);
   printer.setOutputFormat(QPrinter::PdfFormat);
@@ -3105,9 +4593,10 @@ void machine::exporterPDF() {
   QDesktopServices::openUrl(QUrl::fromLocalFile(filePath));
 
   QMessageBox msgBox(this);
-  msgBox.setWindowTitle(QString::fromUtf8("Succ\xC3\xA8s"));
-  msgBox.setText(QString::fromUtf8(
-      "\xE2\x9C\x85 Fiche machine export\xC3\xa9e avec succ\xC3\xA8s !"));
+  msgBox.setWindowTitle(m_isFrench ? "Succès" : "Success");
+  msgBox.setText(m_isFrench
+                     ? QString::fromUtf8("✅ Fiche machine exportée avec succès !")
+                     : QString::fromUtf8("✅ Machine sheet exported successfully!"));
   msgBox.setIcon(QMessageBox::Information);
   msgBox.setStyleSheet(R"(
     QMessageBox { background-color: #f8f9fa; border: 2px solid #1A3C2F; }
@@ -3126,7 +4615,7 @@ void machine::exporterPDF() {
 void machine::chargerHistorique() {
   // Title
   ui->lblHistoriqueTitle->setText(
-      QString::fromUtf8("\xF0\x9F\x93\x9C Historique des machines"));
+      m_isFrench ? "Historique des machines" : "Machines history");
   ui->btnFermerHistorique->setText(QString::fromUtf8("\xE2\x9C\x95"));
 
   // Create or reset model
@@ -3135,10 +4624,7 @@ void machine::chargerHistorique() {
   }
   historiqueTableModel->setRowCount(0);
   historiqueTableModel->setHorizontalHeaderLabels(
-      {QString::fromUtf8("\xF0\x9F\x8F\xAD Nom Machine"),
-       QString::fromUtf8("\xE2\x8F\xB1 Temps ON"),
-       QString::fromUtf8("\xE2\x8F\xB1 Temps OFF"),
-       QString::fromUtf8("\xE2\x8F\xB1 Temps Veille")});
+      {"Nom Machine", "Temps ON", "Temps OFF", "Temps Veille"});
 
   // Configure table view
   ui->tableHistorique_machine->setModel(historiqueTableModel);
@@ -3148,6 +4634,7 @@ void machine::chargerHistorique() {
       QHeaderView::Stretch);
   ui->tableHistorique_machine->setEditTriggers(
       QAbstractItemView::NoEditTriggers);
+  ui->tableHistorique_machine->setAlternatingRowColors(false);
   ui->tableHistorique_machine->verticalHeader()->setDefaultSectionSize(45);
   ui->tableHistorique_machine->setShowGrid(true);
 
@@ -3169,10 +4656,6 @@ void machine::chargerHistorique() {
 
   // Store entries in memory for live update
   m_historiqueEntries.clear();
-
-  QFont boldFont;
-  boldFont.setBold(true);
-  boldFont.setFamily("Segoe UI");
 
   // Helper to format seconds as "Xh Ym Zs"
   auto formatDuration = [](int totalSeconds) -> QString {
@@ -3209,36 +4692,24 @@ void machine::chargerHistorique() {
     // Build row
     QList<QStandardItem *> row;
 
-    auto *itemNom =
-        new QStandardItem(QString::fromUtf8("\xF0\x9F\x8F\xAD ") + entry.machineName);
+    auto *itemNom = new QStandardItem(entry.machineName);
     itemNom->setEditable(false);
     itemNom->setTextAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-    itemNom->setFont(boldFont);
-    itemNom->setForeground(QColor("#1B4D3E"));
     row.append(itemNom);
 
     auto *itemOn = new QStandardItem(formatDuration(entry.secondsOn));
     itemOn->setEditable(false);
     itemOn->setTextAlignment(Qt::AlignCenter);
-    itemOn->setFont(boldFont);
-    itemOn->setForeground(QColor("#155724"));
-    itemOn->setBackground(QColor("#d4edda"));
     row.append(itemOn);
 
     auto *itemOff = new QStandardItem(formatDuration(entry.secondsOff));
     itemOff->setEditable(false);
     itemOff->setTextAlignment(Qt::AlignCenter);
-    itemOff->setFont(boldFont);
-    itemOff->setForeground(QColor("#721c24"));
-    itemOff->setBackground(QColor("#f8d7da"));
     row.append(itemOff);
 
     auto *itemVeille = new QStandardItem(formatDuration(entry.secondsVeille));
     itemVeille->setEditable(false);
     itemVeille->setTextAlignment(Qt::AlignCenter);
-    itemVeille->setFont(boldFont);
-    itemVeille->setForeground(QColor("#856404"));
-    itemVeille->setBackground(QColor("#fff3cd"));
     row.append(itemVeille);
 
     historiqueTableModel->appendRow(row);
@@ -3298,7 +4769,7 @@ void machine::updateHistoriqueDisplay() {
 // ============================================================================
 
 void machine::showMachineCard() {
-  if (m_selectedMachineId.isEmpty() || m_selectedRow < 0)
+  if (m_selectedMachineId.isEmpty())
     return;
 
   const QString employeeColumn = machineEmployeeColumnName();
@@ -3341,9 +4812,10 @@ void machine::showMachineCard() {
     query2.prepare(queryWithoutGarantie);
     query2.bindValue(":id", m_selectedMachineId);
     if (!query2.exec() || !query2.next()) {
-      QMessageBox::critical(this, "Erreur",
-                            QString::fromUtf8("Impossible de r\xC3\xa9cup\xC3\xa9rer "
-                                              "les donn\xC3\xa9es de la machine."));
+      QMessageBox::critical(this, m_isFrench ? "Erreur" : "Error",
+                            m_isFrench
+                                ? QString::fromUtf8("Impossible de récupérer les données de la machine.")
+                                : QString::fromUtf8("Unable to load machine data."));
       return;
     }
     hasGarantie = false;
@@ -3368,16 +4840,7 @@ void machine::showMachineCard() {
   QString responsable = query.value(14).toString();
   QString garantie = hasGarantie ? query.value(15).toDate().toString("yyyy-MM-dd") : "N/A";
 
-  // Determine border color based on ETAT_FONCTIONNEMENT
-  QString borderColor;
-  if (fonctionnement == "Normal")
-    borderColor = "#4CAF50";
-  else if (fonctionnement == "Alerte")
-    borderColor = "#FF9800";
-  else if (fonctionnement == "Panne")
-    borderColor = "#F44336";
-  else
-    borderColor = "#4CAF50";
+  const CardVisualStyle initialVisual = cardVisualForState(fonctionnement);
 
   // Create modal dialog
   machineCardDialog = new QDialog(this);
@@ -3388,32 +4851,41 @@ void machine::showMachineCard() {
   machineCardDialog->setModal(false); // Non-modal to allow background interaction
   machineCardDialog->setObjectName("machineCardDialog");
 
-  // Lambda to build stylesheet with dynamic border color
-  auto buildDialogStyle = [](const QString &bColor) -> QString {
+  // Build dialog style based on app theme while keeping state accent color.
+  auto buildDialogStyle = [this](const CardVisualStyle &visual) -> QString {
+    const QString bgStart = m_isDarkMode ? "#1A2230" : "#F7FAF8";
+    const QString bgEnd = m_isDarkMode ? "#111826" : "#EEF4F1";
+    const QString mainText = m_isDarkMode ? "#EAF0F8" : "#19372B";
+    const QString subText = m_isDarkMode ? "#9FB2C6" : "#3B6B55";
+    const QString buttonBg = m_isDarkMode ? "#243447" : "#DCE8E1";
+    const QString buttonText = m_isDarkMode ? "#EAF0F8" : "#204336";
+
     return QString(
         "QDialog#machineCardDialog { "
-        "  background-color: #1A3C2F; "
-        "  border: 4px solid %1; "
+        "  background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 %1, stop:1 %2); "
+        "  border: 4px solid %3; "
         "  border-radius: 12px; "
         "} "
-        "QLabel { color: white; font-family: 'Segoe UI', Arial, sans-serif; border: none; } "
-        "QLabel#cardTitle { font-size: 18px; font-weight: bold; color: white; } "
-        "QLabel#cardFieldLabel { font-size: 12px; color: #A0C4B0; font-weight: 600; } "
-        "QLabel#cardFieldValue { font-size: 13px; color: white; font-weight: bold; } "
+        "QLabel { color: %4; font-family: 'Segoe UI', Arial, sans-serif; border: none; } "
+        "QLabel#cardTitle { font-size: 18px; font-weight: bold; color: %4; } "
+        "QLabel#cardFieldLabel { font-size: 12px; color: %5; font-weight: 600; } "
+        "QLabel#cardFieldValue { font-size: 13px; color: %4; font-weight: bold; } "
         "QLabel#cardStatusBadge { "
-        "  font-size: 13px; font-weight: bold; color: white; "
-        "  background-color: %1; border-radius: 8px; padding: 4px 14px; "
+        "  font-size: 13px; font-weight: bold; color: #FFFFFF; "
+        "  background-color: %3; border-radius: 8px; padding: 4px 14px; "
         "} "
         "QPushButton#btnCloseCard { "
-        "  background-color: rgba(255,255,255,0.15); color: white; "
+        "  background-color: %6; color: %7; "
         "  font-size: 12px; font-weight: bold; border: 1px solid rgba(255,255,255,0.3); "
         "  border-radius: 6px; padding: 8px 20px; min-width: 100px; "
         "} "
-        "QPushButton#btnCloseCard:hover { background-color: rgba(255,255,255,0.25); } "
-        ).arg(bColor);
+        "QPushButton#btnCloseCard:hover { background-color: %6; border: 1px solid %3; } "
+          )
+          .arg(bgStart, bgEnd, visual.borderColor, mainText, subText, buttonBg,
+               buttonText);
   };
 
-  machineCardDialog->setStyleSheet(buildDialogStyle(borderColor));
+        machineCardDialog->setStyleSheet(buildDialogStyle(initialVisual));
 
   QVBoxLayout *mainLay = new QVBoxLayout(machineCardDialog);
   mainLay->setSpacing(12);
@@ -3497,7 +4969,7 @@ void machine::showMachineCard() {
     delete machineCardPollingTimer;
   }
   machineCardPollingTimer = new QTimer(this);
-  machineCardPollingTimer->setInterval(5000); // 5 seconds
+  machineCardPollingTimer->setInterval(1000);
 
   QString machineId = m_selectedMachineId;
   QDialog *dlg = machineCardDialog;
@@ -3509,22 +4981,14 @@ void machine::showMachineCard() {
                 machineCardPollingTimer->stop();
               return;
             }
-            // Re-query ETAT_FONCTIONNEMENT
+            // Re-query ETAT_FONCTIONNEMENT and refresh card colors in real time.
             QSqlQuery pollQuery(ConnectionMachine::getInstance().getDatabase());
             pollQuery.prepare("SELECT ETAT_FONCTIONNEMENT FROM MACHINE WHERE ID_MACHINE = :id");
             pollQuery.bindValue(":id", machineId);
             if (pollQuery.exec() && pollQuery.next()) {
               QString newFonct = pollQuery.value(0).toString();
-              QString newColor;
-              if (newFonct == "Normal")
-                newColor = "#4CAF50";
-              else if (newFonct == "Alerte")
-                newColor = "#FF9800";
-              else if (newFonct == "Panne")
-                newColor = "#F44336";
-              else
-                newColor = "#4CAF50";
-              dlg->setStyleSheet(buildDialogStyle(newColor));
+              const CardVisualStyle visual = cardVisualForState(newFonct);
+              dlg->setStyleSheet(buildDialogStyle(visual));
               lblStatus->setText(newFonct);
             }
           });
