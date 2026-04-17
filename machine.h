@@ -19,6 +19,7 @@
 #include <QTimer>
 #include <QVector>
 #include <QWidget>
+#include "assistant.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -89,6 +90,8 @@ struct HistoriqueEntry {
   int secondsVeille;
 };
 
+class Chatbot;
+
 // Machine Main Window Class
 class machine : public QMainWindow {
   Q_OBJECT
@@ -99,6 +102,7 @@ public:
 
 protected:
   bool eventFilter(QObject *obj, QEvent *event) override;
+  void resizeEvent(QResizeEvent *event) override;
 
 signals:
   void backToMenu();
@@ -194,6 +198,8 @@ private:
   QVector<HistoriqueEntry> m_historiqueEntries;
   MachineServer *m_machineServer;
   Assistant *m_assistant;
+  Chatbot *m_chatbot;
+  QPushButton *m_btnChatbot;
   QString m_serverHostIp;
   bool m_isDarkMode = false;
   bool m_isFrench = true;

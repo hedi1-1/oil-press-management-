@@ -1,6 +1,7 @@
 #include "machine.h"
 #include "MachineServer.h"
 #include "assistant.h"
+#include "chatbot.h"
 #include "connexionmachine.h"
 #include "ui_machine.h"
 #include <QBrush>
@@ -371,10 +372,47 @@ machine::machine(QWidget *parent)
     connect(ui->btnLanguageToggle_machine, &QPushButton::clicked, this,
       &machine::onLanguageToggleClicked);
 
+  // 1. Initialisation de l'assistant
   m_assistant = new Assistant(this);
+  // 2. Liaison avec le bouton "Parler" du header
   m_assistant->setTalkButton(ui->btnVoiceAssistant_machine);
   connect(ui->btnVoiceAssistant_machine, &QPushButton::clicked,
           m_assistant, &Assistant::startVoiceCycle);
+  // 3. Connexion du signal de navigation vers le QTabWidget
+  // Cela permet à l'IA de changer d'onglet (Parc, Actions, Statistiques, Carnet)
+  connect(m_assistant, &Assistant::requestNavigation, ui->tabWidgetMachineManagement, &QTabWidget::setCurrentIndex);
+
+  // --- CHATBOT INTEGRATION ---
+  m_chatbot = new Chatbot(this);
+  m_btnChatbot = new QPushButton("🤖", this);
+  m_btnChatbot->setToolTip("Ouvrir le Chatbot Gemini");
+  m_btnChatbot->setStyleSheet(
+      "QPushButton { "
+      "  background-color: rgba(255, 255, 255, 0.12); "
+      "  color: #C9A227; "
+      "  border: 1px solid rgba(255, 255, 255, 0.25); "
+      "  border-radius: 8px; "
+      "  font-size: 16px; "
+      "} "
+      "QPushButton:hover { "
+      "  background-color: rgba(255, 255, 255, 0.2); "
+      "}"
+  );
+  m_btnChatbot->setFixedSize(40, 30);
+  
+  // Insertion claire du bouton Chatbot à droite du bouton Vocal
+  // Le layout qui contient le bouton Parler s'appelle subtitleLayout dans le fichier .ui
+  if (ui->subtitleLayout) {
+      ui->subtitleLayout->addWidget(m_btnChatbot);
+  } else {
+      m_btnChatbot->setParent(ui->btnVoiceAssistant_machine->parentWidget());
+      int x = ui->btnVoiceAssistant_machine->x() + ui->btnVoiceAssistant_machine->width() + 10;
+      int y = ui->btnVoiceAssistant_machine->y();
+      m_btnChatbot->move(x, y);
+  }
+
+  connect(m_btnChatbot, &QPushButton::clicked, m_chatbot, &Chatbot::toggleVisibility);
+  m_chatbot->raise();
 
   // Setup date/time timer
   dateTimeTimer = new QTimer(this);
@@ -1735,6 +1773,19 @@ bool machine::selectMachineInTableById(const QString &machineId) {
   }
 
   return false;
+}
+
+void machine::resizeEvent(QResizeEvent *event) {
+  QMainWindow::resizeEvent(event);
+  if (m_chatbot) {
+    int w = m_chatbot->width();
+    int h = height();
+    if (m_chatbot->isVisible()) {
+      m_chatbot->setGeometry(width() - w, 0, w, h);
+    } else {
+      m_chatbot->setGeometry(width(), 0, w, h);
+    }
+  }
 }
 
 void machine::updateAICarnetForSelectedMachine() {

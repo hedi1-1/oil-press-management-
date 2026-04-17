@@ -14,13 +14,15 @@ SOURCES += \
     assistant.cpp \
     connexionmachine.cpp \
     main.cpp \
-    machine.cpp
+    machine.cpp \
+    chatbot.cpp
 
 HEADERS += \
     MachineServer.h \
     assistant.h \
     connexionmachine.h \
-    machine.h
+    machine.h \
+    chatbot.h
 
 FORMS += \
     machine.ui

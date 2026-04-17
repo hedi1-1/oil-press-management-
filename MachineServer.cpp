@@ -164,45 +164,75 @@ QList<MachineTimelineItem> MachineServer::buildTimeline(const MachineSnapshot &s
 }
 
 QString MachineServer::buildMachineHtml(const MachineSnapshot &snapshot, const QList<MachineTimelineItem> &timeline) const {
-    // Génération du QR Code pour l'affichage
-    const QString machineLink = machineUrlForId(snapshot.id);
-    const QString encodedLink = QString::fromUtf8(QUrl::toPercentEncoding(machineLink));
-    const QString qrImageUrl = QString("https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=%1").arg(encodedLink);
-
-    // Construction simplifiée de l'historique pour l'exemple
-    QString timelineHtml;
+    QString historyHtml;
     for (const auto &item : timeline) {
-        timelineHtml += QString("<p><b>%1</b>: %2</p>").arg(item.when.toString("dd/MM HH:mm"), item.detail);
+        historyHtml += QString(
+            "<div class='event'>"
+            "  <div class='event-dot'></div>"
+            "  <div class='event-content'>"
+            "    <span class='time'>%1</span>"
+            "    <p><b>%2</b> : %3</p>"
+            "  </div>"
+            "</div>")
+            .arg(item.when.toString("HH:mm"), item.title, item.detail);
     }
 
     return QString(R"HTML(
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Machine %1</title>
-            <style>
-                body { font-family: sans-serif; background: #f0f4f2; padding: 20px; text-align: center; }
-                .card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 400px; margin: auto; }
-                .qr img { width: 200px; }
-                .status { font-weight: bold; color: green; }
-            </style>
-        </head>
-        <body>
-            <div class="card">
-                <h1>%1</h1>
-                <div class="qr"><img src="%2"></div>
-                <p>Etat: <span class="status">%3</span></p>
-                <p>Température: %4°C</p>
-                <hr>
-                <h3>Historique</h3>
-                %5
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dashboard Machine</title>
+    <style>
+        :root { --bg: #04160f; --card: rgba(10, 77, 54, 0.4); --green: #10b981; --text: #e2e8f0; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; }
+        .container { max-width: 500px; margin: auto; }
+        .header { border-left: 4px solid var(--green); padding-left: 15px; margin: 20px 0; }
+        .card { background: var(--card); backdrop-filter: blur(10px); border: 1px solid #064e3b; border-radius: 20px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .status-badge { background: rgba(16, 185, 129, 0.2); color: var(--green); padding: 5px 12px; border-radius: 10px; font-size: 11px; font-weight: bold; border: 1px solid var(--green); }
+        .health-bar { background: #000; height: 10px; border-radius: 5px; margin: 15px 0; overflow: hidden; }
+        .health-fill { height: 100%; width: %4%%; background: var(--green); box-shadow: 0 0 10px var(--green); }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .item { background: rgba(0,0,0,0.3); padding: 10px; border-radius: 15px; text-align: center; }
+        .item label { display: block; font-size: 10px; color: var(--green); }
+        .item span { font-size: 18px; font-weight: bold; }
+        .history { margin-top: 20px; }
+        .event { display: flex; margin-bottom: 15px; }
+        .event-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; margin-top: 5px; }
+        .event-content { margin-left: 15px; font-size: 14px; }
+        .time { font-size: 11px; color: var(--green); font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header"><h1>SENSORS HUB</h1><p>Monitoring Industriel</p></div>
+        <div class="card">
+            <span class="status-badge">%2</span>
+            <h2 style="margin: 10px 0 0;">%3</h2>
+            <p style="font-size: 12px; opacity: 0.6;">Modèle: %5</p>
+            <div class="health-bar"><div class="health-fill"></div></div>
+            <div class="grid">
+                <div class="item"><label>TEMPERATURE</label><span>%6°C</span></div>
+                <div class="item"><label>CHARGE</label><span>%7%</span></div>
             </div>
-        </body>
-        </html>
+        </div>
+        <div class="history">
+            <h3 style="color: var(--green); font-size: 16px;">LOGS RÉCENTS</h3>
+            %8
+        </div>
+        <p style="text-align:center; font-size: 10px; opacity: 0.3; margin-top: 20px;">ID: %1 | %9</p>
+    </div>
+</body>
+</html>
     )HTML")
-    .arg(snapshot.nom, qrImageUrl, snapshot.etatMarche, QString::number(snapshot.temperatureActuelle, 'f', 1), timelineHtml);
+    .arg(h(snapshot.id), h(snapshot.etatMarche), h(snapshot.nom)) // %1, %2, %3
+    .arg(snapshot.scoreSante)                                     // %4
+    .arg(h(snapshot.type))                                        // %5
+    .arg(snapshot.temperatureActuelle, 0, 'f', 1)                 // %6
+    .arg(snapshot.niveauCharge, 0, 'f', 1)                        // %7
+    .arg(historyHtml)                                             // %8
+    .arg(snapshot.dateMiseAJour.toString("dd/MM/yyyy HH:mm:ss")); // %9
 }
 
 QString MachineServer::h(const QString &value) {
