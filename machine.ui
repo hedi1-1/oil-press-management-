@@ -41,7 +41,6 @@ QTabBar::tab {
     color: #444;
     padding: 8px 16px;
     margin-right: 2px;
-    border: 1px solid #ddd;
     border-bottom: none;
     border-top-left-radius: 4px;
     border-top-right-radius: 4px;
@@ -369,59 +368,112 @@ QPushButton:pressed {
                         </spacer>
                       </item>
                       <item>
-                        <widget class="QPushButton" name="btnGestionStock_machine">
+                        <widget class="QPushButton" name="btnThemeToggle_machine">
                           <property name="minimumSize">
                             <size>
-                              <width>118</width>
+                              <width>34</width>
                               <height>30</height>
                             </size>
                           </property>
                           <property name="maximumSize">
                             <size>
-                              <width>200</width>
+                              <width>34</width>
                               <height>30</height>
                             </size>
                           </property>
+                          <property name="cursor">
+                            <cursorShape>PointingHandCursor</cursorShape>
+                          </property>
+                          <property name="toolTip">
+                            <string>Basculer thème sombre / clair</string>
+                          </property>
                           <property name="styleSheet">
-                            <string notr="true">QPushButton { background-color: transparent; color: #C9A227; font-weight: 600; border: none; font-size: 12px; font-family: 'Segoe UI', Arial, sans-serif; } QPushButton:hover { text-decoration: underline; }</string>
+                            <string notr="true">QPushButton { background-color: rgba(255, 255, 255, 0.12); color: #C9A227; font-weight: 700; border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 8px; font-size: 14px; } QPushButton:hover { background-color: rgba(255, 255, 255, 0.2); }</string>
                           </property>
                           <property name="text">
-                            <string>🏭 Gestion De Stock</string>
+                            <string>🌙</string>
                           </property>
                         </widget>
                       </item>
                       <item>
-                        <spacer name="buttonsSpacer">
+                        <spacer name="themeLanguageSpacer">
                           <property name="orientation">
                             <enum>Qt::Orientation::Horizontal</enum>
                           </property>
                           <property name="sizeHint" stdset="0">
                             <size>
-                              <width>40</width>
+                              <width>8</width>
                               <height>20</height>
                             </size>
                           </property>
                         </spacer>
                       </item>
                       <item>
-                        <widget class="QPushButton" name="btnGestionProduction_machine">
+                        <widget class="QPushButton" name="btnLanguageToggle_machine">
                           <property name="minimumSize">
                             <size>
-                              <width>118</width>
+                              <width>34</width>
                               <height>30</height>
                             </size>
                           </property>
                           <property name="maximumSize">
                             <size>
-                              <width>220</width>
+                              <width>34</width>
                               <height>30</height>
                             </size>
                           </property>
+                          <property name="cursor">
+                            <cursorShape>PointingHandCursor</cursorShape>
+                          </property>
+                          <property name="toolTip">
+                            <string>Changer la langue (FR / EN)</string>
+                          </property>
                           <property name="styleSheet">
-                            <string notr="true">QPushButton { background-color: transparent; color: #C9A227; font-weight: 600; border: none; font-size: 12px; font-family: 'Segoe UI', Arial, sans-serif; } QPushButton:hover { text-decoration: underline; }</string>
+                            <string notr="true">QPushButton { background-color: rgba(255, 255, 255, 0.12); color: #C9A227; font-weight: 700; border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 8px; font-size: 14px; } QPushButton:hover { background-color: rgba(255, 255, 255, 0.2); }</string>
                           </property>
                           <property name="text">
-                            <string>🏭 Gestion De Production</string>
+                            <string>🌐</string>
+                          </property>
+                        </widget>
+                      </item>
+                      <item>
+                        <spacer name="languageVoiceSpacer">
+                          <property name="orientation">
+                            <enum>Qt::Orientation::Horizontal</enum>
+                          </property>
+                          <property name="sizeHint" stdset="0">
+                            <size>
+                              <width>8</width>
+                              <height>20</height>
+                            </size>
+                          </property>
+                        </spacer>
+                      </item>
+                      <item>
+                        <widget class="QPushButton" name="btnVoiceAssistant_machine">
+                          <property name="minimumSize">
+                            <size>
+                              <width>96</width>
+                              <height>30</height>
+                            </size>
+                          </property>
+                          <property name="maximumSize">
+                            <size>
+                              <width>120</width>
+                              <height>30</height>
+                            </size>
+                          </property>
+                          <property name="cursor">
+                            <cursorShape>PointingHandCursor</cursorShape>
+                          </property>
+                          <property name="toolTip">
+                            <string>Assistant vocal IA</string>
+                          </property>
+                          <property name="styleSheet">
+                            <string notr="true">QPushButton { background-color: rgba(255, 255, 255, 0.12); color: #C9A227; font-weight: 700; border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 8px; font-size: 14px; } QPushButton:hover { background-color: rgba(255, 255, 255, 0.2); }</string>
+                          </property>
+                          <property name="text">
+                            <string>🗣 Parler</string>
                           </property>
                         </widget>
                       </item>
@@ -1173,6 +1225,34 @@ QPushButton:pressed {
                                  </property>
                                </widget>
                              </item>
+                               <item>
+                                 <widget class="QPushButton" name="btnSetVeille_machine">
+                                   <property name="enabled">
+                                     <bool>false</bool>
+                                   </property>
+                                   <property name="minimumSize">
+                                     <size>
+                                       <width>36</width>
+                                       <height>36</height>
+                                     </size>
+                                   </property>
+                                   <property name="maximumSize">
+                                     <size>
+                                       <width>36</width>
+                                       <height>36</height>
+                                     </size>
+                                   </property>
+                                   <property name="toolTip">
+                                     <string>Mettre la machine en veille</string>
+                                   </property>
+                                   <property name="styleSheet">
+                                     <string>QPushButton { min-width: 0px; padding: 4px; font-size: 18px; background-color: #607D8B; color: white; border-radius: 4px; } QPushButton:disabled { background-color: #e0e0e0; color: #9e9e9e; }</string>
+                                   </property>
+                                   <property name="text">
+                                     <string>💤</string>
+                                   </property>
+                                 </widget>
+                               </item>
                             <item>
                               <widget class="QPushButton" name="btnCarteMachine">
                                 <property name="enabled">
@@ -2883,6 +2963,18 @@ QFrame#cardMachine3:hover { border-color: #4CAF50; }</string>
                 </property>
                 <item>
                   <widget class="QGroupBox" name="groupOptionsStats">
+                    <property name="sizePolicy">
+                      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                      </sizepolicy>
+                    </property>
+                    <property name="maximumSize">
+                      <size>
+                        <width>16777215</width>
+                        <height>90</height>
+                      </size>
+                    </property>
                     <property name="title">
                       <string>Options de visualisation</string>
                     </property>
@@ -2911,6 +3003,12 @@ QFrame#cardMachine3:hover { border-color: #4CAF50; }</string>
                       </item>
                       <item>
                         <widget class="QComboBox" name="type_statistique_machine">
+                          <property name="minimumSize">
+                            <size>
+                              <width>210</width>
+                              <height>0</height>
+                            </size>
+                          </property>
                           <item>
                             <property name="text">
                               <string>État fonctionnement</string>
@@ -2937,42 +3035,41 @@ QFrame#cardMachine3:hover { border-color: #4CAF50; }</string>
                       </item>
                       <item>
                         <widget class="QComboBox" name="type_graphique_machine">
+                          <property name="minimumSize">
+                            <size>
+                              <width>190</width>
+                              <height>0</height>
+                            </size>
+                          </property>
                           <item>
                             <property name="text">
-                              <string>BarChart</string>
+                              <string>Histogramme (barres)</string>
                             </property>
                           </item>
                           <item>
                             <property name="text">
-                              <string>PieChart</string>
+                              <string>Camembert</string>
                             </property>
                           </item>
                           <item>
                             <property name="text">
-                              <string>LineChart</string>
+                              <string>Courbe</string>
                             </property>
                           </item>
                         </widget>
                       </item>
                       <item>
                         <widget class="QPushButton" name="btnGenererStats_machine">
+                          <property name="minimumSize">
+                            <size>
+                              <width>140</width>
+                              <height>0</height>
+                            </size>
+                          </property>
                           <property name="text">
                             <string>📊 Générer</string>
                           </property>
                         </widget>
-                      </item>
-                      <item>
-                        <spacer name="statsSpacer">
-                          <property name="orientation">
-                            <enum>Qt::Orientation::Horizontal</enum>
-                          </property>
-                          <property name="sizeHint" stdset="0">
-                            <size>
-                              <width>40</width>
-                              <height>20</height>
-                            </size>
-                          </property>
-                        </spacer>
                       </item>
                     </layout>
                   </widget>
@@ -2991,16 +3088,31 @@ QFrame#cardMachine3:hover { border-color: #4CAF50; }</string>
                   </widget>
                 </item>
                 <item>
-                  <widget class="QGroupBox" name="groupMaintenancePredictive">
+                  <widget class="QGroupBox" name="groupComparaisonStats">
                     <property name="title">
-                      <string>Maintenance prédictive - Machines à surveiller</string>
+                      <string>Comparaison des machines</string>
                     </property>
-                    <layout class="QVBoxLayout" name="layoutMaintenanceTable">
+                    <layout class="QVBoxLayout" name="layoutComparaisonStats">
+                      <property name="leftMargin">
+                        <number>10</number>
+                      </property>
                       <property name="topMargin">
-                        <number>15</number>
+                        <number>12</number>
+                      </property>
+                      <property name="rightMargin">
+                        <number>10</number>
+                      </property>
+                      <property name="bottomMargin">
+                        <number>10</number>
                       </property>
                       <item>
-                        <widget class="QTableView" name="tableMaintenance_machine">
+                        <widget class="QTableView" name="tableComparaisonStats_machine">
+                          <property name="minimumSize">
+                            <size>
+                              <width>0</width>
+                              <height>190</height>
+                            </size>
+                          </property>
                           <property name="alternatingRowColors">
                             <bool>true</bool>
                           </property>
@@ -3011,65 +3123,6 @@ QFrame#cardMachine3:hover { border-color: #4CAF50; }</string>
                       </item>
                     </layout>
                   </widget>
-                </item>
-                <item>
-                  <layout class="QHBoxLayout" name="layoutBtnsMaintenance">
-                    <item>
-                      <spacer name="maintenanceSpacerLeft">
-                        <property name="orientation">
-                          <enum>Qt::Orientation::Horizontal</enum>
-                        </property>
-                        <property name="sizeHint" stdset="0">
-                          <size>
-                            <width>40</width>
-                            <height>20</height>
-                          </size>
-                        </property>
-                      </spacer>
-                    </item>
-                    <item>
-                      <widget class="QPushButton" name="btnEnregistrerMaintenance_machine">
-                        <property name="minimumSize">
-                          <size>
-                            <width>118</width>
-                            <height>35</height>
-                          </size>
-                        </property>
-                        <property name="text">
-                          <string>💾 Enregistrer maintenance</string>
-                        </property>
-                      </widget>
-                    </item>
-                    <item>
-                      <widget class="QPushButton" name="btnPlanifierMaintenance_machine">
-                        <property name="minimumSize">
-                          <size>
-                            <width>118</width>
-                            <height>35</height>
-                          </size>
-                        </property>
-                        <property name="styleSheet">
-                          <string>background-color: #F39C12;</string>
-                        </property>
-                        <property name="text">
-                          <string>📅 Planifier maintenance</string>
-                        </property>
-                      </widget>
-                    </item>
-                    <item>
-                      <spacer name="maintenanceSpacerRight">
-                        <property name="orientation">
-                          <enum>Qt::Orientation::Horizontal</enum>
-                        </property>
-                        <property name="sizeHint" stdset="0">
-                          <size>
-                            <width>40</width>
-                            <height>20</height>
-                          </size>
-                        </property>
-                      </spacer>
-                    </item>
-                  </layout>
                 </item>
               </layout>
             </widget>
@@ -3094,13 +3147,13 @@ QFrame#cardMachine3:hover { border-color: #4CAF50; }</string>
                   <number>30</number>
                 </property>
                 <item>
-                  <widget class="QGroupBox" name="groupRecommandationIA">
+                  <widget class="QGroupBox" name="groupSelectionAIMachine">
                     <property name="title">
-                      <string>Recommandation de l'Intelligence Artificielle</string>
+                      <string>Sélection de la machine</string>
                     </property>
-                    <layout class="QVBoxLayout" name="layoutRecommandation">
+                    <layout class="QHBoxLayout" name="layoutSelectionAIMachine">
                       <property name="spacing">
-                        <number>15</number>
+                        <number>12</number>
                       </property>
                       <property name="leftMargin">
                         <number>20</number>
@@ -3115,116 +3168,168 @@ QFrame#cardMachine3:hover { border-color: #4CAF50; }</string>
                         <number>20</number>
                       </property>
                       <item>
-                        <widget class="QLabel" name="lblRecommandationIA_machine">
-                          <property name="styleSheet">
-                            <string>font-size: 16px; padding: 20px; background-color: #e8f4fd; border: 1px solid #bee5eb; border-radius: 6px;</string>
+                        <widget class="QLabel" name="lblSelectionMachineIA">
+                          <property name="minimumSize">
+                            <size>
+                              <width>170</width>
+                              <height>0</height>
+                            </size>
                           </property>
                           <property name="text">
-                            <string>ðŸ” Analyse en cours...</string>
-                          </property>
-                          <property name="wordWrap">
-                            <bool>true</bool>
+                            <string>Machine:</string>
                           </property>
                         </widget>
                       </item>
                       <item>
-                        <layout class="QHBoxLayout" name="layoutConfiance">
-                          <item>
-                            <widget class="QLabel" name="lblConfianceLabel">
-                              <property name="styleSheet">
-                                <string>font-weight: bold;</string>
-                              </property>
-                              <property name="text">
-                                <string>Niveau de confiance:</string>
-                              </property>
-                            </widget>
-                          </item>
-                          <item>
-                            <widget class="QProgressBar" name="progressConfianceIA_machine">
-                              <property name="value">
-                                <number>0</number>
-                              </property>
-                              <property name="textVisible">
-                                <bool>true</bool>
-                              </property>
-                            </widget>
-                          </item>
-                        </layout>
+                        <widget class="QComboBox" name="comboDecisionMachine">
+                          <property name="minimumSize">
+                            <size>
+                              <width>420</width>
+                              <height>34</height>
+                            </size>
+                          </property>
+                        </widget>
                       </item>
                       <item>
-                        <layout class="QHBoxLayout" name="layoutBtnsIA">
-                          <item>
-                            <spacer name="iaSpacerLeft">
-                              <property name="orientation">
-                                <enum>Qt::Orientation::Horizontal</enum>
-                              </property>
-                              <property name="sizeHint" stdset="0">
-                                <size>
-                                  <width>40</width>
-                                  <height>20</height>
-                                </size>
-                              </property>
-                            </spacer>
-                          </item>
-                          <item>
-                            <widget class="QPushButton" name="btnAppliquerDecision_machine">
-                              <property name="minimumSize">
-                                <size>
-                                  <width>118</width>
-                                  <height>40</height>
-                                </size>
-                              </property>
-                              <property name="text">
-                                <string>✓ Appliquer décision</string>
-                              </property>
-                            </widget>
-                          </item>
-                          <item>
-                            <widget class="QPushButton" name="btnIgnorerDecision_machine">
-                              <property name="minimumSize">
-                                <size>
-                                  <width>118</width>
-                                  <height>40</height>
-                                </size>
-                              </property>
-                              <property name="styleSheet">
-                                <string>background-color: #6c757d;</string>
-                              </property>
-                              <property name="text">
-                                <string>✗ Ignorer</string>
-                              </property>
-                            </widget>
-                          </item>
-                          <item>
-                            <spacer name="iaSpacerRight">
-                              <property name="orientation">
-                                <enum>Qt::Orientation::Horizontal</enum>
-                              </property>
-                              <property name="sizeHint" stdset="0">
-                                <size>
-                                  <width>40</width>
-                                  <height>20</height>
-                                </size>
-                              </property>
-                            </spacer>
-                          </item>
-                        </layout>
+                        <widget class="QPushButton" name="btnGenererQrMachine">
+                          <property name="minimumSize">
+                            <size>
+                              <width>160</width>
+                              <height>34</height>
+                            </size>
+                          </property>
+                          <property name="text">
+                            <string>▦ Générer QR</string>
+                          </property>
+                        </widget>
+                      </item>
+                      <item>
+                        <widget class="QLabel" name="lblQrPreviewMachine">
+                          <property name="minimumSize">
+                            <size>
+                              <width>150</width>
+                              <height>150</height>
+                            </size>
+                          </property>
+                          <property name="maximumSize">
+                            <size>
+                              <width>150</width>
+                              <height>150</height>
+                            </size>
+                          </property>
+                          <property name="frameShape">
+                            <enum>QFrame::StyledPanel</enum>
+                          </property>
+                          <property name="alignment">
+                            <set>Qt::AlignCenter</set>
+                          </property>
+                          <property name="text">
+                            <string>QR</string>
+                          </property>
+                        </widget>
+                      </item>
+                      <item>
+                        <spacer name="spacerMachineSelectIA">
+                          <property name="orientation">
+                            <enum>Qt::Orientation::Horizontal</enum>
+                          </property>
+                          <property name="sizeHint" stdset="0">
+                            <size>
+                              <width>40</width>
+                              <height>20</height>
+                            </size>
+                          </property>
+                        </spacer>
                       </item>
                     </layout>
                   </widget>
                 </item>
                 <item>
-                  <spacer name="iaVerticalSpacer">
-                    <property name="orientation">
-                      <enum>Qt::Orientation::Vertical</enum>
+                  <widget class="QGroupBox" name="groupAIDetails">
+                    <property name="title">
+                      <string>Carnet / Arduino</string>
                     </property>
-                    <property name="sizeHint" stdset="0">
-                      <size>
-                        <width>20</width>
-                        <height>40</height>
-                      </size>
-                    </property>
-                  </spacer>
+                    <layout class="QVBoxLayout" name="layoutAIDetails">
+                      <property name="leftMargin">
+                        <number>14</number>
+                      </property>
+                      <property name="topMargin">
+                        <number>14</number>
+                      </property>
+                      <property name="rightMargin">
+                        <number>14</number>
+                      </property>
+                      <property name="bottomMargin">
+                        <number>14</number>
+                      </property>
+                      <item>
+                        <widget class="QTabWidget" name="tabWidgetAIDetails">
+                          <property name="currentIndex">
+                            <number>0</number>
+                          </property>
+                          <widget class="QWidget" name="tabCarnetVie">
+                            <attribute name="title">
+                              <string>Carnet / Journal</string>
+                            </attribute>
+                            <layout class="QVBoxLayout" name="layoutCarnetVie">
+                              <property name="leftMargin">
+                                <number>10</number>
+                              </property>
+                              <property name="topMargin">
+                                <number>10</number>
+                              </property>
+                              <property name="rightMargin">
+                                <number>10</number>
+                              </property>
+                              <property name="bottomMargin">
+                                <number>10</number>
+                              </property>
+                              <item>
+                                <widget class="QTableWidget" name="tableCarnetMachine_machine">
+                                  <property name="alternatingRowColors">
+                                    <bool>true</bool>
+                                  </property>
+                                  <property name="selectionBehavior">
+                                    <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
+                                  </property>
+                                  <column>
+                                    <property name="text">
+                                      <string>Date &amp; heure</string>
+                                    </property>
+                                  </column>
+                                  <column>
+                                    <property name="text">
+                                      <string>Événement</string>
+                                    </property>
+                                  </column>
+                                </widget>
+                              </item>
+                            </layout>
+                          </widget>
+                          <widget class="QWidget" name="tabArduino">
+                            <attribute name="title">
+                              <string>Arduino</string>
+                            </attribute>
+                            <layout class="QVBoxLayout" name="layoutArduinoPlaceholder">
+                              <item>
+                                <spacer name="arduinoTopSpacer">
+                                  <property name="orientation">
+                                    <enum>Qt::Orientation::Vertical</enum>
+                                  </property>
+                                  <property name="sizeHint" stdset="0">
+                                    <size>
+                                      <width>20</width>
+                                      <height>40</height>
+                                    </size>
+                                  </property>
+                                </spacer>
+                              </item>
+                            </layout>
+                          </widget>
+                        </widget>
+                      </item>
+                    </layout>
+                  </widget>
                 </item>
               </layout>
             </widget>

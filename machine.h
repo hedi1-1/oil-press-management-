@@ -13,6 +13,7 @@
 #include <QLabel>
 #include <QMainWindow>
 #include <QPair>
+#include <QPixmap>
 #include <QPushButton>
 #include <QStandardItemModel>
 #include <QTimer>
@@ -24,6 +25,88 @@ namespace Ui {
 class machine;
 };
 QT_END_NAMESPACE
+
+class MachineServer;
+class Assistant;
+class QComboBox;
+class QFrame;
+class QGridLayout;
+class QLabel;
+class QScrollArea;
+class QSerialPort;
+class QTimer;
+
+struct ArduinoThresholdProfile {
+  double fanOn = 35.0;
+  double alert = 50.0;
+  double panne = 65.0;
+};
+
+enum class ArduinoThresholdMode {
+  HypothesisA = 0,
+  HypothesisB = 1,
+  HypothesisC = 2
+};
+
+class ArduinoMachineDialog : public QDialog {
+  Q_OBJECT
+
+public:
+  ArduinoMachineDialog(const QString &machineId,
+                       const QString &machineName,
+                       const QString &machineType,
+                       bool isFrench,
+                       bool isDarkMode,
+                       QWidget *parent = nullptr);
+  ~ArduinoMachineDialog() override;
+
+signals:
+  void telemetryApplied(const QString &machineId);
+
+private slots:
+  void toggleConnection();
+  void refreshPortList();
+  void readSerialData();
+  void onThresholdModeChanged(int index);
+
+private:
+  void buildUi();
+  void applyTheme();
+  void setConnectionState(bool connected);
+  void handleSerialLine(const QString &line);
+  void updateTelemetry(double temperature,
+                       double humidity,
+                       const QString &level,
+                       const QString &fanState);
+  ArduinoThresholdProfile resolveThresholdProfile() const;
+  ArduinoThresholdProfile loadProfileFromDatabase() const;
+  QString formatHeader() const;
+  int computeHealthScore(double temperature,
+                         const ArduinoThresholdProfile &profile,
+                         const QString &etatFonctionnement) const;
+
+  QString m_machineId;
+  QString m_machineName;
+  QString m_machineType;
+  bool m_isFrench = true;
+  bool m_isDarkMode = false;
+  ArduinoThresholdMode m_thresholdMode = ArduinoThresholdMode::HypothesisB;
+
+  QSerialPort *m_serial = nullptr;
+  QByteArray m_serialBuffer;
+
+  QLabel *m_headerLabel = nullptr;
+  QLabel *m_statusLabel = nullptr;
+  QLabel *m_tempValueLabel = nullptr;
+  QLabel *m_fanValueLabel = nullptr;
+  QLabel *m_levelValueLabel = nullptr;
+  QLabel *m_humidityValueLabel = nullptr;
+  QComboBox *m_portCombo = nullptr;
+  QComboBox *m_baudCombo = nullptr;
+  QComboBox *m_thresholdCombo = nullptr;
+  QPushButton *m_connectButton = nullptr;
+  QPushButton *m_refreshPortsButton = nullptr;
+};
 
 // Navigation Bar Class Declaration
 class NavigationBar : public QWidget {
@@ -102,6 +185,8 @@ signals:
 private slots:
   void onBackButtonClicked();
   void updateDateTime();
+  void onThemeToggleClicked();
+  void onLanguageToggleClicked();
   void onNavigationTabClicked(int index);
   void on_pushButton_enregistrer_machine_clicked();
   void on_btnReinitialiser_machine_clicked();
@@ -110,6 +195,8 @@ private slots:
   void on_btnModifierMachine_machine_clicked();
   void on_btnFiltrer_clicked();
   void on_btnGenererStats_machine_clicked();
+  void on_btnGenererQrMachine_clicked();
+  void onMachineRequestedFromHttp(const QString &machineId);
 
 private:
   struct MachineData {
@@ -155,6 +242,14 @@ private:
                                const QString &problematicName);
 
   void setupNavigationBar();
+  QString resolveLocalIpv4() const;
+  QPixmap generateMachineQrPixmap(const QString &payload,
+                                  int moduleSize = 4,
+                                  int margin = 2) const;
+  void resetQrPreviewLabel();
+  void refreshNavigationTabs();
+  void applyTheme();
+  void applyLanguage();
   void setupTodoList();
   void reloadTodoFromMachineData();
   void refreshTodoList();
@@ -162,12 +257,12 @@ private:
 
   Ui::machine *ui;
   QTimer *dateTimeTimer;
-  QTimer *machineTableRefreshTimer;
   NavigationBar *navigationBar;
   QVector<TodoItem> m_todoItems;
   QStandardItemModel *machineTableModel;
   QStandardItemModel *employeeTableModel;
   QStandardItemModel *historiqueTableModel;
+  QStandardItemModel *statsComparisonModel;
   QList<MachineData> m_allMachines; // Stockage global pour le filtrage
   QString m_selectedMachineId;
   int m_selectedRow;
@@ -176,8 +271,21 @@ private:
   QTimer *countsTimer;
   QTimer *historiqueTimer;
   QVector<HistoriqueEntry> m_historiqueEntries;
+  MachineServer *m_machineServer;
+  Assistant *m_assistant;
+  QString m_serverHostIp;
+  bool m_isDarkMode = false;
+  bool m_isFrench = true;
+  QPushButton *m_btnVoiceAssistant = nullptr;
+  QString m_lightStyleSheet;
+  QString m_darkStyleSheet;
   void setupMachineTable();
   void setupEmployeesTable();
+  void setupStatsComparisonTable();
+  void populateStatsComparisonTable();
+  void normalizeLowPriorityTags();
+  void refreshAIMachineSelector();
+  void updateAICarnetForSelectedMachine();
   void chargerMachines();
   void chargerEmployees();
   void refreshResponsableFilterOptions();
@@ -202,7 +310,23 @@ private:
   void showMachineCard();
   void updateMachineCounts();
   void updateHistoriqueDisplay();
-  void restoreSelectedMachineRow();
-  void applyMachineRowPastelColors();
+  bool selectMachineInTableById(const QString &machineId);
+  void setupArduinoModule();
+  void refreshArduinoEligibleMachines();
+  void clearArduinoMachineButtons();
+  void openArduinoMachineDialog(const QString &machineId);
+
+private slots:
+  void onArduinoTelemetryApplied(const QString &machineId);
+
+private:
+  QWidget *m_arduinoPanel = nullptr;
+  QScrollArea *m_arduinoScroll = nullptr;
+  QGridLayout *m_arduinoGrid = nullptr;
+  QLabel *m_arduinoTitleLabel = nullptr;
+  QLabel *m_arduinoEmptyLabel = nullptr;
+  QPushButton *m_btnArduinoRefresh = nullptr;
+  QTimer *m_arduinoRefreshTimer = nullptr;
+  QVector<QPushButton *> m_arduinoButtons;
 };
 #endif // MACHINE_H
