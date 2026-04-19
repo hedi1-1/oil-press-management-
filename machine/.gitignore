@@ -21,3 +21,7 @@ ui_*.h
 Makefile
 Makefile.*
 .qmake.stash
+
+
+# config.h
+machine/config.h
