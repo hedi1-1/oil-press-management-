@@ -14,6 +14,7 @@
 #include <QFrame>
 #include <QTimer>
 #include <QWidget>
+#include <QString>
 
 class Login : public QMainWindow
 {
@@ -31,7 +32,7 @@ public:
     void setCardYOffset(int v);
 
 signals:
-    void goToMenu();
+    void goToMenu(const QString &username, const QString &role);
 
 protected:
     void resizeEvent(QResizeEvent *event) override;
@@ -42,8 +43,11 @@ private slots:
     void onLoginClicked();
     void validateFields();
     void togglePasswordVisibility();
+    void onForgotPasswordClicked();
 
 private:
+    static QString hashPassword(const QString &pw);
+
     void buildUi();
     void applyBackground();
     void playEntranceAnimation();
@@ -52,6 +56,10 @@ private:
     void showError(const QString &msg);
     void hideError();
     void setLoadingState(bool loading);
+
+    int m_failedAttempts = 0;
+    QString m_loggedInUsername;
+    QString m_loggedInRole;
 
     // Background
     QWidget *bgWidget;

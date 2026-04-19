@@ -26,7 +26,8 @@ bool ConnexionFinance::open() {
 
     if (db.open()) {
         // Forcer autocommit OFF pour Oracle
-        db.exec("SET AUTOCOMMIT OFF");
+        QSqlQuery query(db);
+        query.exec("SET AUTOCOMMIT OFF");
         
         qDebug() << "========================================";
         qDebug() << "[Finance] Connexion a la base de donnees reussie !";

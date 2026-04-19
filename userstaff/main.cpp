@@ -5,7 +5,7 @@
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    userstaff w;
-    w.showFullScreen();
+    userstaff w("Admin", "Admin");
+    w.show();
     return a.exec();
 }

@@ -85,13 +85,13 @@ QLabel {
         <widget class="QLabel" name="lblLogo">
          <property name="minimumSize">
           <size>
-           <width>67</width>
+           <width>40</width>
            <height>40</height>
           </size>
          </property>
          <property name="maximumSize">
           <size>
-           <width>67</width>
+           <width>40</width>
            <height>40</height>
           </size>
          </property>
@@ -102,10 +102,7 @@ QLabel {
           <pixmap resource="../production/resources.qrc">:/logo.png</pixmap>
          </property>
          <property name="scaledContents">
-          <bool>false</bool>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
+          <bool>true</bool>
          </property>
         </widget>
        </item>
@@ -756,9 +753,9 @@ QLineEdit:focus {
             </property>
             <property name="styleSheet">
              <string notr="true">QComboBox {
-    background-color: #2c3e2e;
-    color: white;
-    border: 1px solid #14532d;
+    background-color: #f9fafb;
+    color: #111827;
+    border: 1px solid #e5e7eb;
     border-radius: 6px;
     padding: 6px 12px;
     font-size: 13px;
@@ -768,10 +765,10 @@ QComboBox::drop-down {
     width: 20px;
 }
 QComboBox QAbstractItemView {
-    background-color: #2c3e2e;
-    color: white;
-    selection-background-color: #14532d;
-    border: 1px solid #14532d;
+    background-color: #ffffff;
+    color: #111827;
+    selection-background-color: #dcfce7;
+    border: 1px solid #e5e7eb;
 }</string>
             </property>
             <item>
@@ -902,72 +899,6 @@ QPushButton:hover {
             </property>
             <property name="text">
              <string>+ Ajouter</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="btnModifier">
-            <property name="minimumSize">
-             <size>
-              <width>100</width>
-              <height>35</height>
-             </size>
-            </property>
-            <property name="styleSheet">
-             <string notr="true">QPushButton {
-    background-color: #2563eb;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    padding: 8px 16px;
-    font-size: 13px;
-    font-weight: 600;
-}
-QPushButton:hover {
-    background-color: #3b82f6;
-}
-QPushButton:disabled {
-    background-color: #93c5fd;
-}</string>
-            </property>
-            <property name="text">
-             <string>Modifier</string>
-            </property>
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="btnSupprimer">
-            <property name="minimumSize">
-             <size>
-              <width>100</width>
-              <height>35</height>
-             </size>
-            </property>
-            <property name="styleSheet">
-             <string notr="true">QPushButton {
-    background-color: #dc2626;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    padding: 8px 16px;
-    font-size: 13px;
-    font-weight: 600;
-}
-QPushButton:hover {
-    background-color: #ef4444;
-}
-QPushButton:disabled {
-    background-color: #fca5a5;
-}</string>
-            </property>
-            <property name="text">
-             <string>Supprimer</string>
-            </property>
-            <property name="enabled">
-             <bool>false</bool>
             </property>
            </widget>
           </item>

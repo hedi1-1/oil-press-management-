@@ -4590,8 +4590,7 @@ void machine::exporterPDF() {
           // ===== FOOTER =====
           "<div class='footer'>"
           "  <div>Document g\xC3\xA9n\xC3\xA9r\xC3\xA9 le %20</div>"
-          "  <div class='footer-brand'>\xF0\x9F\x8F\xAD  Syst\xC3\xA8me de "
-          "Gestion des Machines \xe2\x80\x94 Zitouna</div>"
+          "  <div class='footer-brand'>Systeme de Gestion des Machines - Zitouna</div>"
           "</div>"
 
           "</body></html>")

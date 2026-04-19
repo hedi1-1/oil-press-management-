@@ -1,4 +1,5 @@
 #include "login.h"
+#include "connectionlogin.h"
 
 #include <QApplication>
 #include <QVBoxLayout>
@@ -16,6 +17,15 @@
 #include <QFontDatabase>
 #include <QSpacerItem>
 #include <QCursor>
+#include <QCryptographicHash>
+#include <QtSql/QSqlDatabase>
+#include <QtSql/QSqlQuery>
+#include <QtSql/QSqlError>
+#include <QSysInfo>
+#include <QDateTime>
+#include <QDialog>
+#include <QTextEdit>
+#include <QMessageBox>
 
 // ============================================================================
 // STYLESHEET
@@ -230,6 +240,7 @@ Login::Login(QWidget *parent)
         passwordEdit->setFocus();
     });
     connect(eyeToggle, &QPushButton::clicked, this, &Login::togglePasswordVisibility);
+    connect(forgotBtn, &QPushButton::clicked, this, &Login::onForgotPasswordClicked);
 
     // Install event filter for input frame focus styling
     usernameEdit->installEventFilter(this);
@@ -237,6 +248,9 @@ Login::Login(QWidget *parent)
 
     validateFields();
     usernameEdit->setFocus();
+
+    // DB init (Oracle via QODBC)
+    ConnectionLogin::getInstance().createconnect();
 }
 
 Login::~Login()
@@ -338,22 +352,8 @@ void Login::buildUi()
     QHBoxLayout *brandRow = new QHBoxLayout();
     brandRow->setSpacing(10);
 
-    brandIcon = new QLabel();
+    brandIcon = new QLabel(QString::fromUtf8("\xf0\x9f\xab\x92"));
     brandIcon->setObjectName("brandIcon");
-    {
-        QPixmap logoPix;
-        for (const QString &p : QStringList{":/logo.png", "logo.png", "../production/logo.png",
-             QCoreApplication::applicationDirPath() + "/../../logo.png",
-             QCoreApplication::applicationDirPath() + "/../../../production/logo.png"}) {
-            logoPix = QPixmap(p);
-            if (!logoPix.isNull()) break;
-        }
-        if (!logoPix.isNull())
-            brandIcon->setPixmap(logoPix.scaledToHeight(40, Qt::SmoothTransformation));
-        else
-            brandIcon->setText(QString::fromUtf8("\xf0\x9f\xab\x92"));
-    }
-    brandIcon->setFixedSize(44, 44);
     brandRow->addWidget(brandIcon);
 
     QVBoxLayout *brandText = new QVBoxLayout();
@@ -631,7 +631,13 @@ void Login::playEntranceAnimation()
     // For the entrance, we'll just animate the card's content margins
     cardFrame->setContentsMargins(36, 80, 36, 32); // Start offset down
 
-    // Simple approach: use a timer-based approach to smoothly reduce top margin
+    // Can't animate QMargins directly, so use a timer-based approach instead
+
+    // Simple approach: use a QPropertyAnimation on a custom property
+    // Already defined cardYOffset — but layout makes it tricky
+
+    // Simpler: just animate the opacity of the whole right side
+    // and use a timer to smoothly reduce top margin
 
     // Let's do a clean parallel animation
     QParallelAnimationGroup *group = new QParallelAnimationGroup(this);
@@ -641,9 +647,8 @@ void Login::playEntranceAnimation()
 
     // Card fade - simple timer approach
     cardFrame->setStyleSheet(cardFrame->styleSheet()); // reset
-    int step = 0;
     QTimer *timer = new QTimer(this);
-    connect(timer, &QTimer::timeout, this, [this, timer, &step]() {
+    connect(timer, &QTimer::timeout, this, [this, timer]() {
         static int s = 0;
         s++;
         if (s >= 20) {
@@ -697,13 +702,22 @@ void Login::playSuccessAnimation()
     fadeOut->setEasingCurve(QEasingCurve::InCubic);
 
     connect(fadeOut, &QPropertyAnimation::finished, this, [this]() {
-        emit goToMenu();
+        emit goToMenu(m_loggedInUsername, m_loggedInRole);
         this->hide();
         // Reset for next show
         centralWidget()->setGraphicsEffect(nullptr);
     });
 
     fadeOut->start(QAbstractAnimation::DeleteWhenStopped);
+}
+
+// ============================================================================
+// PASSWORD HASHING
+// ============================================================================
+
+QString Login::hashPassword(const QString &pw)
+{
+    return QString(QCryptographicHash::hash(pw.toUtf8(), QCryptographicHash::Sha256).toHex());
 }
 
 // ============================================================================
@@ -800,21 +814,409 @@ void Login::onLoginClicked()
     hideError();
     setLoadingState(true);
 
-    // Simulate authentication delay (replace with real auth)
-    QTimer::singleShot(800, this, [this]() {
-        setLoadingState(false);
+    QTimer::singleShot(250, this, [this]() {
+        const QString userInput = usernameEdit->text().trimmed();
+        const QString pwInput   = passwordEdit->text();
 
-        // For now: always succeed (integrate your auth logic here)
-        QString user = usernameEdit->text().trimmed();
-        QString pass = passwordEdit->text().trimmed();
-
-        if (user.isEmpty() || pass.isEmpty()) {
+        if (userInput.isEmpty() || pwInput.trimmed().isEmpty()) {
+            setLoadingState(false);
             showError("Veuillez remplir tous les champs");
             playShakeAnimation();
             return;
         }
 
-        // Success → play fade out and emit signal
+        QSqlDatabase db = ConnectionLogin::getInstance().getDatabase();
+        if (!db.isOpen()) {
+            const bool ok = ConnectionLogin::getInstance().createconnect();
+            db = ConnectionLogin::getInstance().getDatabase();
+            if (!ok || !db.isOpen()) {
+                setLoadingState(false);
+                showError("Erreur de connexion à la base de données.");
+                playShakeAnimation();
+                return;
+            }
+        }
+
+        const QString host = QSysInfo::machineHostName();
+        const QString hashed = hashPassword(pwInput);
+
+        // 2) Credentials match query
+        QSqlQuery q(db);
+        q.prepare(
+            "SELECT USER_ID, USERNAME, STATE, FAILED_ATTEMPTS, ROLE "
+            "FROM EMPLOYEES "
+            "WHERE (UPPER(USERNAME)=UPPER(:u) OR UPPER(EMAIL)=UPPER(:u)) "
+            "AND (UPPER(PASSWORD_HASH) = UPPER(:hash) OR PASSWORD_HASH = :raw)");
+        q.bindValue(":u", userInput);
+        q.bindValue(":hash", hashed);
+        q.bindValue(":raw", pwInput);
+
+        if (!q.exec()) {
+            setLoadingState(false);
+            showError("Erreur SQL: " + q.lastError().text());
+            playShakeAnimation();
+            return;
+        }
+
+        auto insertAudit = [&](const QString &username,
+                               const QString &eventType,
+                               const QString &details,
+                               const QVariant &performedBy = QVariant()) {
+            QSqlQuery a(db);
+            a.prepare("INSERT INTO AUDIT_LOG (USERNAME, EVENT_TYPE, DETAILS, PERFORMED_BY, HOSTNAME) "
+                      "VALUES (:u, :t, :d, :p, :h)");
+            a.bindValue(":u", username);
+            a.bindValue(":t", eventType);
+            a.bindValue(":d", details);
+            a.bindValue(":p", performedBy);
+            a.bindValue(":h", host);
+            a.exec();
+        };
+
+        if (!q.next()) {
+            // 3) Wrong credentials: check if user exists
+            QSqlQuery qExist(db);
+            qExist.prepare(
+                "SELECT USER_ID, USERNAME, FAILED_ATTEMPTS, STATE "
+                "FROM EMPLOYEES "
+                "WHERE UPPER(USERNAME)=UPPER(:u) OR UPPER(EMAIL)=UPPER(:u)");
+            qExist.bindValue(":u", userInput);
+
+            if (!qExist.exec()) {
+                setLoadingState(false);
+                showError("Erreur SQL: " + qExist.lastError().text());
+                playShakeAnimation();
+                return;
+            }
+
+            if (qExist.next()) {
+                const int userId = qExist.value(0).toInt();
+                const QString realUsername = qExist.value(1).toString();
+                const int failed = qExist.value(2).toInt();
+                const QString state = qExist.value(3).toString();
+
+                if (state.compare("LOCKED", Qt::CaseInsensitive) == 0) {
+                    insertAudit(realUsername, "LOGIN_FAIL", "Account already locked");
+                    setLoadingState(false);
+                    showError("⛔ Compte verrouillé. Contactez un administrateur.");
+                    playShakeAnimation();
+                    return;
+                }
+
+                if (state.compare("ACTIVE", Qt::CaseInsensitive) == 0
+                    || state.compare("INACTIVE", Qt::CaseInsensitive) == 0
+                    || state.isEmpty()) {
+                    // increment failed attempts
+                    QSqlQuery upd(db);
+                    upd.prepare(
+                        "UPDATE EMPLOYEES SET FAILED_ATTEMPTS = NVL(FAILED_ATTEMPTS,0) + 1, "
+                        "LAST_ACTION = 'ECHEC_CONNEXION', "
+                        "LAST_ACTION_TIME = SYSTIMESTAMP "
+                        "WHERE USER_ID = :id");
+                    upd.bindValue(":id", userId);
+                    if (!upd.exec()) {
+                        setLoadingState(false);
+                        showError("Erreur SQL: " + upd.lastError().text());
+                        playShakeAnimation();
+                        return;
+                    }
+
+                    insertAudit(realUsername, "LOGIN_FAIL", "Invalid credentials");
+
+                    // re-query new failed attempts
+                    QSqlQuery qNew(db);
+                    qNew.prepare("SELECT FAILED_ATTEMPTS FROM EMPLOYEES WHERE USER_ID=:id");
+                    qNew.bindValue(":id", userId);
+                    int newFailed = failed + 1;
+                    if (qNew.exec() && qNew.next()) {
+                        newFailed = qNew.value(0).toInt();
+                    }
+
+                    if (newFailed >= 3) {
+                        QSqlQuery lockQ(db);
+                        lockQ.prepare("UPDATE EMPLOYEES SET STATE='LOCKED' WHERE USER_ID=:id");
+                        lockQ.bindValue(":id", userId);
+                        lockQ.exec();
+                        insertAudit(realUsername, "ACCOUNT_LOCKED", "Auto-locked after 3 failed attempts");
+                        setLoadingState(false);
+                        showError("🔒 Compte verrouillé après 3 tentatives. Contactez un administrateur.");
+                        playShakeAnimation();
+                        return;
+                    }
+
+                    const int remaining = 3 - newFailed;
+                    setLoadingState(false);
+                    showError(QString("❌ Identifiant ou mot de passe incorrect. %1 tentative(s) restante(s).").arg(remaining));
+                    playShakeAnimation();
+                    return;
+                }
+
+                // Other states: treat as generic failure
+                insertAudit(realUsername, "LOGIN_FAIL", "Invalid credentials (state=" + state + ")");
+                setLoadingState(false);
+                showError("❌ Identifiant ou mot de passe incorrect.");
+                playShakeAnimation();
+                return;
+            }
+
+            // user not found
+            insertAudit(userInput, "LOGIN_FAIL", "Unknown username/email");
+            setLoadingState(false);
+            showError("❌ Identifiant ou mot de passe incorrect.");
+            playShakeAnimation();
+            return;
+        }
+
+        // 4) Success: credentials match
+        const int userId = q.value(0).toInt();
+        const QString username = q.value(1).toString();
+        const QString state = q.value(2).toString();
+        const QString role = q.value(4).toString();
+
+        if (state.compare("LOCKED", Qt::CaseInsensitive) == 0) {
+            insertAudit(username, "LOGIN_FAIL", "Blocked login attempt on LOCKED account");
+            setLoadingState(false);
+            showError("⛔ Compte verrouillé. Contactez un administrateur.");
+            playShakeAnimation();
+            return;
+        }
+
+        if (state.compare("ARCHIVED", Qt::CaseInsensitive) == 0) {
+            insertAudit(username, "LOGIN_FAIL", "Blocked login attempt on ARCHIVED account");
+            setLoadingState(false);
+            showError("🚫 Ce compte est désactivé.");
+            playShakeAnimation();
+            return;
+        }
+
+        QSqlQuery upd(db);
+        upd.prepare(
+            "UPDATE EMPLOYEES SET "
+            "LAST_LOGIN = SYSTIMESTAMP, "
+            "FAILED_ATTEMPTS = 0, "
+            "LAST_ACTION = 'CONNEXION_REUSSIE', "
+            "LAST_ACTION_TIME = SYSTIMESTAMP "
+            "WHERE USER_ID = :id");
+        upd.bindValue(":id", userId);
+        if (!upd.exec()) {
+            setLoadingState(false);
+            showError("Erreur SQL: " + upd.lastError().text());
+            playShakeAnimation();
+            return;
+        }
+
+        insertAudit(username, "LOGIN_SUCCESS", "Login success");
+
+        m_loggedInUsername = username;
+        m_loggedInRole = role;
+
+        setLoadingState(false);
         playSuccessAnimation();
     });
+}
+
+// ============================================================================
+// FORGOT PASSWORD (offline request workflow)
+// ============================================================================
+
+void Login::onForgotPasswordClicked()
+{
+    QDialog dlg(this);
+    dlg.setWindowTitle("Réinitialisation du mot de passe");
+    dlg.setFixedSize(420, 340);
+    dlg.setModal(true);
+
+    dlg.setStyleSheet(
+        "QDialog { background-color: #1a1f1b; border-radius: 16px; }"
+        "QLabel { color: #ffffff; font-size: 13px; }"
+        "QLabel#dlgTitle { color: #C9A227; font-size: 16px; font-weight: bold; }"
+        "QLabel#dlgSubtitle { color: rgba(255,255,255,140); font-size: 11px; }"
+        "QLineEdit { background: rgba(255,255,255,8); border: 1.5px solid rgba(255,255,255,20);"
+        "            border-radius: 10px; padding: 10px 14px; color: white; font-size: 13px; }"
+        "QLineEdit:focus { border: 1.5px solid #C9A227; }"
+        "QTextEdit { background: rgba(255,255,255,8); border: 1.5px solid rgba(255,255,255,20);"
+        "           border-radius: 10px; padding: 8px; color: white; font-size: 12px; }"
+        "QTextEdit:focus { border: 1.5px solid #C9A227; }"
+        "QPushButton#btnSendRequest { background: qlineargradient(x1:0,y1:0,x2:1,y2:0,"
+        "    stop:0 #1B6B3A, stop:1 #C9A227); color: white; border: none;"
+        "    border-radius: 10px; padding: 11px; font-size: 13px; font-weight: bold; }"
+        "QPushButton#btnSendRequest:hover { background: qlineargradient(x1:0,y1:0,x2:1,y2:0,"
+        "    stop:0 #228B4A, stop:1 #D4AF37); }"
+        "QPushButton#btnCancelForgot { background: rgba(255,255,255,10); color: rgba(255,255,255,180);"
+        "    border: 1px solid rgba(255,255,255,20); border-radius: 10px; padding: 11px;"
+        "    font-size: 13px; }"
+    );
+
+    auto *root = new QVBoxLayout(&dlg);
+    root->setContentsMargins(28, 28, 28, 28);
+    root->setSpacing(10);
+
+    auto *lblTitle = new QLabel(QString::fromUtf8("\xf0\x9f\x94\x91 Mot de passe oublié"), &dlg);
+    lblTitle->setObjectName("dlgTitle");
+    root->addWidget(lblTitle);
+
+    auto *lblSub = new QLabel(
+        "Votre demande sera transmise à l'administrateur\n"
+        "qui vous contactera pour définir un nouveau mot de passe.",
+        &dlg);
+    lblSub->setObjectName("dlgSubtitle");
+    lblSub->setWordWrap(true);
+    root->addWidget(lblSub);
+
+    root->addSpacing(16);
+
+    root->addWidget(new QLabel("Identifiant ou email *", &dlg));
+    auto *leIdentifier = new QLineEdit(&dlg);
+    leIdentifier->setPlaceholderText("Votre identifiant ou adresse email");
+    root->addWidget(leIdentifier);
+
+    root->addWidget(new QLabel("Message (facultatif)", &dlg));
+    auto *teMessage = new QTextEdit(&dlg);
+    teMessage->setPlaceholderText("Ex: Je suis l'opérateur de la presse A1...");
+    teMessage->setFixedHeight(70);
+    root->addWidget(teMessage);
+
+    auto *lblErr = new QLabel(&dlg);
+    lblErr->setStyleSheet("color: #ef4444; font-size: 11px;");
+    lblErr->setWordWrap(true);
+    lblErr->setVisible(false);
+    root->addWidget(lblErr);
+
+    auto *btnRow = new QHBoxLayout();
+    auto *btnCancel = new QPushButton("Annuler", &dlg);
+    btnCancel->setObjectName("btnCancelForgot");
+    auto *btnSend = new QPushButton(QString::fromUtf8("\xf0\x9f\x93\xa8 Envoyer la demande"), &dlg);
+    btnSend->setObjectName("btnSendRequest");
+    btnRow->addWidget(btnCancel);
+    btnRow->addWidget(btnSend);
+    root->addLayout(btnRow);
+
+    QObject::connect(btnCancel, &QPushButton::clicked, &dlg, &QDialog::reject);
+
+    QString foundUsername;
+    QString foundEmail;
+    bool sentOk = false;
+
+    QObject::connect(btnSend, &QPushButton::clicked, &dlg, [&]() {
+        lblErr->setVisible(false);
+
+        const QString identifier = leIdentifier->text().trimmed();
+        if (identifier.isEmpty()) {
+            lblErr->setText("Veuillez entrer votre identifiant ou email.");
+            lblErr->setVisible(true);
+            return;
+        }
+
+        QSqlDatabase db = ConnectionLogin::getInstance().getDatabase();
+        if (!db.isOpen()) {
+            const bool ok = ConnectionLogin::getInstance().createconnect();
+            db = ConnectionLogin::getInstance().getDatabase();
+            if (!ok || !db.isOpen()) {
+                lblErr->setText("Erreur de connexion à la base de données.");
+                lblErr->setVisible(true);
+                return;
+            }
+        }
+
+        // Step 2: find user
+        QSqlQuery q(db);
+        q.prepare(
+            "SELECT USER_ID, USERNAME, EMAIL, STATE "
+            "FROM EMPLOYEES "
+            "WHERE UPPER(USERNAME) = UPPER(:id) OR UPPER(EMAIL) = UPPER(:id)");
+        q.bindValue(":id", identifier);
+        if (!q.exec()) {
+            lblErr->setText("Erreur SQL: " + q.lastError().text());
+            lblErr->setVisible(true);
+            return;
+        }
+
+        if (!q.next()) {
+            lblErr->setText(QString::fromUtf8("\xe2\x9d\x8c Aucun compte trouvé avec cet identifiant."));
+            lblErr->setVisible(true);
+            return;
+        }
+
+        const int userId = q.value(0).toInt();
+        const QString username = q.value(1).toString();
+        const QString email = q.value(2).toString();
+        const QString state = q.value(3).toString();
+
+        if (state.trimmed().compare("ARCHIVED", Qt::CaseInsensitive) == 0) {
+            lblErr->setText(QString::fromUtf8("\xf0\x9f\x9a\xab Ce compte est désactivé. Contactez l'administrateur directement."));
+            lblErr->setVisible(true);
+            return;
+        }
+
+        // Step 3c: duplicate pending request
+        QSqlQuery qDup(db);
+        qDup.prepare(
+            "SELECT COUNT(*) FROM PASSWORD_RESET_REQUESTS "
+            "WHERE USER_ID = :uid AND STATUS = 'PENDING'");
+        qDup.bindValue(":uid", userId);
+        if (!qDup.exec() || !qDup.next()) {
+            lblErr->setText("Erreur SQL: " + qDup.lastError().text());
+            lblErr->setVisible(true);
+            return;
+        }
+        if (qDup.value(0).toInt() > 0) {
+            lblErr->setText(QString::fromUtf8(
+                "\xe2\x8f\xb3 Une demande est déjà en attente pour ce compte.\n"
+                "L'administrateur va vous contacter prochainement."));
+            lblErr->setVisible(true);
+            return;
+        }
+
+        // Step 4: insert request
+        const QString message = teMessage->toPlainText().trimmed().left(500);
+        QSqlQuery ins(db);
+        ins.prepare(
+            "INSERT INTO PASSWORD_RESET_REQUESTS (USER_ID, USERNAME, EMAIL, MESSAGE, STATUS) "
+            "VALUES (:uid, :username, :email, :message, 'PENDING')");
+        ins.bindValue(":uid", userId);
+        ins.bindValue(":username", username);
+        if (email.trimmed().isEmpty())
+            ins.bindValue(":email", QVariant());
+        else
+            ins.bindValue(":email", email);
+        if (message.isEmpty())
+            ins.bindValue(":message", QVariant());
+        else
+            ins.bindValue(":message", message);
+
+        if (!ins.exec()) {
+            lblErr->setText("Erreur SQL: " + ins.lastError().text());
+            lblErr->setVisible(true);
+            return;
+        }
+
+        foundUsername = username;
+        foundEmail = email;
+        sentOk = true;
+        dlg.accept();
+    });
+
+    dlg.exec();
+
+    if (!sentOk) return;
+
+    // Step 5: themed success message
+    QMessageBox msg(this);
+    msg.setIcon(QMessageBox::Information);
+    msg.setWindowTitle("Demande envoyée ✓");
+    msg.setText(
+        "Votre demande a été transmise à l'administrateur.\n\n"
+        "📋 Identifiant: " + foundUsername + "\n"
+        "📧 Email: " + (foundEmail.trimmed().isEmpty() ? QString("(non renseigné)") : foundEmail) +
+        "\n\n"
+        "L'administrateur vous contactera pour vous communiquer\n"
+        "un nouveau mot de passe.");
+    msg.setStyleSheet(
+        "QMessageBox { background-color: #1a1f1b; }"
+        "QLabel { color: #ffffff; font-size: 12px; }"
+        "QPushButton { background: rgba(255,255,255,10); color: rgba(255,255,255,200);"
+        " border: 1px solid rgba(255,255,255,20); border-radius: 8px; padding: 7px 14px; }"
+        "QPushButton:hover { border: 1px solid #C9A227; color: #ffffff; }"
+    );
+    msg.exec();
 }

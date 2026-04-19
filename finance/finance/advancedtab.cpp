@@ -30,6 +30,7 @@
 #include <QHeaderView>
 #include <QPropertyAnimation>
 #include <QtMath>
+#include <utility>
 
 // ═══════════════════════════════════════════════════════════════════════════════
 //  CONSTRUCTEUR
@@ -551,17 +552,7 @@ QLabel#alerteOK {
     border-radius:9px; border-left:4px solid #10b981;
     background:#f0fdf4; color:#065f46;
 }
-    )")
-    .arg(bg)      // 1
-    .arg(txt)     // 2
-    .arg(bg2)     // 3
-    .arg(border)  // 4
-    .arg(txt2)    // 5
-    .arg(txt3)    // 6
-    .arg(hdr)     // 7
-    .arg(selBg)   // 8
-    .arg(hdrTxt)  // 9
-    );
+    )").arg(bg, txt, bg2, border, txt2, txt3, hdr, selBg, hdrTxt));
 
     // Mode sombre : alertes adaptées
     if (m_isDarkMode) {
@@ -899,7 +890,7 @@ void AdvancedTab::predire()
     dernieresPrevisions = prev;
 
     QList<double> cf;
-    for (const PrevisionMois &p : hist) cf.append(p.cashFlow);
+    for (const PrevisionMois &p : std::as_const(hist)) cf.append(p.cashFlow);
     RegressionResult reg = calculerRegression(cf);
 
     double lastPred = prev.isEmpty() ? 0 : prev.last().cashFlow;
@@ -914,7 +905,7 @@ void AdvancedTab::predire()
 
     lblPeriodInfo->setText(
         QString("Modele : %1  |  Historique : %2 mois  |  Projection : %3 mois")
-            .arg(cbAlgorithm->currentText()).arg(hist.size()).arg(nbMois));
+            .arg(cbAlgorithm->currentText(), QString::number(hist.size()), QString::number(nbMois)));
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -1046,7 +1037,7 @@ void AdvancedTab::mettreAJourTableauDetail(const QList<PrevisionMois> &hist,
 {
     // Mini graphique dans la section santé
     QLineSeries *miniSerie = new QLineSeries();
-    QPen mp(QColor("#2563eb")); mp.setWidth(2);
+    QPen mp(QColor(0x25, 0x63, 0xeb)); mp.setWidth(2);
     miniSerie->setPen(mp);
     miniSerie->setPointsVisible(true);
 
@@ -1060,8 +1051,12 @@ void AdvancedTab::mettreAJourTableauDetail(const QList<PrevisionMois> &hist,
     mc->setTitle("");
     mc->setMargins(QMargins(2, 2, 2, 2));
     mc->createDefaultAxes();
-    mc->axes(Qt::Horizontal).first()->setVisible(false);
-    QValueAxis *mcY = qobject_cast<QValueAxis*>(mc->axes(Qt::Vertical).first());
+    const auto hAxes = mc->axes(Qt::Horizontal);
+    if (!hAxes.isEmpty()) {
+        hAxes.first()->setVisible(false);
+    }
+    const auto vAxes = mc->axes(Qt::Vertical);
+    QValueAxis *mcY = vAxes.isEmpty() ? nullptr : qobject_cast<QValueAxis*>(vAxes.first());
     if (mcY) {
         mcY->setLabelFormat("%.0f");
         mcY->setLabelsColor(QColor(m_isDarkMode ? "#8b949e" : "#94a3b8"));
@@ -1094,33 +1089,33 @@ void AdvancedTab::mettreAJourTableauDetail(const QList<PrevisionMois> &hist,
         QTableWidgetItem *itP = new QTableWidgetItem(periode);
         itP->setTextAlignment(Qt::AlignVCenter | Qt::AlignLeft);
         if (p.estFutur) {
-            itP->setForeground(QColor("#ea580c"));
+            itP->setForeground(QColor(0xea, 0x58, 0x0c));
             QFont f = itP->font(); f.setBold(true); itP->setFont(f);
         } else {
-            itP->setForeground(QColor("#2563eb"));
+            itP->setForeground(QColor(0x25, 0x63, 0xeb));
         }
         tableauPrevisions->setItem(row, 0, itP);
 
-        cell(1, formatDT(p.revenu),  Qt::AlignVCenter | Qt::AlignRight, QColor("#10b981"));
-        cell(2, formatDT(p.depense), Qt::AlignVCenter | Qt::AlignRight, QColor("#ef4444"));
+           cell(1, formatDT(p.revenu),  Qt::AlignVCenter | Qt::AlignRight, QColor(0x10, 0xb9, 0x81));
+           cell(2, formatDT(p.depense), Qt::AlignVCenter | Qt::AlignRight, QColor(0xef, 0x44, 0x44));
         cell(3, formatDT(p.cashFlow),Qt::AlignVCenter | Qt::AlignRight,
-             p.cashFlow >= 0 ? QColor("#10b981") : QColor("#ef4444"));
+               p.cashFlow >= 0 ? QColor(0x10, 0xb9, 0x81) : QColor(0xef, 0x44, 0x44));
 
         // Statut avec fond coloré
         QString statut;
         QColor  statFg, statBg;
         if (!p.estFutur) {
-            statut = "Reel";   statFg = QColor("#2563eb");
-            statBg = m_isDarkMode ? QColor("#0d2040") : QColor("#dbeafe");
+            statut = "Reel";   statFg = QColor(0x25, 0x63, 0xeb);
+            statBg = m_isDarkMode ? QColor(0x0d, 0x20, 0x40) : QColor(0xdb, 0xea, 0xfe);
         } else if (p.cashFlow > 0) {
-            statut = "Excedent";  statFg = QColor("#059669");
-            statBg = m_isDarkMode ? QColor("#0a2d1a") : QColor("#d1fae5");
+            statut = "Excedent";  statFg = QColor(0x05, 0x96, 0x69);
+            statBg = m_isDarkMode ? QColor(0x0a, 0x2d, 0x1a) : QColor(0xd1, 0xfa, 0xe5);
         } else if (p.cashFlow > -500) {
-            statut = "Equilibre"; statFg = QColor("#d97706");
-            statBg = m_isDarkMode ? QColor("#2d1e06") : QColor("#fef3c7");
+            statut = "Equilibre"; statFg = QColor(0xd9, 0x77, 0x06);
+            statBg = m_isDarkMode ? QColor(0x2d, 0x1e, 0x06) : QColor(0xfe, 0xf3, 0xc7);
         } else {
-            statut = "Deficit !"; statFg = QColor("#dc2626");
-            statBg = m_isDarkMode ? QColor("#2d0b0b") : QColor("#fee2e2");
+            statut = "Deficit !"; statFg = QColor(0xdc, 0x26, 0x26);
+            statBg = m_isDarkMode ? QColor(0x2d, 0x0b, 0x0b) : QColor(0xfe, 0xe2, 0xe2);
         }
         QTableWidgetItem *itS = new QTableWidgetItem(statut);
         itS->setTextAlignment(Qt::AlignVCenter | Qt::AlignCenter);
@@ -1316,9 +1311,9 @@ void AdvancedTab::exporterPrevisionCSV()
     out.setEncoding(QStringConverter::Utf8);
     out << "\xEF\xBB\xBF";
     out << "Periode,Type,Revenus (DT),Depenses (DT),Cash-Flow (DT)\n";
-    for (const PrevisionMois &p : dernierHistorique)
+    for (const PrevisionMois &p : std::as_const(dernierHistorique))
         out << p.label << ",Reel,"    << p.revenu << "," << p.depense << "," << p.cashFlow << "\n";
-    for (const PrevisionMois &p : dernieresPrevisions)
+    for (const PrevisionMois &p : std::as_const(dernieresPrevisions))
         out << p.label << ",Prevision," << p.revenu << "," << p.depense << "," << p.cashFlow << "\n";
     f.close();
     QMessageBox::information(this, "Export CSV", "Fichier cree :\n" + path);
@@ -1336,8 +1331,8 @@ void AdvancedTab::exporterGraphiquePDF()
             + "/rapport_prevision.pdf", "PDF (*.pdf)");
     if (path.isEmpty()) return;
 
-    int nbA=0,nbI=0,nbU=0,nbD=0;
-    for (const PrevisionMois &p : dernieresPrevisions) {
+    int nbA = 0;
+    for (const PrevisionMois &p : std::as_const(dernieresPrevisions)) {
         if (p.cashFlow < 0) nbA++;
     }
 
@@ -1364,7 +1359,7 @@ void AdvancedTab::exporterGraphiquePDF()
         "<table><tr><th>Periode</th><th>Revenus (DT)</th>"
         "<th>Depenses (DT)</th><th>Cash-Flow (DT)</th></tr>";
 
-    for (const PrevisionMois &p : dernierHistorique)
+    for (const PrevisionMois &p : std::as_const(dernierHistorique))
         html += QString("<tr><td class='reel'>%1</td><td>%2</td><td>%3</td>"
                         "<td class='%4'>%5</td></tr>")
                     .arg(p.label).arg(p.revenu,0,'f',2).arg(p.depense,0,'f',2)
@@ -1374,7 +1369,7 @@ void AdvancedTab::exporterGraphiquePDF()
             "<table><tr><th>Periode</th><th>Revenus prev. (DT)</th>"
             "<th>Depenses prev. (DT)</th><th>Cash-Flow prev. (DT)</th><th>Statut</th></tr>";
 
-    for (const PrevisionMois &p : dernieresPrevisions) {
+    for (const PrevisionMois &p : std::as_const(dernieresPrevisions)) {
         QString st = p.cashFlow>0 ? "Excedent" : p.cashFlow>-500 ? "Equilibre" : "Deficit";
         html += QString("<tr><td class='prev'>%1</td><td>%2</td><td>%3</td>"
                         "<td class='%4'>%5</td><td>%6</td></tr>")

@@ -39,7 +39,7 @@ using namespace std;
 // IMPLÉMENTATION: TransactionTab
 // ========================================================================
 TransactionTab::TransactionTab(int userId, QWidget *parent)
-    : QWidget(parent), currentUserId(userId), dbConn(new ConnexionFinance())
+    : QWidget(parent), dbConn(new ConnexionFinance()), currentUserId(userId)
 {
     initializeUI();
 
@@ -365,7 +365,6 @@ void TransactionTab::ajouterTransaction()
     double amount = spinMontant->value();
     QString type = cbType->currentText();
     QString category = cbCategorie->currentText();
-    int machineId = 0;
 
     if (amount <= 0.0) {
         QMessageBox::warning(this, "Validation", QString::fromUtf8("Le montant doit être supérieur à 0."));
@@ -376,17 +375,12 @@ void TransactionTab::ajouterTransaction()
         return;
     }
 
-    if (type == "REVENU") {
-        // REVENU: l'employee vend l'huile, pas de machine
-        machineId = 0;
-    } else {
+    if (type != "REVENU") {
         // DÉPENSE: machine requise SEULEMENT pour Maintenance
         if (category == "Maintenance" && (cbMachine->currentIndex() < 0 || !cbMachine->currentData().isValid())) {
             QMessageBox::warning(this, "Validation", QString::fromUtf8("Veuillez sélectionner une machine pour une opération de maintenance."));
             return;
         }
-        // Pour les autres dépenses (Salaire, Achat pièces, Autre), machine est optionnelle
-        machineId = (cbMachine->currentIndex() >= 0 && cbMachine->currentData().isValid()) ? cbMachine->currentData().toInt() : 0;
     }
 
     // 2. Insertion
@@ -435,23 +429,18 @@ void TransactionTab::modifierTransaction()
     double amount = spinMontant->value();
     QString type = cbType->currentText();
     QString category = cbCategorie->currentText();
-    int machineId = 0;
 
     if (amount <= 0.0) {
         QMessageBox::warning(this, "Validation", "Montant doit etre > 0.");
         return;
     }
 
-    if (type == "REVENU") {
-        machineId = 0;  // REVENU: pas de machine
-    } else {
+    if (type != "REVENU") {
         // DÉPENSE: machine requise SEULEMENT pour Maintenance
         if (category == "Maintenance" && (cbMachine->currentIndex() < 0 || !cbMachine->currentData().isValid())) {
             QMessageBox::warning(this, "Validation", QString::fromUtf8("Veuillez sélectionner une machine pour une opération de maintenance."));
             return;
         }
-        // Pour les autres dépenses (Salaire, Achat pièces, Autre), machine est optionnelle
-        machineId = (cbMachine->currentIndex() >= 0 && cbMachine->currentData().isValid()) ? cbMachine->currentData().toInt() : 0;
     }
 
     QSqlDatabase db = dbConn->getDatabase();
@@ -1290,8 +1279,6 @@ void StatsTab::afficherGraphique()
         *setRev << revenus;
         *setDep << depenses;
         *setBen << benefice;
-        
-        float zeroFixedBen = benefice < 0 ? 0 : benefice;
         
         series->append(setRev);
         series->append(setDep);

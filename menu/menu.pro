@@ -18,6 +18,7 @@ SOURCES += \
     main.cpp \
     menu.cpp \
     ../Login/login.cpp \
+    ../Login/connectionlogin.cpp \
     ../production/production.cpp \
     ../production/connection.cpp \
     ../production/productionmodel.cpp \
@@ -52,6 +53,7 @@ qtHaveModule(httpserver) {
 HEADERS += \
     menu.h \
     ../Login/login.h \
+    ../Login/connectionlogin.h \
     ../production/production.h \
     ../production/connection.h \
     ../production/productionmodel.h \
