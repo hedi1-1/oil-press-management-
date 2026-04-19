@@ -1,4 +1,5 @@
-QT       += core gui sql printsupport charts serialport
+QT       += core gui sql printsupport charts serialport network httpserver
+
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -29,6 +30,8 @@ SOURCES += \
     ../stock/connexion.cpp \
     ../machine/machine.cpp \
     ../machine/connexionmachine.cpp \
+    ../machine/MachineServer.cpp \
+    ../machine/chatbot.cpp \
     ../finance/finance/finance.cpp \
     ../finance/finance/connexionfinance.cpp
 
@@ -51,6 +54,8 @@ HEADERS += \
     ../stock/connexion.h \
     ../machine/machine.h \
     ../machine/connexionmachine.h \
+    ../machine/MachineServer.h \
+    ../machine/chatbot.h \
     ../finance/finance/finance.h \
     ../finance/finance/connexionfinance.h
 
@@ -75,3 +80,4 @@ RESOURCES += \
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+

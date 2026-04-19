@@ -12,6 +12,8 @@
 #include <QKeyEvent>
 #include <QLabel>
 #include <QMainWindow>
+#include <QPair>
+#include <QPixmap>
 #include <QPushButton>
 #include <QStandardItemModel>
 #include <QTimer>
@@ -23,6 +25,8 @@ namespace Ui {
 class machine;
 };
 QT_END_NAMESPACE
+
+class MachineServer;
 
 // Navigation Bar Class Declaration
 class NavigationBar : public QWidget {
@@ -68,10 +72,11 @@ private:
 
 // Todo item for maintenance list
 struct TodoItem {
+  QString machineId;
   QString machineName;
-  QString fabricant;
-  QString priority; // "Urgent" or "Normal"
-  bool done;
+  QString machineType;
+  QString tag;
+  QString priority;
 };
 
 // Historique entry for live timer
@@ -83,6 +88,8 @@ struct HistoriqueEntry {
   int secondsVeille;
 };
 
+class Chatbot;
+
 // Machine Main Window Class
 class machine : public QMainWindow {
   Q_OBJECT
@@ -93,6 +100,7 @@ public:
 
 protected:
   bool eventFilter(QObject *obj, QEvent *event) override;
+  void resizeEvent(QResizeEvent *event) override;
 
 signals:
   void backToMenu();
@@ -100,6 +108,8 @@ signals:
 private slots:
   void onBackButtonClicked();
   void updateDateTime();
+  void onThemeToggleClicked();
+  void onLanguageToggleClicked();
   void onNavigationTabClicked(int index);
   void on_pushButton_enregistrer_machine_clicked();
   void on_btnReinitialiser_machine_clicked();
@@ -107,6 +117,9 @@ private slots:
   void on_btnSupprimerMachine_machine_clicked();
   void on_btnModifierMachine_machine_clicked();
   void on_btnFiltrer_clicked();
+  void on_btnGenererStats_machine_clicked();
+  void on_btnGenererQrMachine_clicked();
+  void onMachineRequestedFromHttp(const QString &machineId);
 
 private:
   struct MachineData {
@@ -124,6 +137,9 @@ private:
     int scoreSante;
     QDate miseAJour;
     QString responsable;
+    QString refroidissement;
+    QString tag;
+    QString priorite;
   };
   struct MachineFormData {
     QString nom;
@@ -149,12 +165,17 @@ private:
                                const QString &problematicName);
 
   void setupNavigationBar();
+  QString resolveLocalIpv4() const;
+  QPixmap generateMachineQrPixmap(const QString &payload,
+                                  int moduleSize = 4,
+                                  int margin = 2) const;
+  void resetQrPreviewLabel();
+  void refreshNavigationTabs();
+  void applyTheme();
+  void applyLanguage();
   void setupTodoList();
+  void reloadTodoFromMachineData();
   void refreshTodoList();
-  void addTodoItem(const QString &machineName, const QString &fabricant,
-                   const QString &priority);
-  void onTodoCheckToggled(int index, bool checked);
-  void showAddTodoDialog();
   QWidget *createTodoItemWidget(int index);
 
   Ui::machine *ui;
@@ -164,6 +185,7 @@ private:
   QStandardItemModel *machineTableModel;
   QStandardItemModel *employeeTableModel;
   QStandardItemModel *historiqueTableModel;
+  QStandardItemModel *statsComparisonModel;
   QList<MachineData> m_allMachines; // Stockage global pour le filtrage
   QString m_selectedMachineId;
   int m_selectedRow;
@@ -172,8 +194,21 @@ private:
   QTimer *countsTimer;
   QTimer *historiqueTimer;
   QVector<HistoriqueEntry> m_historiqueEntries;
+  MachineServer *m_machineServer;
+  Chatbot *m_chatbot;
+  QPushButton *m_btnChatbot;
+  QString m_serverHostIp;
+  bool m_isDarkMode = false;
+  bool m_isFrench = true;
+  QString m_lightStyleSheet;
+  QString m_darkStyleSheet;
   void setupMachineTable();
   void setupEmployeesTable();
+  void setupStatsComparisonTable();
+  void populateStatsComparisonTable();
+  void normalizeLowPriorityTags();
+  void refreshAIMachineSelector();
+  void updateAICarnetForSelectedMachine();
   void chargerMachines();
   void chargerEmployees();
   void refreshResponsableFilterOptions();
@@ -190,8 +225,14 @@ private:
   void rechercherMachines();
   void exporterPDF();
   void afficherDialogExport();
+  QList<QPair<QString, double>> loadStatisticsData(const QString &statsType) const;
+  void renderStatisticsChart(const QList<QPair<QString, double>> &data,
+                             const QString &statsType,
+                             const QString &chartType);
+  void clearStatsChartArea(const QString &message);
   void showMachineCard();
   void updateMachineCounts();
   void updateHistoriqueDisplay();
+  bool selectMachineInTableById(const QString &machineId);
 };
 #endif // MACHINE_H

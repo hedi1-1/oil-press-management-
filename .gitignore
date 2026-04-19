@@ -24,3 +24,6 @@ moc_predefs.h
 Makefile
 Makefile.Debug
 Makefile.Release
+
+# config.h
+machine/config.h
