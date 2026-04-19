@@ -1,4 +1,4 @@
-#include "stock.h"
+#include "fournisseur.h"
 #include "ui_stock.h"
 
 #include <QComboBox>

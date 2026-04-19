@@ -1689,228 +1689,6 @@ void Stock::chargerDonneesTable()
     chargerDatesStockCalendrier();
 }
 
-void Stock::initialiserCalendrier()
-{
-    if (!ui->calendarWidgetStock || !ui->tableCalendarDetails) {
-        return;
-    }
-
-    ui->calendarWidgetStock->setGridVisible(true);
-    ui->calendarWidgetStock->setVerticalHeaderFormat(QCalendarWidget::NoVerticalHeader);
-
-    ui->tableCalendarDetails->setColumnCount(6);
-    ui->tableCalendarDetails->setHorizontalHeaderLabels({"Type d'huile", "Quantite (L)", "Seuil (L)", "Emplacement", "Etat", "Date MAJ"});
-    ui->tableCalendarDetails->horizontalHeader()->setStretchLastSection(true);
-    ui->tableCalendarDetails->setSelectionBehavior(QAbstractItemView::SelectRows);
-    ui->tableCalendarDetails->setEditTriggers(QAbstractItemView::NoEditTriggers);
-
-    chargerDatesStockCalendrier();
-    onCalendarDateSelected(ui->calendarWidgetStock->selectedDate());
-}
-
-void Stock::chargerDatesStockCalendrier()
-{
-    if (!connexion || !connexion->isOpen() || !ui->calendarWidgetStock) {
-        return;
-    }
-
-    dateStatutMap.clear();
-
-    QSqlQuery query(connexion->getDatabase());
-    query.prepare("SELECT TRUNC(DATE_DERNIERE_MISE_A_JOUR), QUANTITE_ACTUELLE, SEUIL_ALERTE "
-                  "FROM STOCK WHERE DATE_DERNIERE_MISE_A_JOUR IS NOT NULL");
-
-    if (!query.exec()) {
-        qDebug() << "Erreur chargement dates calendrier:" << query.lastError().text();
-        return;
-    }
-
-    while (query.next()) {
-        QDate date = query.value(0).toDate();
-        double quantite = query.value(1).toDouble();
-        double seuil = query.value(2).toDouble();
-
-        QString statut = "disponible";
-        if (seuil > 0 && quantite <= (seuil * 0.5)) {
-            statut = "critique";
-        } else if (seuil > 0 && quantite <= seuil) {
-            statut = "alerte";
-        }
-
-        const QString current = dateStatutMap.value(date);
-        if (current == "critique") {
-            continue;
-        }
-        if (current == "alerte" && statut == "disponible") {
-            continue;
-        }
-
-        dateStatutMap.insert(date, statut);
-    }
-
-    mettreEnCouleurCalendrier();
-    mettreAJourKpiCalendrier();
-}
-
-void Stock::mettreAJourKpiCalendrier()
-{
-    int alertDates = 0;
-    int criticalDates = 0;
-
-    for (auto it = dateStatutMap.constBegin(); it != dateStatutMap.constEnd(); ++it) {
-        if (it.value() == "critique") {
-            criticalDates++;
-        } else if (it.value() == "alerte") {
-            alertDates++;
-        }
-    }
-
-    if (ui->labelKpiDatesActivesValue) {
-        ui->labelKpiDatesActivesValue->setText(QString::number(dateStatutMap.size()));
-    }
-    if (ui->labelKpiAlertesValue) {
-        ui->labelKpiAlertesValue->setText(QString::number(alertDates));
-    }
-    if (ui->labelKpiCritiquesValue) {
-        ui->labelKpiCritiquesValue->setText(QString::number(criticalDates));
-    }
-}
-
-void Stock::mettreEnCouleurCalendrier()
-{
-    if (!ui->calendarWidgetStock) {
-        return;
-    }
-
-    ui->calendarWidgetStock->setDateTextFormat(QDate(), QTextCharFormat());
-
-    for (auto it = dateStatutMap.constBegin(); it != dateStatutMap.constEnd(); ++it) {
-        QTextCharFormat fmt;
-
-        if (it.value() == "critique") {
-            fmt.setBackground(QBrush(QColor("#ef4444")));
-            fmt.setForeground(QBrush(Qt::white));
-        } else if (it.value() == "alerte") {
-            fmt.setBackground(QBrush(QColor("#f59e0b")));
-            fmt.setForeground(QBrush(Qt::black));
-        } else {
-            fmt.setBackground(QBrush(QColor("#22c55e")));
-            fmt.setForeground(QBrush(Qt::white));
-        }
-
-        fmt.setFontWeight(QFont::DemiBold);
-        ui->calendarWidgetStock->setDateTextFormat(it.key(), fmt);
-    }
-}
-
-void Stock::onCalendarDateSelected(const QDate &date)
-{
-    afficherStocksParDate(date);
-}
-
-void Stock::onCalendarShowMonth(int year, int month)
-{
-    Q_UNUSED(year);
-    Q_UNUSED(month);
-    mettreEnCouleurCalendrier();
-}
-
-void Stock::afficherStocksParDate(const QDate &date)
-{
-    if (!connexion || !connexion->isOpen() || !ui->tableCalendarDetails) {
-        return;
-    }
-
-    QSqlQuery query(connexion->getDatabase());
-    query.prepare("SELECT TYPE_HUILE, QUANTITE_ACTUELLE, SEUIL_ALERTE, EMPLACEMENT_STOCKAGE, ETAT_STOCK, DATE_DERNIERE_MISE_A_JOUR "
-                  "FROM STOCK "
-                  "WHERE TRUNC(DATE_DERNIERE_MISE_A_JOUR) = TO_DATE(:dateValue, 'YYYY-MM-DD') "
-                  "ORDER BY TYPE_HUILE");
-    query.bindValue(":dateValue", date.toString("yyyy-MM-dd"));
-
-    if (!query.exec()) {
-        qDebug() << "Erreur afficherStocksParDate:" << query.lastError().text();
-        return;
-    }
-
-    ui->tableCalendarDetails->setRowCount(0);
-
-    int row = 0;
-    int countDisponible = 0;
-    int countAlerte = 0;
-    int countCritique = 0;
-    while (query.next()) {
-        const double quantite = query.value(1).toDouble();
-        const double seuil = query.value(2).toDouble();
-
-        ui->tableCalendarDetails->insertRow(row);
-        ui->tableCalendarDetails->setItem(row, 0, new QTableWidgetItem(query.value(0).toString()));
-        ui->tableCalendarDetails->setItem(row, 1, new QTableWidgetItem(QString::number(quantite, 'f', 2)));
-        ui->tableCalendarDetails->setItem(row, 2, new QTableWidgetItem(QString::number(seuil, 'f', 2)));
-        ui->tableCalendarDetails->setItem(row, 3, new QTableWidgetItem(query.value(3).toString()));
-        ui->tableCalendarDetails->setItem(row, 4, new QTableWidgetItem(query.value(4).toString()));
-        ui->tableCalendarDetails->setItem(row, 5, new QTableWidgetItem(query.value(5).toDate().toString("dd/MM/yyyy")));
-
-        QColor rowColor("#dcfce7");
-        QColor textColor("#14532d");
-        if (seuil > 0 && quantite <= (seuil * 0.5)) {
-            rowColor = QColor("#fee2e2");
-            textColor = QColor("#991b1b");
-            countCritique++;
-        } else if (seuil > 0 && quantite <= seuil) {
-            rowColor = QColor("#ffedd5");
-            textColor = QColor("#92400e");
-            countAlerte++;
-        } else {
-            countDisponible++;
-        }
-
-        for (int col = 0; col < ui->tableCalendarDetails->columnCount(); ++col) {
-            QTableWidgetItem *item = ui->tableCalendarDetails->item(row, col);
-            if (item) {
-                item->setBackground(QBrush(rowColor));
-                item->setForeground(QBrush(textColor));
-            }
-        }
-
-        row++;
-    }
-
-    if (ui->labelCalendarSummary) {
-        ui->labelCalendarSummary->setText(
-            QString("📌 Date selectionnee : %1 | %2 enregistrement(s) | "
-                    "<span style='color:#14532d;'>🟢 %3</span> "
-                    "<span style='color:#92400e;'>🟡 %4</span> "
-                    "<span style='color:#991b1b;'>🔴 %5</span>")
-                .arg(date.toString("dd/MM/yyyy"))
-                .arg(row)
-                .arg(countDisponible)
-                .arg(countAlerte)
-                .arg(countCritique));
-        animerResumeCalendrier();
-    }
-}
-
-void Stock::animerResumeCalendrier()
-{
-    if (!ui->labelCalendarSummary) {
-        return;
-    }
-
-    QGraphicsOpacityEffect *effect = qobject_cast<QGraphicsOpacityEffect*>(ui->labelCalendarSummary->graphicsEffect());
-    if (!effect) {
-        effect = new QGraphicsOpacityEffect(ui->labelCalendarSummary);
-        ui->labelCalendarSummary->setGraphicsEffect(effect);
-    }
-
-    QPropertyAnimation *animation = new QPropertyAnimation(effect, "opacity", ui->labelCalendarSummary);
-    animation->setDuration(280);
-    animation->setStartValue(0.35);
-    animation->setEndValue(1.0);
-    animation->setEasingCurve(QEasingCurve::OutCubic);
-    animation->start(QAbstractAnimation::DeleteWhenStopped);
-}
-
 void Stock::viderChamps()
 {
     ui->lineEditIdStock->clear();
@@ -2664,204 +2442,6 @@ void Stock::onVerifierAlertesClicked()
     afficherMessage("Alertes", resume);
 }
 
-// ==================== HISTORIQUE ====================
-
-void Stock::onAfficherHistoriqueClicked()
-{
-    refreshHistoriqueEtatTemps(true);
-}
-
-void Stock::refreshHistoriqueEtatTemps(bool userTriggered)
-{
-    if (!ui->tableHistorique || !ui->listProduitsCritiques || !ui->progressStock || !ui->labelEtatGlobal || !ui->lcdVolume) {
-        return;
-    }
-
-    if (!connexion || !connexion->isOpen()) {
-        if (userTriggered) {
-            afficherMessage("Erreur", "Pas de connexion à la base de données", true);
-        }
-        return;
-    }
-
-    QDate startDate = ui->dateDebut ? ui->dateDebut->date() : QDate::currentDate().addDays(-30);
-    QDate endDate = ui->dateFin ? ui->dateFin->date() : QDate::currentDate();
-    if (startDate > endDate) {
-        std::swap(startDate, endDate);
-        if (ui->dateDebut) ui->dateDebut->setDate(startDate);
-        if (ui->dateFin) ui->dateFin->setDate(endDate);
-    }
-
-    ui->tableHistorique->clear();
-    ui->tableHistorique->setColumnCount(7);
-    ui->tableHistorique->setHorizontalHeaderLabels({"ID", "Type", "Quantité", "Seuil", "Date MAJ", "Emplacement", "État"});
-    ui->tableHistorique->setRowCount(0);
-    ui->tableHistorique->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    ui->tableHistorique->horizontalHeader()->setDefaultAlignment(Qt::AlignCenter);
-    ui->tableHistorique->setSelectionBehavior(QAbstractItemView::SelectRows);
-    ui->tableHistorique->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    ui->tableHistorique->setAlternatingRowColors(true);
-    ui->tableHistorique->verticalHeader()->setVisible(false);
-    ui->tableHistorique->verticalHeader()->setDefaultSectionSize(32);
-
-    QSqlQuery historyQuery(connexion->getDatabase());
-    historyQuery.prepare(
-        "SELECT ID_STOCK, TYPE_HUILE, QUANTITE_ACTUELLE, SEUIL_ALERTE, DATE_DERNIERE_MISE_A_JOUR, EMPLACEMENT_STOCKAGE, ETAT_STOCK "
-        "FROM STOCK "
-        "WHERE DATE_DERNIERE_MISE_A_JOUR IS NOT NULL "
-        "AND TRUNC(DATE_DERNIERE_MISE_A_JOUR) BETWEEN TO_DATE(:startDate, 'YYYY-MM-DD') AND TO_DATE(:endDate, 'YYYY-MM-DD') "
-        "ORDER BY DATE_DERNIERE_MISE_A_JOUR DESC, ID_STOCK DESC");
-    historyQuery.bindValue(":startDate", startDate.toString("yyyy-MM-dd"));
-    historyQuery.bindValue(":endDate", endDate.toString("yyyy-MM-dd"));
-
-    if (!historyQuery.exec()) {
-        if (userTriggered) {
-            afficherMessage("Historique", "Erreur chargement historique : " + historyQuery.lastError().text(), true);
-        }
-        return;
-    }
-
-    int row = 0;
-    while (historyQuery.next()) {
-        ui->tableHistorique->insertRow(row);
-
-        const double quantite = historyQuery.value(2).toDouble();
-        const double seuil = historyQuery.value(3).toDouble();
-
-        ui->tableHistorique->setItem(row, 0, new QTableWidgetItem(historyQuery.value(0).toString()));
-        ui->tableHistorique->setItem(row, 1, new QTableWidgetItem(historyQuery.value(1).toString()));
-        ui->tableHistorique->setItem(row, 2, new QTableWidgetItem(QString::number(quantite, 'f', 2)));
-        ui->tableHistorique->setItem(row, 3, new QTableWidgetItem(QString::number(seuil, 'f', 2)));
-        ui->tableHistorique->setItem(row, 4, new QTableWidgetItem(historyQuery.value(4).toDate().toString("dd/MM/yyyy")));
-        ui->tableHistorique->setItem(row, 5, new QTableWidgetItem(historyQuery.value(5).toString()));
-        ui->tableHistorique->setItem(row, 6, new QTableWidgetItem(historyQuery.value(6).toString()));
-
-        QColor bgColor("#ecfdf3");
-        QColor fgColor("#14532d");
-        if (quantite <= 0.0) {
-            bgColor = QColor("#fee2e2");
-            fgColor = QColor("#991b1b");
-        } else if (seuil > 0.0 && quantite <= seuil) {
-            bgColor = QColor("#ffedd5");
-            fgColor = QColor("#92400e");
-        }
-
-        for (int col = 0; col < ui->tableHistorique->columnCount(); ++col) {
-            QTableWidgetItem *item = ui->tableHistorique->item(row, col);
-            if (!item) {
-                continue;
-            }
-            item->setBackground(QBrush(bgColor));
-            item->setForeground(QBrush(fgColor));
-            item->setTextAlignment(col == 1 || col == 5 ? (Qt::AlignVCenter | Qt::AlignLeft) : Qt::AlignCenter);
-        }
-
-        ++row;
-    }
-
-    QSqlQuery kpiQuery(connexion->getDatabase());
-    kpiQuery.prepare(
-        "SELECT NVL(SUM(QUANTITE_ACTUELLE),0) AS TOTAL_QTE, "
-        "       NVL(SUM(SEUIL_ALERTE),0) AS TOTAL_SEUIL, "
-        "       SUM(CASE WHEN QUANTITE_ACTUELLE = 0 THEN 1 ELSE 0 END) AS NB_RUPTURE, "
-        "       SUM(CASE WHEN QUANTITE_ACTUELLE > 0 AND QUANTITE_ACTUELLE <= SEUIL_ALERTE THEN 1 ELSE 0 END) AS NB_FAIBLE, "
-        "       COUNT(*) AS NB_TOTAL "
-        "FROM STOCK");
-
-    if (kpiQuery.exec() && kpiQuery.next()) {
-        const double totalQte = kpiQuery.value(0).toDouble();
-        const double totalSeuil = kpiQuery.value(1).toDouble();
-        const int nbRupture = kpiQuery.value(2).toInt();
-        const int nbFaible = kpiQuery.value(3).toInt();
-        const int nbTotal = qMax(1, kpiQuery.value(4).toInt());
-
-        ui->lcdVolume->display(QString::number(totalQte, 'f', 2));
-        if (ui->labelDerniereMaj) {
-            ui->labelDerniereMaj->setText("Dernière mise à jour : " + QDateTime::currentDateTime().toString("dd/MM/yyyy HH:mm:ss"));
-        }
-
-        int progressPct = 100;
-        if (totalSeuil > 0.0) {
-            progressPct = qBound(0, qRound((totalQte / totalSeuil) * 100.0), 100);
-        }
-
-        QString etatText = "État : ✅ Normal";
-        QString progressChunkColor = "#22c55e";
-        if (nbRupture > 0) {
-            etatText = QString("État : ⛔ Critique (%1 rupture%2)")
-                           .arg(nbRupture)
-                           .arg(nbRupture > 1 ? "s" : "");
-            progressChunkColor = "#ef4444";
-            progressPct = qMin(progressPct, 30);
-        } else if (nbFaible > 0) {
-            etatText = QString("État : ⚠️ Attention (%1 faible%2)")
-                           .arg(nbFaible)
-                           .arg(nbFaible > 1 ? "s" : "");
-            progressChunkColor = "#f59e0b";
-            progressPct = qMin(progressPct, 70);
-        }
-
-        ui->labelEtatGlobal->setText(etatText);
-        ui->progressStock->setValue(progressPct);
-        ui->progressStock->setFormat(QString("Niveau global : %1% (%2/%3)")
-                                     .arg(progressPct)
-                                     .arg(nbTotal - nbRupture - nbFaible)
-                                     .arg(nbTotal));
-        ui->progressStock->setStyleSheet(
-            QString("QProgressBar { border: 1px solid #c7dbcf; border-radius: 9px; text-align: center; min-height: 30px; "
-                    "background: #f6fbf8; color: #123327; font-weight: 700; }"
-                    "QProgressBar::chunk { border-radius: 8px; background-color: %1; }")
-                .arg(progressChunkColor));
-    }
-
-    ui->listProduitsCritiques->clear();
-    QSqlQuery criticalQuery(connexion->getDatabase());
-    criticalQuery.prepare(
-        "SELECT TYPE_HUILE, QUANTITE_ACTUELLE, SEUIL_ALERTE, EMPLACEMENT_STOCKAGE "
-        "FROM STOCK "
-        "WHERE QUANTITE_ACTUELLE <= SEUIL_ALERTE OR QUANTITE_ACTUELLE = 0 "
-        "ORDER BY CASE WHEN QUANTITE_ACTUELLE = 0 THEN 0 ELSE 1 END, QUANTITE_ACTUELLE ASC");
-
-    if (criticalQuery.exec()) {
-        while (criticalQuery.next()) {
-            const QString type = criticalQuery.value(0).toString();
-            const double quantite = criticalQuery.value(1).toDouble();
-            const double seuil = criticalQuery.value(2).toDouble();
-            const QString emplacement = criticalQuery.value(3).toString();
-
-            QString prefix = "⚠️";
-            QColor color("#92400e");
-            if (quantite <= 0.0) {
-                prefix = "⛔";
-                color = QColor("#991b1b");
-            }
-
-            auto *item = new QListWidgetItem(
-                QString("%1 %2 | %3 L (seuil %4 L) | %5")
-                    .arg(prefix)
-                    .arg(type)
-                    .arg(QString::number(quantite, 'f', 2))
-                    .arg(QString::number(seuil, 'f', 2))
-                    .arg(emplacement));
-            item->setForeground(QBrush(color));
-            ui->listProduitsCritiques->addItem(item);
-        }
-    }
-
-    if (ui->listProduitsCritiques->count() == 0) {
-        auto *item = new QListWidgetItem("✅ Aucun produit critique actuellement");
-        item->setForeground(QBrush(QColor("#166534")));
-        ui->listProduitsCritiques->addItem(item);
-    }
-
-    if (userTriggered) {
-        afficherMessage("Historique", QString("Historique mis à jour: %1 ligne(s) sur la période %2 - %3.")
-                                         .arg(row)
-                                         .arg(startDate.toString("dd/MM/yyyy"))
-                                         .arg(endDate.toString("dd/MM/yyyy")));
-    }
-}
-
 void Stock::onAnalyserTendancesClicked()
 {
     if (!connexion || !connexion->isOpen()) {
@@ -3211,67 +2791,228 @@ void Stock::onAnalyserTendancesClicked()
 
 void Stock::onAnalyserPredictifHuileClicked()
 {
-    if (ui->comboPeriodePredictifHuile && ui->comboPeriode) {
-        ui->comboPeriode->setCurrentText(ui->comboPeriodePredictifHuile->currentText());
+    if (!connexion || !connexion->isOpen()) {
+        afficherMessage("Erreur", "Pas de connexion a la base de donnees", true);
+        return;
     }
 
-    onAnalyserTendancesClicked();
+    int periodDays = 30;
+    const QString periode = ui->comboPeriodePredictifHuile
+                                ? ui->comboPeriodePredictifHuile->currentText()
+                                : QString("30 derniers jours");
+    if (periode.contains("7")) {
+        periodDays = 7;
+    } else if (periode.contains("90") || periode.contains("3")) {
+        periodDays = 90;
+    }
 
-    if (ui->tableResultatsPredictifHuile && ui->tableResultatsCombined) {
-        ui->tableResultatsPredictifHuile->clear();
-        ui->tableResultatsPredictifHuile->setColumnCount(ui->tableResultatsCombined->columnCount());
+    const QDate startDate = QDate::currentDate().addDays(-periodDays);
+    QSqlQuery query(connexion->getDatabase());
+    query.prepare(
+        "SELECT s.TYPE_HUILE, s.QUANTITE_ACTUELLE, s.SEUIL_ALERTE, "
+        "       NVL(SUM(CASE WHEN p.DATEPRODUCTION >= :startDate THEN p.HUILEPRODUITEL ELSE 0 END), 0) AS PROD_PERIODE, "
+        "       MAX(s.DATE_DERNIERE_MISE_A_JOUR) AS LAST_UPDATE, "
+        "       NVL(s.FOURNISSEUR_NOM, ''), NVL(s.FOURNISSEUR_EMAIL, ''), NVL(s.FOURNISSEUR_TEL, ''), "
+        "       MAX(s.DATE_DERNIERE_COMMANDE) AS LAST_ORDER "
+        "FROM STOCK s "
+        "LEFT JOIN PRODUCTION p ON p.ID_STOCK = s.ID_STOCK "
+        "GROUP BY s.TYPE_HUILE, s.QUANTITE_ACTUELLE, s.SEUIL_ALERTE, s.FOURNISSEUR_NOM, s.FOURNISSEUR_EMAIL, s.FOURNISSEUR_TEL "
+        "ORDER BY s.TYPE_HUILE");
+    query.bindValue(":startDate", startDate);
 
-        QStringList headers;
-        for (int col = 0; col < ui->tableResultatsCombined->columnCount(); ++col) {
-            QTableWidgetItem* headerItem = ui->tableResultatsCombined->horizontalHeaderItem(col);
-            headers << (headerItem ? headerItem->text() : QString("Colonne %1").arg(col + 1));
+    if (!query.exec()) {
+        afficherMessage("Erreur", "Erreur analyse recommandations : " + query.lastError().text(), true);
+        return;
+    }
+
+    struct ExpertRecommendation {
+        QString type;
+        double stock = 0.0;
+        double seuil = 0.0;
+        double prodPeriode = 0.0;
+        QDate lastUpdate;
+        QDate lastOrderDate;
+        QString fournisseur;
+        QString fournisseurEmail;
+        QString fournisseurTel;
+        double demandJ7 = 0.0;
+        double demandJ30 = 0.0;
+        double coverageDays = 0.0;
+        int risk = 0;
+        int optimalQty = 0;
+        int idealDelayDays = 0;
+        QString confidence;
+        QString why;
+        QString recommendationLine;
+    };
+
+    QList<ExpertRecommendation> rows;
+
+    while (query.next()) {
+        ExpertRecommendation item;
+        item.type = query.value(0).toString();
+        item.stock = query.value(1).toDouble();
+        item.seuil = query.value(2).toDouble();
+        item.prodPeriode = query.value(3).toDouble();
+        item.lastUpdate = query.value(4).toDateTime().date();
+        item.fournisseur = query.value(5).toString().trimmed();
+        item.fournisseurEmail = query.value(6).toString().trimmed();
+        item.fournisseurTel = query.value(7).toString().trimmed();
+        item.lastOrderDate = query.value(8).toDateTime().date();
+
+        const double avgDailyFromProd = item.prodPeriode / qMax(1, periodDays);
+        const double baselineDaily = (item.seuil > 0.0) ? (item.seuil / 30.0) : 0.5;
+        const double estimatedDailyDemand = qMax(0.5, qMax(avgDailyFromProd, baselineDaily));
+
+        item.demandJ7 = estimatedDailyDemand * 7.0;
+        item.demandJ30 = estimatedDailyDemand * 30.0;
+        item.coverageDays = item.stock / qMax(0.1, estimatedDailyDemand);
+
+        const double securityStock = qMax(10.0, item.seuil * 0.7);
+        item.optimalQty = qMax(0, qRound(item.demandJ30 + securityStock - item.stock));
+
+        if (item.coverageDays <= 2.0) {
+            item.idealDelayDays = 1;
+        } else if (item.coverageDays <= 5.0) {
+            item.idealDelayDays = 2;
+        } else if (item.coverageDays <= 10.0) {
+            item.idealDelayDays = 4;
+        } else {
+            item.idealDelayDays = 7;
         }
-        ui->tableResultatsPredictifHuile->setHorizontalHeaderLabels(headers);
-        ui->tableResultatsPredictifHuile->setRowCount(0);
-        ui->tableResultatsPredictifHuile->setWordWrap(false);
-        ui->tableResultatsPredictifHuile->setAlternatingRowColors(true);
-        ui->tableResultatsPredictifHuile->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
-        ui->tableResultatsPredictifHuile->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
-        ui->tableResultatsPredictifHuile->verticalHeader()->setDefaultSectionSize(32);
 
-        for (int row = 0; row < ui->tableResultatsCombined->rowCount(); ++row) {
-            ui->tableResultatsPredictifHuile->insertRow(row);
-            for (int col = 0; col < ui->tableResultatsCombined->columnCount(); ++col) {
-                QTableWidgetItem* source = ui->tableResultatsCombined->item(row, col);
-                if (!source) {
-                    continue;
-                }
-                QTableWidgetItem* cloned = source->clone();
-                ui->tableResultatsPredictifHuile->setItem(row, col, cloned);
+        int freshnessRisk = 25;
+        int daysSinceUpdate = 30;
+        if (item.lastUpdate.isValid()) {
+            daysSinceUpdate = qAbs(item.lastUpdate.daysTo(QDate::currentDate()));
+            if (daysSinceUpdate <= 2) {
+                freshnessRisk = 5;
+            } else if (daysSinceUpdate <= 7) {
+                freshnessRisk = 12;
+            } else if (daysSinceUpdate <= 14) {
+                freshnessRisk = 20;
+            } else {
+                freshnessRisk = 35;
             }
         }
 
-        for (int col = 0; col < ui->tableResultatsPredictifHuile->columnCount(); ++col) {
-            ui->tableResultatsPredictifHuile->setColumnWidth(col, ui->tableResultatsCombined->columnWidth(col));
-            QTableWidgetItem* headerItem = ui->tableResultatsPredictifHuile->horizontalHeaderItem(col);
-            if (headerItem) {
-                headerItem->setTextAlignment(Qt::AlignCenter);
-            }
+        int stockRisk = 20;
+        if (item.coverageDays <= 2.0) {
+            stockRisk = 95;
+        } else if (item.coverageDays <= 5.0) {
+            stockRisk = 75;
+        } else if (item.coverageDays <= 10.0) {
+            stockRisk = 55;
+        } else {
+            stockRisk = 25;
         }
 
-        ui->tableResultatsPredictifHuile->horizontalHeader()->setStretchLastSection(false);
-        ui->tableResultatsPredictifHuile->setSelectionBehavior(QAbstractItemView::SelectRows);
-        ui->tableResultatsPredictifHuile->setEditTriggers(QAbstractItemView::NoEditTriggers);
+        item.risk = std::clamp(static_cast<int>(0.7 * stockRisk + 0.3 * freshnessRisk), 0, 100);
+
+        const bool hasFullContact = !item.fournisseur.isEmpty() && !item.fournisseurEmail.isEmpty() && !item.fournisseurTel.isEmpty();
+        if (!hasFullContact) {
+            item.confidence = "Faible";
+        } else if (daysSinceUpdate <= 7) {
+            item.confidence = "Elevee";
+        } else {
+            item.confidence = "Moyenne";
+        }
+
+        const QString supplier = item.fournisseur.isEmpty() ? "Fournisseur a definir" : item.fournisseur;
+        item.recommendationLine = QString("Commander %1 L chez %2 avant %3 jour(s)")
+                                      .arg(item.optimalQty)
+                                      .arg(supplier)
+                                      .arg(item.idealDelayDays);
+
+        item.why = QString("Couverture: %1 j | Demande J+30: %2 L | Risque: %3% | Confiance: %4")
+                       .arg(QString::number(item.coverageDays, 'f', 1))
+                       .arg(QString::number(item.demandJ30, 'f', 1))
+                       .arg(item.risk)
+                       .arg(item.confidence);
+
+        rows.append(item);
     }
 
-    if (ui->textAnalysePredictifHuile && ui->textAnalyseTendances) {
-        ui->textAnalysePredictifHuile->setPlainText(ui->textAnalyseTendances->toPlainText());
+    if (rows.isEmpty()) {
+        afficherMessage("Analyse", "Aucune donnee disponible pour les recommandations.", true);
+        return;
     }
 
-    if (ui->labelTopStrategiqueValue2 && ui->labelTopStrategiqueValue) {
-        ui->labelTopStrategiqueValue2->setText(ui->labelTopStrategiqueValue->text());
+    std::sort(rows.begin(), rows.end(), [](const ExpertRecommendation &a, const ExpertRecommendation &b) {
+        if (a.risk != b.risk) {
+            return a.risk > b.risk;
+        }
+        return a.optimalQty > b.optimalQty;
+    });
+
+    if (ui->tableResultatsPredictifHuile) {
+        ui->tableResultatsPredictifHuile->hide();
     }
-    if (ui->labelRisqueMoyenGlobalValue2 && ui->labelRisqueMoyenGlobalValue) {
-        ui->labelRisqueMoyenGlobalValue2->setText(ui->labelRisqueMoyenGlobalValue->text());
+    if (ui->groupResultatsPredictiveHuile) {
+        ui->groupResultatsPredictiveHuile->hide();
     }
-    if (ui->labelBesoinReapproTotalValue2 && ui->labelBesoinReapproTotalValue) {
-        ui->labelBesoinReapproTotalValue2->setText(ui->labelBesoinReapproTotalValue->text());
+
+    int totalRisk = 0;
+    int totalOptimalOrder = 0;
+    for (const ExpertRecommendation &item : rows) {
+        totalRisk += item.risk;
+        totalOptimalOrder += item.optimalQty;
     }
+
+    const int avgRisk = rows.isEmpty() ? 0 : qRound(static_cast<double>(totalRisk) / rows.size());
+    const ExpertRecommendation &priorityOil = rows.first();
+    const QString topSupplier = priorityOil.fournisseur.isEmpty() ? "Fournisseur a definir" : priorityOil.fournisseur;
+
+    if (ui->labelTopStrategiqueValue2) {
+        ui->labelTopStrategiqueValue2->setText(
+            QString("Priorite: Commander %1 L de %2").arg(priorityOil.optimalQty).arg(priorityOil.type));
+    }
+    if (ui->labelRisqueMoyenGlobalValue2) {
+        ui->labelRisqueMoyenGlobalValue2->setText(
+            QString("Fournisseur recommande: %1 (%2)").arg(topSupplier).arg(priorityOil.confidence));
+    }
+    if (ui->labelBesoinReapproTotalValue2) {
+        ui->labelBesoinReapproTotalValue2->setText(
+            QString("Delai ideal: avant %1 jour(s) | Total: %2 L")
+                .arg(priorityOil.idealDelayDays)
+                .arg(totalOptimalOrder));
+    }
+
+    if (ui->textAnalysePredictifHuile) {
+        QString report;
+        report += "<h3 style='color:#14532d;'>Recommandation optimisee (niveau expert)</h3>";
+        report += "<p><b>Periode:</b> " + periode + "<br/>";
+        report += "<b>Principe:</b> quantite optimale + fournisseur recommande + delai ideal.</p>";
+        report += "<hr/>";
+
+        const int topN = qMin(3, rows.size());
+        for (int i = 0; i < topN; ++i) {
+            const ExpertRecommendation &item = rows.at(i);
+            const QString supplier = item.fournisseur.isEmpty() ? "Fournisseur a definir" : item.fournisseur;
+            const QString cardColor = (i == 0) ? "#fee2e2" : ((i == 1) ? "#ffedd5" : "#ecfdf3");
+            report += QString(
+                "<div style='background:%1;border:1px solid #cbd5e1;border-radius:10px;padding:10px;margin:10px 0;'>"
+                "<p style='margin:0 0 8px 0;'><b>%2) %3</b></p>"
+                "<p style='margin:0;'><b>Action:</b> Commander %4 L chez %5 avant %6 jour(s)</p>"
+                "<p style='margin:4px 0 0 0;'><b>Justification:</b> %7</p>"
+                "</div>")
+                .arg(cardColor)
+                .arg(i + 1)
+                .arg(item.type)
+                .arg(item.optimalQty)
+                .arg(supplier)
+                .arg(item.idealDelayDays)
+                .arg(item.why);
+        }
+
+        report += QString("<p><b>Risque moyen global:</b> %1%% | <b>Volume total suggere:</b> %2 L</p>")
+                      .arg(avgRisk)
+                      .arg(totalOptimalOrder);
+
+        ui->textAnalysePredictifHuile->setHtml(report);
+    }
+
+    afficherMessage("Recommandations", "Recommandations optimisees generees avec succes.");
 }
 
 // ==================== RAPPORTS ====================

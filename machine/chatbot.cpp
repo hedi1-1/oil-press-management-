@@ -45,8 +45,8 @@ static const QString SYSTEM_PROMPT =
 Chatbot::Chatbot(QWidget *parent)
     : QWidget(parent),
       m_networkManager(new QNetworkAccessManager(this)),
-      m_isVisible(false),
-      m_dotCount(0)
+    m_dotCount(0),
+    m_isVisible(false)
 {
     hide();
     setFixedWidth(400);

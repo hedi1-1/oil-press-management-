@@ -30,7 +30,9 @@ SOURCES += \
     ../gestionclients/metierswidget.cpp \
     ../gestionclients/client.cpp \
     ../gestionclients/clientconnection.cpp \
+    ../stock/calendrier.cpp \
     ../stock/fournisseur.cpp \
+    ../stock/historique.cpp \
     ../stock/stock.cpp \
     ../stock/connexion.cpp \
     ../machine/machine.cpp \
@@ -59,6 +61,8 @@ HEADERS += \
     ../gestionclients/metierswidget.h \
     ../gestionclients/client.h \
     ../gestionclients/clientconnection.h \
+    ../stock/calendrier.h \
+    ../stock/historique.h \
     ../stock/stock.h \
     ../stock/connexion.h \
     ../machine/machine.h \

@@ -42,6 +42,7 @@
 #include <QFile>
 #include <QTextStream>
 #include <QVBoxLayout>
+#include <utility>
 #include <QtCharts/QBarCategoryAxis>
 #include <QtCharts/QBarSeries>
 #include <QtCharts/QBarSet>
@@ -4535,7 +4536,7 @@ void machine::exporterPDF() {
           "  <div class='section-title'>\xF0\x9F\x93\x8A  Param\xC3\xA8tres "
           "techniques</div>"
           "  <div class='field'>\xF0\x9F\x8C\xA1 <span "
-          "class='field-label'>Temp\xC3\xa9rature (\xC2\xB0C)</span>&nbsp;"
+          "class='field-label'>Temp\xC3\xa9rature (\xC2\xB0""C)</span>&nbsp;"
           "    <span class='field-value'>%6</span></div>"
           "  <div class='field'>\xE2\x9A\xA1 <span class='field-label'>Charge "
           "(%%)</span>&nbsp;&nbsp;&nbsp;"
@@ -4865,7 +4866,7 @@ void machine::showMachineCard() {
       return;
     }
     hasGarantie = false;
-    query = query2;
+    query = std::move(query2);
   }
 
   // Extract values
@@ -4978,7 +4979,7 @@ void machine::showMachineCard() {
   addField(0, 0, "Nom:", nom);
   addField(0, 1, "Type:", type);
   addField(1, 0, QString::fromUtf8("\xC3\x89tat marche:"), etatMarche);
-  addField(1, 1, QString::fromUtf8("Temp\xC3\xa9rature:"), temperature + QString::fromUtf8(" \xC2\xB0C"));
+  addField(1, 1, QString::fromUtf8("Temp\xC3\xa9rature:"), temperature + QString::fromUtf8(" \xC2\xB0""C"));
   addField(2, 0, "Charge:", charge + " %");
   addField(2, 1, "Fonctionnement:", fonctionnement);
   addField(3, 0, "Alerte:", alerte);
