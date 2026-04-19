@@ -11,7 +11,6 @@ QMAKE_CXXFLAGS += -finput-charset=UTF-8 -fexec-charset=UTF-8
 
 SOURCES += \
     MachineServer.cpp \
-    assistant.cpp \
     connexionmachine.cpp \
     main.cpp \
     machine.cpp \
@@ -19,7 +18,6 @@ SOURCES += \
 
 HEADERS += \
     MachineServer.h \
-    assistant.h \
     connexionmachine.h \
     machine.h \
     chatbot.h

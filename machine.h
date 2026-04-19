@@ -19,7 +19,6 @@
 #include <QTimer>
 #include <QVector>
 #include <QWidget>
-#include "assistant.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -28,7 +27,6 @@ class machine;
 QT_END_NAMESPACE
 
 class MachineServer;
-class Assistant;
 
 // Navigation Bar Class Declaration
 class NavigationBar : public QWidget {
@@ -197,7 +195,6 @@ private:
   QTimer *historiqueTimer;
   QVector<HistoriqueEntry> m_historiqueEntries;
   MachineServer *m_machineServer;
-  Assistant *m_assistant;
   Chatbot *m_chatbot;
   QPushButton *m_btnChatbot;
   QString m_serverHostIp;

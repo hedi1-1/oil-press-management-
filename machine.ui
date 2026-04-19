@@ -449,34 +449,6 @@ QPushButton:pressed {
                           </property>
                         </spacer>
                       </item>
-                      <item>
-                        <widget class="QPushButton" name="btnVoiceAssistant_machine">
-                          <property name="minimumSize">
-                            <size>
-                              <width>96</width>
-                              <height>30</height>
-                            </size>
-                          </property>
-                          <property name="maximumSize">
-                            <size>
-                              <width>120</width>
-                              <height>30</height>
-                            </size>
-                          </property>
-                          <property name="cursor">
-                            <cursorShape>PointingHandCursor</cursorShape>
-                          </property>
-                          <property name="toolTip">
-                            <string>Assistant vocal IA</string>
-                          </property>
-                          <property name="styleSheet">
-                            <string notr="true">QPushButton { background-color: rgba(255, 255, 255, 0.12); color: #C9A227; font-weight: 700; border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 8px; font-size: 14px; } QPushButton:hover { background-color: rgba(255, 255, 255, 0.2); }</string>
-                          </property>
-                          <property name="text">
-                            <string>🗣 Parler</string>
-                          </property>
-                        </widget>
-                      </item>
                     </layout>
                   </item>
                 </layout>

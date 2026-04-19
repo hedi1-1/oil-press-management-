@@ -1,6 +1,5 @@
 #include "machine.h"
 #include "MachineServer.h"
-#include "assistant.h"
 #include "chatbot.h"
 #include "connexionmachine.h"
 #include "ui_machine.h"
@@ -321,7 +320,7 @@ machine::machine(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::machine), navigationBar(nullptr),
   employeeTableModel(nullptr), historiqueTableModel(nullptr), statsComparisonModel(nullptr), m_selectedRow(-1),
       machineCardPollingTimer(nullptr), machineCardDialog(nullptr),
-      countsTimer(nullptr), historiqueTimer(nullptr), m_machineServer(nullptr), m_assistant(nullptr) {
+      countsTimer(nullptr), historiqueTimer(nullptr), m_machineServer(nullptr) {
   ui->setupUi(this);
 
   m_lightStyleSheet = styleSheet();
@@ -372,16 +371,6 @@ machine::machine(QWidget *parent)
     connect(ui->btnLanguageToggle_machine, &QPushButton::clicked, this,
       &machine::onLanguageToggleClicked);
 
-  // 1. Initialisation de l'assistant
-  m_assistant = new Assistant(this);
-  // 2. Liaison avec le bouton "Parler" du header
-  m_assistant->setTalkButton(ui->btnVoiceAssistant_machine);
-  connect(ui->btnVoiceAssistant_machine, &QPushButton::clicked,
-          m_assistant, &Assistant::startVoiceCycle);
-  // 3. Connexion du signal de navigation vers le QTabWidget
-  // Cela permet à l'IA de changer d'onglet (Parc, Actions, Statistiques, Carnet)
-  connect(m_assistant, &Assistant::requestNavigation, ui->tabWidgetMachineManagement, &QTabWidget::setCurrentIndex);
-
   // --- CHATBOT INTEGRATION ---
   m_chatbot = new Chatbot(this);
   m_btnChatbot = new QPushButton("🤖", this);
@@ -404,11 +393,6 @@ machine::machine(QWidget *parent)
   // Le layout qui contient le bouton Parler s'appelle subtitleLayout dans le fichier .ui
   if (ui->subtitleLayout) {
       ui->subtitleLayout->addWidget(m_btnChatbot);
-  } else {
-      m_btnChatbot->setParent(ui->btnVoiceAssistant_machine->parentWidget());
-      int x = ui->btnVoiceAssistant_machine->x() + ui->btnVoiceAssistant_machine->width() + 10;
-      int y = ui->btnVoiceAssistant_machine->y();
-      m_btnChatbot->move(x, y);
   }
 
   connect(m_btnChatbot, &QPushButton::clicked, m_chatbot, &Chatbot::toggleVisibility);
@@ -724,9 +708,6 @@ void machine::applyTheme() {
 
   ui->btnThemeToggle_machine->setStyleSheet(iconButtonStyle);
   ui->btnLanguageToggle_machine->setStyleSheet(iconButtonStyle);
-  if (ui->btnVoiceAssistant_machine) {
-    ui->btnVoiceAssistant_machine->setStyleSheet(iconButtonStyle);
-  }
   ui->btnThemeToggle_machine->setText(m_isDarkMode ? "☀" : "🌙");
 
   const QString lightDateStyle =
@@ -917,10 +898,6 @@ void machine::applyLanguage() {
   ui->btnLanguageToggle_machine->setToolTip(
       m_isFrench ? "Changer la langue (FR / EN)"
                  : "Change language (FR / EN)");
-  if (ui->btnVoiceAssistant_machine) {
-    ui->btnVoiceAssistant_machine->setToolTip(
-        m_isFrench ? "Assistant vocal IA" : "AI voice assistant");
-  }
 
     ui->groupRecherche_machine->setTitle(m_isFrench ? "Filtrage & Tri"
                             : "Filters & Sorting");

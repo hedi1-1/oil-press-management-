@@ -32,8 +32,6 @@ add_executable(machine
     connexionmachine.h
     machine.cpp
     machine.h
-    assistant.cpp
-    assistant.h
     MachineServer.cpp
     MachineServer.h
     machine.ui
