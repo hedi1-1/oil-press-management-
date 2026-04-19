@@ -34,6 +34,7 @@ public:
 
 public slots:
     void refreshFromClients();
+    void refreshHistoryTab();
 
 private slots:
     void on_pushButton_rechercher_clicked();
@@ -49,6 +50,11 @@ private slots:
     void on_pushButton_exportIdea_clicked();
     void onRapportClientChanged(int index);
     void onChartConfigChanged();
+    void on_pushButton_refreshHistory_clicked();
+    void on_comboBox_historyClient_currentIndexChanged(int index);
+    void on_lineEdit_historySearch_textChanged(const QString &text);
+    void on_pushButton_planOptimize_clicked();
+    void on_pushButton_planReset_clicked();
 
 private:
     struct ReportClient {
@@ -88,6 +94,11 @@ private:
     void updateStrategicPanels();
     void updateInsightPanel();
     void updateRapportIdeaPanel();
+    void setupHistoryTab();
+    void loadHistoryClients();
+    void refreshHistoryTable();
+    void setupPlanningPanel();
+    void generatePlanning();
 };
 
 #endif // METIERSWIDGET_H

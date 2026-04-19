@@ -32,12 +32,14 @@ private slots:
     void on_pushButton_ajouter_clicked();
     void on_pushButton_modifier_clicked();
     void on_pushButton_supprimer_clicked();
+    void on_pushButton_historique_clicked();
     void on_tableWidget_clients_clicked(const QModelIndex &index);
     void on_tableWidget_clients_customContextMenuRequested(const QPoint &pos);
     void calculerStatutEnTempsReel();
 
 signals:
     void clientsUpdated();
+    void historyUpdated();
 
 private:
     Ui::GestionClientsWidget *ui;
@@ -66,6 +68,11 @@ private:
     void setFieldState(QWidget *widget, bool valid);
     void setErrorHint(const QString &message);
     void showToastMessage(const QString &message);
+    void updateClientLastAction(const Client &client, const QString &actionType, const QString &details);
+    QString buildChangeDetails(const Client &before, const Client &after) const;
+    Client clientFromRow(int row) const;
+    void addRemarkForClient(int id, const QString &nom, const QString &prenom);
+    void openHistoryDialogForClient(int id, const QString &nom, const QString &prenom);
 };
 
 #endif // GESTIONCLIENTSWIDGET_H

@@ -17,6 +17,14 @@
 #include <QStringConverter>
 #include <QTextDocument>
 #include <algorithm>
+#include <QTime>
+#include <QSplitter>
+#include <QTimer>
+#include <QSqlQuery>
+#include <QSqlError>
+#include <QHeaderView>
+#include <QAbstractItemView>
+#include "clientconnection.h"
 
 MetiersWidget::MetiersWidget(QWidget *parent)
     : QWidget(parent)
@@ -26,6 +34,17 @@ MetiersWidget::MetiersWidget(QWidget *parent)
     , fideliteChartView(nullptr)
 {
     ui->setupUi(this);
+
+    if (ui->splitterFidelite) {
+        ui->splitterFidelite->setStretchFactor(0, 1);
+        ui->splitterFidelite->setStretchFactor(1, 1);
+        QTimer::singleShot(0, this, [this]() {
+            if (!ui || !ui->splitterFidelite) return;
+            const int total = ui->splitterFidelite->width();
+            if (total <= 0) return;
+            ui->splitterFidelite->setSizes({total / 2, total - (total / 2)});
+        });
+    }
     
     ui->tableView_resultats->setColumnCount(7);
     ui->tableView_resultats->setHorizontalHeaderLabels({"ID", "Nom", "Prénom", "Type", "Total Olives (kg)", "Date", "Statut"});
@@ -38,6 +57,8 @@ MetiersWidget::MetiersWidget(QWidget *parent)
     initializeStatsChart();
     initializeFideliteChart();
     refreshReportClients();
+    setupHistoryTab();
+    setupPlanningPanel();
 
     connect(ui->comboBox_chartType, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &MetiersWidget::onChartConfigChanged);
@@ -45,6 +66,16 @@ MetiersWidget::MetiersWidget(QWidget *parent)
             this, &MetiersWidget::onChartConfigChanged);
         connect(ui->comboBox_rapportClient, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &MetiersWidget::onRapportClientChanged);
+        connect(ui->pushButton_refreshHistory, &QPushButton::clicked,
+            this, &MetiersWidget::on_pushButton_refreshHistory_clicked);
+        connect(ui->comboBox_historyClient, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &MetiersWidget::on_comboBox_historyClient_currentIndexChanged);
+        connect(ui->lineEdit_historySearch, &QLineEdit::textChanged,
+            this, &MetiersWidget::on_lineEdit_historySearch_textChanged);
+            connect(ui->pushButton_planOptimize, &QPushButton::clicked,
+                this, &MetiersWidget::on_pushButton_planOptimize_clicked);
+            connect(ui->pushButton_planReset, &QPushButton::clicked,
+                this, &MetiersWidget::on_pushButton_planReset_clicked);
 }
 
 MetiersWidget::~MetiersWidget()
@@ -68,6 +99,7 @@ void MetiersWidget::refreshFromClients()
     updateStrategicPanels();
     updateInsightPanel();
     updateRapportIdeaPanel();
+    refreshHistoryTab();
 }
 
 void MetiersWidget::refreshFideliteTableView()
@@ -242,6 +274,221 @@ void MetiersWidget::exportToTxt(const QList<Client> &data)
     
     file.close();
     QMessageBox::information(this, "Succès", "Export TXT réussi!");
+}
+
+void MetiersWidget::setupHistoryTab()
+{
+    ui->tableView_historique->setColumnCount(4);
+    ui->tableView_historique->setHorizontalHeaderLabels({"Date/Heure", "Action", "Client", "Details"});
+    ui->tableView_historique->horizontalHeader()->setStretchLastSection(true);
+    ui->tableView_historique->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    ui->tableView_historique->setSelectionBehavior(QAbstractItemView::SelectRows);
+
+    loadHistoryClients();
+    refreshHistoryTable();
+}
+
+void MetiersWidget::loadHistoryClients()
+{
+    ui->comboBox_historyClient->blockSignals(true);
+    ui->comboBox_historyClient->clear();
+    ui->comboBox_historyClient->addItem("Tous", -1);
+
+    QSqlQuery query(ClientConnection::getInstance().getDatabase());
+    if (query.exec("SELECT ID_CLIENT, NOM, PRENOM FROM CLIENT ORDER BY NOM, PRENOM")) {
+        while (query.next()) {
+            const int id = query.value(0).toInt();
+            const QString nom = query.value(1).toString();
+            const QString prenom = query.value(2).toString();
+            const QString label = QString("%1 %2 (ID:%3)").arg(prenom, nom, QString::number(id));
+            ui->comboBox_historyClient->addItem(label, id);
+        }
+    }
+
+    ui->comboBox_historyClient->blockSignals(false);
+}
+
+void MetiersWidget::refreshHistoryTable()
+{
+    ui->tableView_historique->setRowCount(0);
+
+    const int clientId = ui->comboBox_historyClient->currentData().toInt();
+    const QString keyword = ui->lineEdit_historySearch->text().trimmed().toUpper();
+    const QVariant keywordValue = keyword.isEmpty() ? QVariant() : QVariant("%" + keyword + "%");
+
+    QSqlQuery query(ClientConnection::getInstance().getDatabase());
+    query.prepare("SELECT LAST_ACTION_TIME, LAST_ACTION, ID_CLIENT, NOM, PRENOM, LAST_ACTION_DETAILS "
+                  "FROM CLIENT "
+                  "WHERE (:id = -1 OR ID_CLIENT = :id) "
+                  "AND (:kw IS NULL OR UPPER(NVL(LAST_ACTION, '')) LIKE :kw "
+                  "OR UPPER(NVL(LAST_ACTION_DETAILS, '')) LIKE :kw "
+                  "OR UPPER(NOM) LIKE :kw OR UPPER(PRENOM) LIKE :kw) "
+                  "ORDER BY LAST_ACTION_TIME DESC NULLS LAST, NOM, PRENOM");
+    query.bindValue(":id", clientId);
+    query.bindValue(":kw", keywordValue);
+
+    if (!query.exec()) {
+        ui->tableView_historique->setRowCount(1);
+        ui->tableView_historique->setItem(0, 0, new QTableWidgetItem("Erreur"));
+        ui->tableView_historique->setItem(0, 1, new QTableWidgetItem(query.lastError().text()));
+        return;
+    }
+
+    int row = 0;
+    while (query.next()) {
+        ui->tableView_historique->insertRow(row);
+        const QDateTime dateTime = query.value(0).toDateTime();
+        const QString action = query.value(1).toString();
+        const QString idText = query.value(2).toString();
+        const QString nom = query.value(3).toString();
+        const QString prenom = query.value(4).toString();
+        const QString details = query.value(5).toString();
+
+        ui->tableView_historique->setItem(row, 0, new QTableWidgetItem(dateTime.isValid() ? dateTime.toString("dd/MM/yyyy HH:mm") : "-"));
+        ui->tableView_historique->setItem(row, 1, new QTableWidgetItem(action.isEmpty() ? "-" : action));
+        ui->tableView_historique->setItem(row, 2, new QTableWidgetItem(QString("%1 %2 (ID:%3)").arg(prenom, nom, idText)));
+        ui->tableView_historique->setItem(row, 3, new QTableWidgetItem(details.isEmpty() ? "Aucune action" : details));
+        row++;
+    }
+}
+
+void MetiersWidget::refreshHistoryTab()
+{
+    loadHistoryClients();
+    refreshHistoryTable();
+}
+
+void MetiersWidget::on_pushButton_refreshHistory_clicked()
+{
+    refreshHistoryTable();
+}
+
+void MetiersWidget::on_comboBox_historyClient_currentIndexChanged(int)
+{
+    refreshHistoryTable();
+}
+
+void MetiersWidget::on_lineEdit_historySearch_textChanged(const QString &)
+{
+    refreshHistoryTable();
+}
+
+void MetiersWidget::setupPlanningPanel()
+{
+    ui->tableView_planning->setColumnCount(6);
+    ui->tableView_planning->setHorizontalHeaderLabels({
+        "Date", "Heure", "Client", "Volume (kg)", "Priorite", "Statut"
+    });
+    ui->tableView_planning->horizontalHeader()->setStretchLastSection(true);
+    ui->tableView_planning->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    ui->tableView_planning->setSelectionBehavior(QAbstractItemView::SelectRows);
+
+    const QDate today = QDate::currentDate();
+    ui->dateEdit_planStart->setDate(today);
+    ui->dateEdit_planEnd->setDate(today.addDays(7));
+    ui->spinBox_planCapacity->setValue(2000);
+    ui->spinBox_slotHours->setValue(2);
+    ui->checkBox_planPriority->setChecked(true);
+    ui->label_planSummary->setText("Configurez les contraintes et cliquez sur Optimiser");
+}
+
+void MetiersWidget::generatePlanning()
+{
+    ui->tableView_planning->setRowCount(0);
+
+    if (!clients || clients->isEmpty()) {
+        QMessageBox::warning(this, "Planning", "Aucune donnee client disponible.");
+        return;
+    }
+
+    const QDate startDate = ui->dateEdit_planStart->date();
+    const QDate endDate = ui->dateEdit_planEnd->date();
+    if (endDate < startDate) {
+        QMessageBox::warning(this, "Planning", "La date fin doit etre apres la date debut.");
+        return;
+    }
+
+    const int capacityPerDay = ui->spinBox_planCapacity->value();
+    const int slotHours = ui->spinBox_slotHours->value();
+    const bool usePriority = ui->checkBox_planPriority->isChecked();
+
+    const int workHours = 10;
+    const int slotsPerDay = qMax(1, workHours / qMax(1, slotHours));
+    const double slotCapacity = (capacityPerDay * slotHours) / double(workHours);
+
+    QList<Client> sortedClients = *clients;
+    std::sort(sortedClients.begin(), sortedClients.end(), [usePriority](const Client &a, const Client &b) {
+        if (usePriority) {
+            const int prioA = (a.statut == "Important") ? 0 : 1;
+            const int prioB = (b.statut == "Important") ? 0 : 1;
+            if (prioA != prioB) return prioA < prioB;
+        }
+        return a.total_olives_livrees > b.total_olives_livrees;
+    });
+
+    QDate currentDate = startDate;
+    int slotIndex = 0;
+    double plannedTotal = 0.0;
+    double unplannedTotal = 0.0;
+    int row = 0;
+
+    for (const Client &client : sortedClients) {
+        double remaining = client.total_olives_livrees;
+        if (remaining <= 0) continue;
+
+        while (remaining > 0 && currentDate <= endDate) {
+            const QTime slotTime = QTime(8, 0).addSecs(slotIndex * slotHours * 3600);
+            const double volume = qMin(remaining, slotCapacity);
+            remaining -= volume;
+            plannedTotal += volume;
+
+            ui->tableView_planning->insertRow(row);
+            ui->tableView_planning->setItem(row, 0, new QTableWidgetItem(currentDate.toString("dd/MM/yyyy")));
+            ui->tableView_planning->setItem(row, 1, new QTableWidgetItem(slotTime.toString("HH:mm")));
+            ui->tableView_planning->setItem(row, 2, new QTableWidgetItem(QString("%1 %2 (ID:%3)")
+                                                     .arg(client.prenom, client.nom, QString::number(client.id_client))));
+            ui->tableView_planning->setItem(row, 3, new QTableWidgetItem(QString::number(volume, 'f', 0)));
+            ui->tableView_planning->setItem(row, 4, new QTableWidgetItem(client.statut == "Important" ? "Haute" : "Standard"));
+            ui->tableView_planning->setItem(row, 5, new QTableWidgetItem(client.statut));
+            row++;
+
+            slotIndex++;
+            if (slotIndex >= slotsPerDay) {
+                slotIndex = 0;
+                currentDate = currentDate.addDays(1);
+            }
+        }
+
+        if (remaining > 0) {
+            unplannedTotal += remaining;
+        }
+
+        if (currentDate > endDate) {
+            break;
+        }
+    }
+
+    ui->label_planSummary->setText(QString("Slots: %1 | Planifie: %2 kg | Non planifie: %3 kg")
+                                       .arg(row)
+                                       .arg(QString::number(plannedTotal, 'f', 0))
+                                       .arg(QString::number(unplannedTotal, 'f', 0)));
+}
+
+void MetiersWidget::on_pushButton_planOptimize_clicked()
+{
+    generatePlanning();
+}
+
+void MetiersWidget::on_pushButton_planReset_clicked()
+{
+    const QDate today = QDate::currentDate();
+    ui->dateEdit_planStart->setDate(today);
+    ui->dateEdit_planEnd->setDate(today.addDays(7));
+    ui->spinBox_planCapacity->setValue(2000);
+    ui->spinBox_slotHours->setValue(2);
+    ui->checkBox_planPriority->setChecked(true);
+    ui->tableView_planning->setRowCount(0);
+    ui->label_planSummary->setText("Configuration reinitialisee");
 }
 
 QList<Client> MetiersWidget::collectExportClients() const

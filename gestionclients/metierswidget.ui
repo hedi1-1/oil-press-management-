@@ -650,7 +650,7 @@
            <widget class="QWidget" name="fideliteChartContainer">
             <property name="minimumSize">
              <size>
-              <width>280</width>
+              <width>320</width>
               <height>220</height>
              </size>
             </property>
@@ -669,7 +669,14 @@
              </property>
             </layout>
            </widget>
-           <widget class="QTableWidget" name="tableView_fidelite"/>
+           <widget class="QTableWidget" name="tableView_fidelite">
+            <property name="minimumSize">
+             <size>
+              <width>320</width>
+              <height>220</height>
+             </size>
+            </property>
+           </widget>
           </widget>
          </item>
       </layout>
@@ -847,6 +854,215 @@
        </item>
       </layout>
      </widget>
+      <widget class="QWidget" name="tab_historique">
+       <attribute name="title">
+        <string>Historique client</string>
+       </attribute>
+      <layout class="QHBoxLayout" name="horizontalLayout_historique_split">
+       <item>
+        <widget class="QFrame" name="frame_historique_left">
+         <property name="styleSheet">
+          <string notr="true">QFrame#frame_historique_left{border-right:1px solid #d0d0d0;background:#ffffff;}</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_historique_left">
+          <item>
+           <widget class="QGroupBox" name="groupBox_historique_filtres">
+        <property name="title">
+         <string>Filtres</string>
+        </property>
+        <layout class="QHBoxLayout" name="horizontalLayout_historique_filters">
+         <item>
+          <widget class="QLabel" name="label_historyClient">
+           <property name="text">
+            <string>Client:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="comboBox_historyClient"/>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="lineEdit_historySearch">
+           <property name="placeholderText">
+            <string>Mot cle (action, details, nom)</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="pushButton_refreshHistory">
+           <property name="text">
+            <string>Rafraichir</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_history">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QTableWidget" name="tableView_historique"/>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QFrame" name="frame_planning_right">
+         <property name="styleSheet">
+          <string notr="true">QFrame#frame_planning_right{background:#ffffff;}</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_planning">
+          <item>
+           <widget class="QGroupBox" name="groupBox_planning">
+        <property name="title">
+         <string>Optimisation planning (ordonnancement)</string>
+        </property>
+        <layout class="QFormLayout" name="formLayout_planning">
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_planStart">
+           <property name="text">
+            <string>Date debut:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QDateEdit" name="dateEdit_planStart">
+           <property name="calendarPopup">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="label_planEnd">
+           <property name="text">
+            <string>Date fin:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QDateEdit" name="dateEdit_planEnd">
+           <property name="calendarPopup">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="label_planCapacity">
+           <property name="text">
+            <string>Capacite/jour (kg):</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QSpinBox" name="spinBox_planCapacity">
+           <property name="minimum">
+            <number>100</number>
+           </property>
+           <property name="maximum">
+            <number>200000</number>
+           </property>
+           <property name="singleStep">
+            <number>100</number>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="label_planSlot">
+           <property name="text">
+            <string>Duree creneau (h):</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QSpinBox" name="spinBox_slotHours">
+           <property name="minimum">
+            <number>1</number>
+           </property>
+           <property name="maximum">
+            <number>10</number>
+           </property>
+           <property name="singleStep">
+            <number>1</number>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="0">
+          <widget class="QLabel" name="label_planPriority">
+           <property name="text">
+            <string>Priorite:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="1">
+          <widget class="QCheckBox" name="checkBox_planPriority">
+           <property name="text">
+            <string>Prioriser clients importants</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+           </widget>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_planButtons">
+        <item>
+         <widget class="QPushButton" name="pushButton_planOptimize">
+          <property name="text">
+           <string>Optimiser</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="pushButton_planReset">
+          <property name="text">
+           <string>Reinitialiser</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_planButtons">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_planSummary">
+        <property name="text">
+         <string>--</string>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">color:#2c3e50;font-weight:600;</string>
+        </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QTableWidget" name="tableView_planning"/>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+      </widget>
     </widget>
    </item>
   </layout>

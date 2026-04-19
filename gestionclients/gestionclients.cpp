@@ -49,6 +49,8 @@ GestionClients::GestionClients(QWidget *parent)
             this, &GestionClients::updateStatCards);
         connect(gestionClientsWidget, &GestionClientsWidget::clientsUpdated,
             metiersWidget, &MetiersWidget::refreshFromClients);
+    connect(gestionClientsWidget, &GestionClientsWidget::historyUpdated,
+            metiersWidget, &MetiersWidget::refreshHistoryTab);
 
     // Initial stats update
     updateStatCards();

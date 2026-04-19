@@ -12,6 +12,11 @@
 #include <QApplication>
 #include <QGraphicsDropShadowEffect>
 #include <QAbstractItemView>
+#include <QInputDialog>
+#include <QDialog>
+#include <QVBoxLayout>
+#include <QHeaderView>
+#include <QDateTime>
 
 namespace {
 struct SmartAction {
@@ -132,12 +137,12 @@ int& GestionClientsWidget::getNextClientId()
 
 void GestionClientsWidget::afficherClients()
 {
-    // Configurer le tableau avec 10 colonnes
+    // Configurer le tableau avec 11 colonnes
     ui->tableWidget_clients->setRowCount(0);
-    ui->tableWidget_clients->setColumnCount(10);
+    ui->tableWidget_clients->setColumnCount(11);
     ui->tableWidget_clients->setHorizontalHeaderLabels({
         "ID", "Nom", "Prénom", "Tél", "Adresse", "Email",
-        "Type", "Total Olives", "Date Création", "Statut"
+        "Type", "Total Olives", "Date Création", "Statut", "Remarque"
     });
     ui->tableWidget_clients->horizontalHeader()->setStretchLastSection(true);
 
@@ -182,6 +187,14 @@ void GestionClientsWidget::afficherClients()
             // Rendre l'ID non éditable
             ui->tableWidget_clients->item(row, 0)->setFlags(ui->tableWidget_clients->item(row, 0)->flags() & ~Qt::ItemIsEditable);
 
+            // Ajouter bouton remarque
+            QPushButton *remarkButton = new QPushButton("Remarque");
+            remarkButton->setMinimumWidth(90);
+            ui->tableWidget_clients->setCellWidget(row, 10, remarkButton);
+            connect(remarkButton, &QPushButton::clicked, this, [this, id, nom, prenom]() {
+                addRemarkForClient(id.toInt(), nom, prenom);
+            });
+
             // Colorer les lignes selon le statut
             QColor couleur;
             if (statut == "Important") {
@@ -189,9 +202,11 @@ void GestionClientsWidget::afficherClients()
             } else {
                 couleur = QColor(220, 220, 220); // Gris clair
             }
-            for (int col = 0; col < 10; col++) {
-                ui->tableWidget_clients->item(row, col)->setBackground(QBrush(couleur));
-                ui->tableWidget_clients->item(row, col)->setForeground(QBrush(Qt::black)); // Texte en noir
+            for (int col = 0; col < 11; col++) {
+                QTableWidgetItem *cell = ui->tableWidget_clients->item(row, col);
+                if (!cell) continue;
+                cell->setBackground(QBrush(couleur));
+                cell->setForeground(QBrush(Qt::black)); // Texte en noir
             }
 
             // Stocker aussi dans la liste locale
@@ -552,9 +567,23 @@ void GestionClientsWidget::on_pushButton_ajouter_clicked()
     query.bindValue(":statut", statut);
 
     if (query.exec()) {
+        Client added;
+        added.id_client = ui->lineEdit_id->text().toInt();
+        added.nom = ui->lineEdit_nom->text().trimmed();
+        added.prenom = ui->lineEdit_prenom->text().trimmed();
+        added.telephone = ui->lineEdit_tel->text().trimmed();
+        added.adresse = ui->lineEdit_adresse->text().trimmed();
+        added.email = ui->lineEdit_email->text().trimmed();
+        added.type_client = ui->comboBox_type->currentText();
+        added.total_olives_livrees = totalOlives;
+        added.date_creation = ui->dateEdit_creation->date();
+        added.statut = statut;
+        updateClientLastAction(added, "ajout", "Client ajoute");
+
         afficherClients();
         clearForm();
         emit clientsUpdated();
+        emit historyUpdated();
         QMessageBox::information(this, "Succès", "Client ajouté avec succès dans la base de données !");
     } else {
         QMessageBox::critical(this, "Erreur",
@@ -569,6 +598,8 @@ void GestionClientsWidget::on_pushButton_modifier_clicked()
         return;
     }
     if (!validateForm(false, true)) return;
+
+    Client before = currentSelectedClient;
 
     bool ok;
     int totalOlives = ui->lineEdit_total->text().toInt(&ok);
@@ -595,9 +626,25 @@ void GestionClientsWidget::on_pushButton_modifier_clicked()
     query.bindValue(":id", idClientSelectionne);
 
     if (query.exec()) {
+        Client after;
+        after.id_client = idClientSelectionne;
+        after.nom = ui->lineEdit_nom->text().trimmed();
+        after.prenom = ui->lineEdit_prenom->text().trimmed();
+        after.telephone = ui->lineEdit_tel->text().trimmed();
+        after.adresse = ui->lineEdit_adresse->text().trimmed();
+        after.email = ui->lineEdit_email->text().trimmed();
+        after.type_client = ui->comboBox_type->currentText();
+        after.total_olives_livrees = totalOlives;
+        after.date_creation = ui->dateEdit_creation->date();
+        after.statut = statut;
+
+        const QString details = buildChangeDetails(before, after);
+        updateClientLastAction(after, "modification", details.isEmpty() ? "Modification client" : details);
+
         afficherClients();
         clearForm();
         emit clientsUpdated();
+        emit historyUpdated();
         QMessageBox::information(this, "Succès", "Client modifié avec succès dans la base de données !");
     } else {
         QMessageBox::critical(this, "Erreur",
@@ -633,6 +680,7 @@ void GestionClientsWidget::on_pushButton_supprimer_clicked()
             afficherClients();
             clearForm();
             emit clientsUpdated();
+            emit historyUpdated();
             QMessageBox::information(this, "Succès", "Client supprimé avec succès de la base de données !");
         } else {
             QMessageBox::critical(this, "Erreur",
@@ -660,7 +708,7 @@ void GestionClientsWidget::on_tableWidget_clients_clicked(const QModelIndex &ind
     ui->dateEdit_creation->setDate(QDate::fromString(ui->tableWidget_clients->item(row, 8)->text(), "dd/MM/yyyy"));
     ui->label_statut->setText(ui->tableWidget_clients->item(row, 9)->text());
 
-    currentSelectedClient.id_client = idClientSelectionne;
+    currentSelectedClient = clientFromRow(row);
 
     // Activer les boutons Modifier et Supprimer
     activerBoutons();
@@ -748,4 +796,133 @@ void GestionClientsWidget::showToastMessage(const QString &message)
     toast->show();
 
     QTimer::singleShot(2000, toast, &QWidget::deleteLater);
+}
+
+void GestionClientsWidget::updateClientLastAction(const Client &client, const QString &actionType, const QString &details)
+{
+    QSqlQuery query(ClientConnection::getInstance().getDatabase());
+    query.prepare("UPDATE CLIENT SET LAST_ACTION = :action, LAST_ACTION_TIME = SYSTIMESTAMP, "
+                  "LAST_ACTION_DETAILS = :details WHERE ID_CLIENT = :id");
+    query.bindValue(":action", actionType);
+    query.bindValue(":details", details);
+    query.bindValue(":id", client.id_client);
+
+    if (!query.exec()) {
+        QMessageBox::warning(this, "Historique",
+                             "Impossible d'enregistrer la derniere action :\n" + query.lastError().text());
+    }
+}
+
+QString GestionClientsWidget::buildChangeDetails(const Client &before, const Client &after) const
+{
+    QStringList changes;
+    auto addChange = [&changes](const QString &label, const QString &oldValue, const QString &newValue) {
+        if (oldValue != newValue) {
+            changes << QString("%1: %2 -> %3").arg(label, oldValue, newValue);
+        }
+    };
+
+    addChange("Nom", before.nom, after.nom);
+    addChange("Prenom", before.prenom, after.prenom);
+    addChange("Telephone", before.telephone, after.telephone);
+    addChange("Adresse", before.adresse, after.adresse);
+    addChange("Email", before.email, after.email);
+    addChange("Type", before.type_client, after.type_client);
+    addChange("Total", QString::number(before.total_olives_livrees, 'f', 0),
+              QString::number(after.total_olives_livrees, 'f', 0));
+    addChange("Date", before.date_creation.toString("dd/MM/yyyy"), after.date_creation.toString("dd/MM/yyyy"));
+    addChange("Statut", before.statut, after.statut);
+
+    return changes.join("; ");
+}
+
+Client GestionClientsWidget::clientFromRow(int row) const
+{
+    Client client;
+    client.id_client = ui->tableWidget_clients->item(row, 0)->text().toInt();
+    client.nom = ui->tableWidget_clients->item(row, 1)->text();
+    client.prenom = ui->tableWidget_clients->item(row, 2)->text();
+    client.telephone = ui->tableWidget_clients->item(row, 3)->text();
+    client.adresse = ui->tableWidget_clients->item(row, 4)->text();
+    client.email = ui->tableWidget_clients->item(row, 5)->text();
+    client.type_client = ui->tableWidget_clients->item(row, 6)->text();
+    client.total_olives_livrees = ui->tableWidget_clients->item(row, 7)->text().toDouble();
+    client.date_creation = QDate::fromString(ui->tableWidget_clients->item(row, 8)->text(), "dd/MM/yyyy");
+    client.statut = ui->tableWidget_clients->item(row, 9)->text();
+    return client;
+}
+
+void GestionClientsWidget::addRemarkForClient(int id, const QString &nom, const QString &prenom)
+{
+    bool ok = false;
+    const QString remark = QInputDialog::getText(this, "Remarque client",
+                                                 "Ajouter une remarque:", QLineEdit::Normal,
+                                                 QString(), &ok);
+    if (!ok) return;
+    const QString trimmed = remark.trimmed();
+    if (trimmed.isEmpty()) {
+        QMessageBox::warning(this, "Remarque", "La remarque est vide.");
+        return;
+    }
+
+    Client client;
+    client.id_client = id;
+    client.nom = nom;
+    client.prenom = prenom;
+
+    updateClientLastAction(client, "remarque ajoutee", "Remarque ajoutee: " + trimmed);
+    emit historyUpdated();
+    showToastMessage("Remarque enregistree");
+}
+
+void GestionClientsWidget::openHistoryDialogForClient(int id, const QString &nom, const QString &prenom)
+{
+    QDialog dialog(this);
+    dialog.setWindowTitle(QString("Historique client - %1 %2").arg(prenom, nom));
+    dialog.resize(700, 420);
+
+    QVBoxLayout *layout = new QVBoxLayout(&dialog);
+    QTableWidget *table = new QTableWidget(&dialog);
+    table->setColumnCount(4);
+    table->setHorizontalHeaderLabels({"Date/Heure", "Action", "Client", "Details"});
+    table->horizontalHeader()->setStretchLastSection(true);
+    table->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    table->setSelectionBehavior(QAbstractItemView::SelectRows);
+
+    QSqlQuery query(ClientConnection::getInstance().getDatabase());
+    query.prepare("SELECT LAST_ACTION_TIME, LAST_ACTION, ID_CLIENT, NOM, PRENOM, LAST_ACTION_DETAILS "
+                  "FROM CLIENT WHERE ID_CLIENT = :id");
+    query.bindValue(":id", id);
+
+    if (query.exec()) {
+        if (query.next()) {
+            table->insertRow(0);
+            const QDateTime dateTime = query.value(0).toDateTime();
+            const QString action = query.value(1).toString();
+            const QString idText = query.value(2).toString();
+            const QString nomText = query.value(3).toString();
+            const QString prenomText = query.value(4).toString();
+            const QString details = query.value(5).toString();
+
+            table->setItem(0, 0, new QTableWidgetItem(dateTime.isValid() ? dateTime.toString("dd/MM/yyyy HH:mm") : "-"));
+            table->setItem(0, 1, new QTableWidgetItem(action.isEmpty() ? "-" : action));
+            table->setItem(0, 2, new QTableWidgetItem(QString("%1 %2 (ID:%3)").arg(prenomText, nomText, idText)));
+            table->setItem(0, 3, new QTableWidgetItem(details.isEmpty() ? "Aucune action" : details));
+        }
+    }
+
+    layout->addWidget(table);
+    dialog.exec();
+}
+
+void GestionClientsWidget::on_pushButton_historique_clicked()
+{
+    if (idClientSelectionne == -1) {
+        QMessageBox::warning(this, "Historique", "Veuillez selectionner un client.");
+        return;
+    }
+
+    const QString nom = ui->lineEdit_nom->text().trimmed();
+    const QString prenom = ui->lineEdit_prenom->text().trimmed();
+    openHistoryDialogForClient(idClientSelectionne, nom, prenom);
 }
