@@ -1,5 +1,6 @@
 ﻿#include "finance.h"
 #include "connexionfinance.h"
+#include "historiqueaudit.h"
 #include "ui_finance.h"
 #include <QCoreApplication>
 #include <string>
@@ -27,22 +28,12 @@ using namespace std;
 #include <QTextDocument>
 #include <QSqlQuery>
 #include <QDate>
-#include <QChart>
-#include <QChartView>
-#include <QPieSeries>
-#include <QPieSlice>
-#include <QBarSeries>
-#include <QBarSet>
-#include <QBarCategoryAxis>
-#include <QValueAxis>
-#include <QLineSeries>
 #include <QApplication>
 #include <QMainWindow>
 #include <QDebug>
 #include <QStringList>
 #include <QPainter>
 #include <QShowEvent>
-#include <QTimer>
 
 // ========================================================================
 // IMPLÉMENTATION: TransactionTab
@@ -405,22 +396,30 @@ void TransactionTab::ajouterTransaction()
     QSqlQuery query(db);
     // Format montant avec point decimal (pas de virgule locale)
     QString montantStr = QString::number(amount, 'f', 2);
-    QString sql = QString("INSERT INTO finance (id_transaction, id_machine, idProduction, ctype, categorie, montant, date_trans, description, user_id) "
-                          "VALUES (finance_seq.NEXTVAL, %1, 0, '%2', '%3', %4, SYSDATE, '%5', %6)")
-                  .arg(machineId > 0 ? QString::number(machineId) : "NULL")
+    QString sql = QString("INSERT INTO finance (ctype, categorie, montant, date_trans, description, ID_EMPLOYEE) "
+                          "VALUES ('%1', '%2', %3, SYSDATE, '%4', %5)")
                   .arg(type.replace("'", "''"))
                   .arg(category.replace("'", "''"))
                   .arg(montantStr)
                   .arg(txtDescription->toPlainText().trimmed().replace("'", "''"))
                   .arg(currentUserId);
     
+    qDebug() << "SQL EXECUTE:" << sql;
+    
     if (query.exec(sql)) {
-        db.commit();
+        qDebug() << "✓ INSERT réussi";
+        if (!db.commit()) {
+            qDebug() << "❌ COMMIT ÉCHOUÉ:" << db.lastError().text();
+            db.rollback();
+        } else {
+            qDebug() << "✓ COMMIT réussi";
+        }
         chargerTransactions();
         effacerFormulaire();
         emit dataChanged();
         QMessageBox::information(this, QString::fromUtf8("Succès"), QString::fromUtf8("Transaction enregistrée avec succès."));
     } else {
+        qDebug() << "❌ INSERT ÉCHOUÉ:" << query.lastError().text();
         QMessageBox::critical(this, "Erreur", query.lastError().text());
     }
 }
@@ -461,12 +460,11 @@ void TransactionTab::modifierTransaction()
     // Format montant avec point decimal (pas de virgule locale)
     QString montantStr = QString::number(amount, 'f', 2);
     QString sql = QString("UPDATE finance SET ctype='%1', categorie='%2', montant=%3, "
-                          "date_trans=SYSDATE, description='%4', id_machine=%5 WHERE id_transaction=%6")
+                          "date_trans=SYSDATE, description='%4' WHERE id_transaction=%5")
                   .arg(type.replace("'", "''"))
                   .arg(category.replace("'", "''"))
                   .arg(montantStr)
                   .arg(txtDescription->toPlainText().trimmed().replace("'", "''"))
-                  .arg(machineId > 0 ? QString::number(machineId) : "NULL")
                   .arg(qId.toInt());
     
     if (query.exec(sql)) {
@@ -523,8 +521,9 @@ void TransactionTab::chargerTransactions()
     if (!db.isOpen()) return;
 
     QString sql = "SELECT f.id_transaction, f.ctype, f.categorie, f.montant, TO_CHAR(f.date_trans, 'DD/MM/YYYY'), "
-                  "COALESCE(e.USERNAME, TO_CHAR(f.user_id)), f.description "
-                  "FROM finance f LEFT JOIN EMPLOYEES e ON f.user_id = e.USER_ID "
+                  "COALESCE(e.USERNAME, TO_CHAR(f.ID_EMPLOYEE)), f.description "
+                  "FROM finance f LEFT JOIN EMPLOYEES e ON f.ID_EMPLOYEE = e.USER_ID "
+                  "WHERE f.TYPE_LIGNE = 'TRANSACTION' "
                   "ORDER BY f.id_transaction DESC";
     QSqlQuery query(sql, db);
     
@@ -602,9 +601,9 @@ void TransactionTab::rechercher()
     if (!db.isOpen()) return;
 
     QString sql = "SELECT f.id_transaction, f.ctype, f.categorie, f.montant, TO_CHAR(f.date_trans, 'DD/MM/YYYY'), "
-                  "COALESCE(e.USERNAME, TO_CHAR(f.user_id)), f.description "
-                  "FROM finance f LEFT JOIN EMPLOYEES e ON f.user_id = e.USER_ID "
-                  "WHERE 1=1";
+                  "COALESCE(e.USERNAME, TO_CHAR(f.ID_EMPLOYEE)), f.description "
+                  "FROM finance f LEFT JOIN EMPLOYEES e ON f.ID_EMPLOYEE = e.USER_ID "
+                  "WHERE f.TYPE_LIGNE = 'TRANSACTION'";
 
     if (typeFilter != "Tous") {
         sql += " AND f.ctype = :type";
@@ -650,9 +649,9 @@ void TransactionTab::trier()
     if (!db.isOpen()) return;
 
     QString sql = "SELECT f.id_transaction, f.ctype, f.categorie, f.montant, TO_CHAR(f.date_trans, 'DD/MM/YYYY'), "
-                  "COALESCE(e.USERNAME, TO_CHAR(f.user_id)), f.description "
-                  "FROM finance f LEFT JOIN EMPLOYEES e ON f.user_id = e.USER_ID "
-                  "WHERE 1=1";
+                  "COALESCE(e.USERNAME, TO_CHAR(f.ID_EMPLOYEE)), f.description "
+                  "FROM finance f LEFT JOIN EMPLOYEES e ON f.ID_EMPLOYEE = e.USER_ID "
+                  "WHERE f.TYPE_LIGNE = 'TRANSACTION'";
 
     // Appliquer les filtres actuels
     QString typeFilter = cbSearchType->currentText();
@@ -937,25 +936,24 @@ QGroupBox* StatsTab::createChartControlSection()
     controlLayout->addLayout(typeLayout);
 
     return controlGroup;
-
-    return controlGroup;
 }
 
 QGroupBox* StatsTab::createChartSection()
 {
-    chartGroup = new QGroupBox(QString::fromUtf8("📈 Visualisation"), this);
+    chartGroup = new QGroupBox(QString::fromUtf8("📈 Statistiques"), this);
     chartGroup->setStyleSheet("QGroupBox { font-weight: bold; font-size: 11pt; color: #1B4332; border: 2px solid #1B7331; border-radius: 6px; padding: 10px; background-color: #fafafa; }");
     QVBoxLayout *chartLayout = new QVBoxLayout(chartGroup);
     chartLayout->setContentsMargins(8, 8, 8, 8);
     chartLayout->setSpacing(0);
 
-    chartView = new QChartView();
-    chartView->setMinimumHeight(280);
-    chartView->setRenderHint(QPainter::Antialiasing);
-    chartView->setRenderHint(QPainter::SmoothPixmapTransform);
-    chartView->setStyleSheet("QChartView { background-color: #ffffff; border: 2px solid #1B7331; border-radius: 4px; }");
+    // Graphiques remplacés par des statistiques texte
+    QLabel *statsLabel = new QLabel();
+    statsLabel->setText(QString::fromUtf8("Graphiques - Disponible après génération"));
+    statsLabel->setMinimumHeight(280);
+    statsLabel->setAlignment(Qt::AlignCenter);
+    statsLabel->setStyleSheet("background-color: #ffffff; border: 2px solid #1B7331; border-radius: 4px; color: #999;");
 
-    chartLayout->addWidget(chartView);
+    chartLayout->addWidget(statsLabel);
 
     return chartGroup;
 }
@@ -973,7 +971,7 @@ void StatsTab::setDarkMode(bool isDark)
 
 void StatsTab::applyDarkModeStyles()
 {
-    if (!summaryGroup || !controlGroup || !chartGroup) return;
+    if (!summaryGroup || !controlGroup) return;
 
     if (m_isDarkMode) {
         // DARK MODE
@@ -1003,26 +1001,7 @@ void StatsTab::applyDarkModeStyles()
                                    "QPushButton:pressed { background-color: #0f3e1d; }");
         
         // Chart Group
-        chartGroup->setStyleSheet("QGroupBox { font-weight: bold; font-size: 11pt; color: #e6edf3; border: 2px solid #30363d; border-radius: 6px; padding: 10px; background-color: #0d1117; }");
-        if (chartView) {
-            chartView->setStyleSheet("QChartView { background-color: #0d1117; border: 2px solid #30363d; border-radius: 4px; }");
-            if (chartView->chart()) {
-                chartView->chart()->setBackgroundBrush(QBrush(QColor("#0d1117")));
-                chartView->chart()->setTitleBrush(QColor("#e6edf3"));
-                chartView->chart()->setTheme(QChart::ChartThemeDark);
-                
-                // Update legend
-                if (chartView->chart()->legend()) {
-                    chartView->chart()->legend()->setLabelColor(QColor("#e6edf3"));
-                }
-                
-                // Update axes
-                for (QAbstractAxis *axis : chartView->chart()->axes()) {
-                    axis->setLabelsColor(QColor("#e6edf3"));
-                    axis->setLinePen(QPen(QColor("#30363d")));
-                }
-            }
-        }
+        if (chartGroup) chartGroup->setStyleSheet("QGroupBox { font-weight: bold; font-size: 11pt; color: #e6edf3; border: 2px solid #30363d; border-radius: 6px; padding: 10px; background-color: #0d1117; }");
         
         setStyleSheet("background-color: #0d1117;");
     } else {
@@ -1053,26 +1032,7 @@ void StatsTab::applyDarkModeStyles()
                                    "QPushButton:pressed { background-color: #0f3e1d; }");
         
         // Chart Group
-        chartGroup->setStyleSheet("QGroupBox { font-weight: bold; font-size: 11pt; color: #1B4332; border: 2px solid #1B7331; border-radius: 6px; padding: 10px; background-color: #fafafa; }");
-        if (chartView) {
-            chartView->setStyleSheet("QChartView { background-color: #ffffff; border: 2px solid #1B7331; border-radius: 4px; }");
-            if (chartView->chart()) {
-                chartView->chart()->setBackgroundBrush(QBrush(QColor("#ffffff")));
-                chartView->chart()->setTitleBrush(QColor("#1B4332"));
-                chartView->chart()->setTheme(QChart::ChartThemeLight);
-                
-                // Update legend
-                if (chartView->chart()->legend()) {
-                    chartView->chart()->legend()->setLabelColor(QColor("#1B4332"));
-                }
-                
-                // Update axes
-                for (QAbstractAxis *axis : chartView->chart()->axes()) {
-                    axis->setLabelsColor(QColor("#1B4332"));
-                    axis->setLinePen(QPen(QColor("#1B7331")));
-                }
-            }
-        }
+        if (chartGroup) chartGroup->setStyleSheet("QGroupBox { font-weight: bold; font-size: 11pt; color: #1B4332; border: 2px solid #1B7331; border-radius: 6px; padding: 10px; background-color: #fafafa; }");
         
         setStyleSheet("background-color: #f5f5f5;");
     }
@@ -1088,14 +1048,14 @@ void StatsTab::calculerStats()
 
     QSqlQuery query(db);
     // Calculate Revenus (Normalisation UPPER pour éviter les erreurs de casse)
-    if (query.exec("SELECT SUM(montant) FROM finance WHERE UPPER(ctype) = 'REVENU'")) {
+    if (query.exec("SELECT SUM(montant) FROM finance WHERE UPPER(ctype) = 'REVENU' AND TYPE_LIGNE = 'TRANSACTION'")) {
         if (query.next()) {
             revenus = query.value(0).toDouble();
         }
     }
     
     // Calculate Depenses
-    if (query.exec("SELECT SUM(montant) FROM finance WHERE UPPER(ctype) IN ('DEPENSE', 'DÉPENSE')")) {
+    if (query.exec("SELECT SUM(montant) FROM finance WHERE UPPER(ctype) IN ('DEPENSE', 'DÉPENSE') AND TYPE_LIGNE = 'TRANSACTION'")) {
         if (query.next()) {
             depenses = query.value(0).toDouble();
         }
@@ -1119,188 +1079,260 @@ void StatsTab::calculerStats()
     afficherGraphique();
 }
 
+#include <QtCharts/QChartView>
+#include <QtCharts/QPieSeries>
+#include <QtCharts/QPieSlice>
+#include <QtCharts/QBarSeries>
+#include <QtCharts/QBarSet>
+#include <QtCharts/QBarCategoryAxis>
+#include <QtCharts/QLineSeries>
+#include <QtCharts/QValueAxis>
+
 void StatsTab::afficherGraphique()
 {
-    QString typeGraph = cbChartType->currentText();
-    QChart *chart = new QChart();
-    chart->setAnimationOptions(QChart::AllAnimations);
+    if (!chartGroup || !chartGroup->layout()) return;
     
-    // Appliquer le thème approprié selon le mode
-    if (m_isDarkMode) {
-        chart->setTheme(QChart::ChartThemeDark);
-        chart->setBackgroundBrush(QBrush(QColor("#0d1117")));
-        chart->setTitleBrush(QColor("#e6edf3"));
-    } else {
-        chart->setTheme(QChart::ChartThemeLight);
-        chart->setBackgroundBrush(QBrush(QColor("#ffffff")));
-        chart->setTitleBrush(QColor("#1B4332"));
+    QLayout *layout = chartGroup->layout();
+    
+    // Clear existing widgets
+    QLayoutItem *child;
+    while ((child = layout->takeAt(0)) != nullptr) {
+        if (child->widget()) {
+            child->widget()->deleteLater();
+        }
+        delete child;
     }
     
-    chart->setMargins(QMargins(20, 15, 20, 10));
+    QChart *chart = new QChart();
     
-    // Styliser le titre du graphique
-    QFont titleFont;
-    titleFont.setPointSize(10);
-    titleFont.setBold(true);
-    chart->setTitleFont(titleFont);
+    QSqlDatabase db = dbConn->getDatabase();
+    if (!db.isOpen()) return;
+    
+    int type = cbChartType->currentIndex();
+    QString titleText;
 
-    if (typeGraph.contains("Camembert")) {
+    if (type == 0) {
+        // 📈 Camembert : Revenus vs Dépenses Globaux
+        double revenus = 0.0;
+        double depenses = 0.0;
+        
+        QSqlQuery query(db);
+        if (query.exec("SELECT SUM(montant) FROM finance WHERE UPPER(ctype) = 'REVENU' AND TYPE_LIGNE = 'TRANSACTION'")) {
+            if (query.next()) revenus = query.value(0).toDouble();
+        }
+        if (query.exec("SELECT SUM(montant) FROM finance WHERE UPPER(ctype) IN ('DEPENSE', 'DÉPENSE') AND TYPE_LIGNE = 'TRANSACTION'")) {
+            if (query.next()) depenses = query.value(0).toDouble();
+        }
+        
+        double total = revenus + depenses;
+        
         QPieSeries *series = new QPieSeries();
-        series->setHoleSize(0);  // Camembert complet, pas donut
+        QPieSlice *sliceRev = new QPieSlice("Revenus", revenus);
+        sliceRev->setBrush(QColor("#27ae60")); // Vert
         
-        double rev = lblTotalRevenus->text().replace(" DT", "").toDouble();
-        double dep = lblTotalDepenses->text().replace(" DT", "").toDouble();
-        double total = rev + dep;
+        QPieSlice *sliceDep = new QPieSlice(QString::fromUtf8("Dépenses"), depenses);
+        sliceDep->setBrush(QColor("#e74c3c")); // Rouge
         
-        series->append("Revenus", rev);
-        series->append(QString::fromUtf8("Dépenses"), dep);
+        if (total > 0) {
+            double pctRev = (revenus / total) * 100.0;
+            double pctDep = (depenses / total) * 100.0;
+            sliceRev->setLabel(QString("Revenus: %1%").arg(QString::number(pctRev, 'f', 1)));
+            sliceDep->setLabel(QString::fromUtf8("Dépenses: %1%").arg(QString::number(pctDep, 'f', 1)));
+        }
         
-        // Ajouter les pourcentages aux slices
-        double percRev = (total > 0) ? (rev / total) * 100.0 : 0.0;
-        double percDep = (total > 0) ? (dep / total) * 100.0 : 0.0;
+        sliceRev->setLabelVisible(true);
+        sliceDep->setLabelVisible(true);
         
-        QPieSlice *sliceRev = series->slices().at(0);
-        sliceRev->setBrush(QColor("#27ae60"));
-        sliceRev->setExploded();
-        sliceRev->setExplodeDistanceFactor(0.05);
-        sliceRev->setLabel(QString("Revenus: %1%").arg(QString::number(percRev, 'f', 1)));
-        sliceRev->setLabelVisible();
-        sliceRev->setLabelArmLengthFactor(0);
-        QFont labelFont;
-        labelFont.setPointSize(9);
-        labelFont.setBold(true);
-        sliceRev->setLabelFont(labelFont);
-        
-        QPieSlice *sliceDep = series->slices().at(1);
-        sliceDep->setBrush(QColor("#e74c3c"));
-        sliceDep->setExploded();
-        sliceDep->setExplodeDistanceFactor(0.05);
-        sliceDep->setLabel(QString::fromUtf8("Dépenses: %1%").arg(QString::number(percDep, 'f', 1)));
-        sliceDep->setLabelVisible();
-        sliceDep->setLabelArmLengthFactor(0);
-        sliceDep->setLabelFont(labelFont);
+        series->append(sliceRev);
+        series->append(sliceDep);
         
         chart->addSeries(series);
-        chart->setTitle(QString::fromUtf8("Répartition Revenus vs Dépenses"));
+        titleText = QString::fromUtf8("Répartition Globale (Camembert)");
     } 
-    else if (typeGraph.contains("Histogramme")) {
+    else if (type == 1) {
+        // 📊 Histogramme : Revenus vs Dépenses par type (Mensuel)
         QBarSeries *series = new QBarSeries();
-        QBarSet *setRev = new QBarSet(QString::fromUtf8("Revenus"));
+        QBarSet *setRev = new QBarSet("Revenus");
         QBarSet *setDep = new QBarSet(QString::fromUtf8("Dépenses"));
+        setRev->setColor(QColor("#27ae60"));
+        setDep->setColor(QColor("#e74c3c"));
         
-        setRev->setBrush(QColor("#27ae60"));
-        setDep->setBrush(QColor("#e74c3c"));
+        QStringList categories;
         
-        QStringList months;
-        QStringList revPercentLabels;
-        QStringList depPercentLabels;
+        QSqlQuery q(db);
+        // Compatible avec Oracle et SQLite
+        bool isOracle = db.driverName().contains("QOCI") || db.driverName().contains("QODBC");
+        QString dateExpr = isOracle ? "TO_CHAR(date_trans, 'YYYY-MM')" : "strftime('%Y-%m', date_trans)";
         
-        // On récupère les données des 6 derniers mois
-        for(int i=5; i>=0; i--) {
-            QDate d = QDate::currentDate().addMonths(-i);
-            QString mStr = d.toString("MM/yyyy");
-            months << mStr;
+        q.exec(QString("SELECT %1 AS mois, "
+               "SUM(CASE WHEN UPPER(CTYPE)='REVENU' THEN MONTANT ELSE 0 END) AS rev, "
+               "SUM(CASE WHEN UPPER(CTYPE) IN ('DEPENSE','DÉPENSE') THEN MONTANT ELSE 0 END) AS dep "
+               "FROM FINANCE WHERE TYPE_LIGNE='TRANSACTION' "
+               "GROUP BY %1 ORDER BY mois ASC").arg(dateExpr));
+               
+        double maxVal = 0;
+        int count = 0;
+        while(q.next() && count < 12) {
+            QString mois = q.value(0).toString();
+            double rev = q.value(1).toDouble();
+            double dep = q.value(2).toDouble();
             
-            QSqlDatabase db = dbConn->getDatabase();
-            QSqlQuery q(db);
-            q.prepare("SELECT SUM(montant) FROM finance WHERE UPPER(ctype)='REVENU' AND TO_CHAR(date_trans, 'MM/YYYY') = :m");
-            q.bindValue(":m", mStr);
-            q.exec(); q.next();
-            double revValue = q.value(0).toDouble();
+            categories << mois;
+            *setRev << rev;
+            *setDep << dep;
             
-            q.prepare("SELECT SUM(montant) FROM finance WHERE (UPPER(ctype)='DEPENSE' OR UPPER(ctype)='DÉPENSE') AND TO_CHAR(date_trans, 'MM/YYYY') = :m");
-            q.bindValue(":m", mStr);
-            q.exec(); q.next();
-            double depValue = q.value(0).toDouble();
-            
-            // Calculer les pourcentages
-            double total = revValue + depValue;
-            double percRev = 0, percDep = 0;
-            if (total > 0) {
-                percRev = (revValue / total) * 100.0;
-                percDep = (depValue / total) * 100.0;
-            }
-            
-            // Ajouter les pourcentages à la place des montants
-            *setRev << percRev;
-            *setDep << percDep;
-            
-            // Créer les labels avec pourcentages
-            revPercentLabels << QString::number(percRev, 'f', 1) + "%";
-            depPercentLabels << QString::number(percDep, 'f', 1) + "%";
+            if (rev > maxVal) maxVal = rev;
+            if (dep > maxVal) maxVal = dep;
+            count++;
         }
+        if (categories.isEmpty()) { categories << "N/A"; *setRev << 0; *setDep << 0; }
+        if (maxVal == 0) maxVal = 100;
         
         series->append(setRev);
         series->append(setDep);
-        
-        // Afficher les valeurs sur les barres
         series->setLabelsVisible(true);
-        series->setLabelsFormat("@value");
-        series->setLabelsPosition(QAbstractBarSeries::LabelsOutsideEnd);
         
         chart->addSeries(series);
-        chart->setTitle(QString::fromUtf8("Evolution Mensuelle (% Revenus vs Dépenses)"));
         
         QBarCategoryAxis *axisX = new QBarCategoryAxis();
-        axisX->append(months);
+        if (categories.isEmpty()) categories << "N/A";
+        axisX->append(categories);
         chart->addAxis(axisX, Qt::AlignBottom);
         series->attachAxis(axisX);
         
         QValueAxis *axisY = new QValueAxis();
-        axisY->setMax(100);
-        axisY->setRange(0, 100);
-        axisY->setTitleText("%");
+        axisY->setLabelFormat("%.0f DT");
+        axisY->setRange(0, maxVal * 1.1);
         chart->addAxis(axisY, Qt::AlignLeft);
         series->attachAxis(axisY);
-    }
-    else if (typeGraph.contains("Courbe")) {
-        QLineSeries *seriesBalance = new QLineSeries();
-        seriesBalance->setName(QString::fromUtf8("Bénéfice Net"));
-        seriesBalance->setPen(QPen(QColor("#1B4332"), 3));
         
-        QSqlDatabase db = dbConn->getDatabase();
+        titleText = QString::fromUtf8("Évolution Revenus vs Dépenses (Histogramme)");
+    }
+    else if (type == 2) {
+        // 📉 Courbe : Évolution du Bénéfice
+        QLineSeries *series = new QLineSeries();
+        series->setName(QString::fromUtf8("Bénéfice (Revenus - Dépenses)"));
+        QPen pen(QColor("#3498db"));
+        pen.setWidth(4);
+        series->setPen(pen);
+        
+        QStringList categories;
+        
         QSqlQuery q(db);
-        q.prepare("SELECT date_trans, SUM(CASE WHEN UPPER(ctype)='REVENU' THEN montant ELSE -montant END) "
-                  "OVER (ORDER BY date_trans) as balance FROM finance ORDER BY date_trans");
-        q.exec();
+        bool isOracle = db.driverName().contains("QOCI") || db.driverName().contains("QODBC");
+        QString dateExpr = isOracle ? "TO_CHAR(date_trans, 'YYYY-MM')" : "strftime('%Y-%m', date_trans)";
         
-        int i=0;
-        while(q.next()) {
-            seriesBalance->append(i++, q.value(1).toDouble());
+        q.exec(QString("SELECT %1 AS mois, "
+               "SUM(CASE WHEN UPPER(CTYPE)='REVENU' THEN MONTANT ELSE -MONTANT END) AS benefice "
+               "FROM FINANCE WHERE TYPE_LIGNE='TRANSACTION' "
+               "GROUP BY %1 ORDER BY mois ASC").arg(dateExpr));
+               
+        int idx = 0;
+        double minVal = 0, maxVal = 0;
+        while(q.next() && idx < 12) {
+            QString mois = q.value(0).toString();
+            double benefice = q.value(1).toDouble();
+            
+            categories << mois;
+            series->append(idx, benefice);
+            
+            if (idx == 0) { minVal = maxVal = benefice; }
+            else {
+                if (benefice < minVal) minVal = benefice;
+                if (benefice > maxVal) maxVal = benefice;
+            }
+            idx++;
         }
+        if (categories.isEmpty()) { categories << "N/A"; series->append(0, 0); }
         
-        chart->addSeries(seriesBalance);
-        chart->setTitle("Tendance de la Tresorerie");
-        chart->createDefaultAxes();
-    }
-    else { // Comparatif Catégories
-        QBarSeries *categoriesSeries = new QBarSeries();
-        QBarSet *catSet = new QBarSet(QString::fromUtf8("Montant par Catégorie"));
-        catSet->setBrush(QColor("#C9A227"));
-        
-        QStringList labels;
-        QSqlDatabase db = dbConn->getDatabase();
-        QSqlQuery q("SELECT categorie, SUM(montant) FROM finance GROUP BY categorie", db);
-        while(q.next()) {
-            labels << q.value(0).toString();
-            *catSet << q.value(1).toDouble();
-        }
-        
-        categoriesSeries->append(catSet);
-        chart->addSeries(categoriesSeries);
-        chart->setTitle(QString::fromUtf8("Analyse par Catégories"));
+        chart->addSeries(series);
         
         QBarCategoryAxis *axisX = new QBarCategoryAxis();
-        axisX->append(labels);
+        if (categories.isEmpty()) categories << "N/A";
+        axisX->append(categories);
         chart->addAxis(axisX, Qt::AlignBottom);
-        categoriesSeries->attachAxis(axisX);
+        series->attachAxis(axisX);
         
         QValueAxis *axisY = new QValueAxis();
+        axisY->setLabelFormat("%.0f DT");
+        
+        double padding = (maxVal - minVal) * 0.1;
+        if (padding == 0) padding = 100;
+        axisY->setRange(minVal - padding, maxVal + padding);
+        
         chart->addAxis(axisY, Qt::AlignLeft);
-        categoriesSeries->attachAxis(axisY);
+        series->attachAxis(axisY);
+        
+        titleText = QString::fromUtf8("Évolution du Bénéfice (Courbe)");
     }
-
-    chartView->setChart(chart);
+    else if (type == 3) {
+        // 📋 Comparatif : Comparatif global
+        QBarSeries *series = new QBarSeries();
+        QBarSet *setRev = new QBarSet("Total Revenus");
+        QBarSet *setDep = new QBarSet(QString::fromUtf8("Total Dépenses"));
+        QBarSet *setBen = new QBarSet(QString::fromUtf8("Bénéfice Net"));
+        
+        setRev->setColor(QColor("#27ae60"));
+        setDep->setColor(QColor("#e74c3c"));
+        setBen->setColor(QColor("#3498db"));
+        
+        double revenus = 0.0;
+        double depenses = 0.0;
+        QSqlQuery query(db);
+        if (query.exec("SELECT SUM(montant) FROM finance WHERE UPPER(ctype) = 'REVENU' AND TYPE_LIGNE = 'TRANSACTION'")) {
+            if (query.next()) revenus = query.value(0).toDouble();
+        }
+        if (query.exec("SELECT SUM(montant) FROM finance WHERE UPPER(ctype) IN ('DEPENSE', 'DÉPENSE') AND TYPE_LIGNE = 'TRANSACTION'")) {
+            if (query.next()) depenses = query.value(0).toDouble();
+        }
+        double benefice = revenus - depenses;
+        
+        *setRev << revenus;
+        *setDep << depenses;
+        *setBen << benefice;
+        
+        float zeroFixedBen = benefice < 0 ? 0 : benefice;
+        
+        series->append(setRev);
+        series->append(setDep);
+        series->append(setBen);
+        series->setLabelsVisible(true);
+        
+        chart->addSeries(series);
+        
+        QBarCategoryAxis *axisX = new QBarCategoryAxis();
+        axisX->append(QStringList() << "Bilan Global");
+        chart->addAxis(axisX, Qt::AlignBottom);
+        series->attachAxis(axisX);
+        
+        QValueAxis *axisY = new QValueAxis();
+        axisY->setLabelFormat("%.0f DT");
+        
+        double maxVal = revenus > depenses ? revenus : depenses;
+        if (benefice > maxVal) maxVal = benefice;
+        double minVal = benefice < 0 ? benefice : 0;
+        if (maxVal == 0 && minVal == 0) maxVal = 100;
+        axisY->setRange(minVal * 1.15, maxVal * 1.15);
+        
+        chart->addAxis(axisY, Qt::AlignLeft);
+        series->attachAxis(axisY);
+        
+        titleText = QString::fromUtf8("Comparatif Global : Revenus, Dépenses et Bénéfice");
+    }
+    
+    chart->setTitle(titleText);
+    chart->setAnimationOptions(QChart::SeriesAnimations);
+    chart->legend()->setVisible(true);
+    chart->legend()->setAlignment(Qt::AlignBottom);
+    
+    chart->setBackgroundBrush(QBrush(QColor("#ffffff")));
+    
+    QChartView *chartView = new QChartView(chart);
+    chartView->setRenderHint(QPainter::Antialiasing);
+    chartView->setMinimumHeight(280); // Hauteur ajustée (plus petit)
+    chartView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    
+    layout->addWidget(chartView);
 }
 
 void StatsTab::showEvent(QShowEvent *event)
@@ -1312,354 +1344,8 @@ void StatsTab::showEvent(QShowEvent *event)
 // ========================================================================
 // IMPLÉMENTATION: AdvancedTab
 // ========================================================================
-AdvancedTab::AdvancedTab(QWidget *parent)
-    : QWidget(parent), dbConn(new ConnexionFinance())
-{
-    this->setStyleSheet("background-color: #f5f5f5;"); 
-    if (!dbConn->open()) {
-        qDebug() << "Erreur: Impossible d'ouvrir la base dans AdvancedTab";
-    }
-    initializeUI();
-    setupConnections();
-}
+// L'implémentation de AdvancedTab a été déplacée dans advancedtab.cpp
 
-void AdvancedTab::initializeUI()
-{
-    // 1. Setup Scroll Area to handle responsiveness without crushing
-    QVBoxLayout *outerLayout = new QVBoxLayout(this);
-    outerLayout->setContentsMargins(0, 0, 0, 0);
-    outerLayout->setSpacing(0);
-
-    QScrollArea *scrollArea = new QScrollArea(this);
-    scrollArea->setWidgetResizable(true);
-    scrollArea->setFrameShape(QFrame::NoFrame);
-    scrollArea->setStyleSheet("QScrollArea { background-color: transparent; }");
-
-    QWidget *contentWidget = new QWidget();
-    contentWidget->setObjectName("contentWidget");
-    
-    // Main Layout inside the Scroll Area
-    QVBoxLayout *mainLayout = new QVBoxLayout(contentWidget);
-    mainLayout->setSpacing(25); // Generic spacing between groups
-    mainLayout->setContentsMargins(30, 30, 30, 30);
-
-    // =========================================================================
-    // 1. RENTABILITÉ SECTION
-    // =========================================================================
-    QGroupBox *rentGroup = new QGroupBox(QString::fromUtf8("Rentabilité"), contentWidget);
-    rentGroup->setObjectName("rentGroup");
-    QHBoxLayout *rentLayout = new QHBoxLayout(rentGroup);
-    rentLayout->setSpacing(20);
-    rentLayout->setContentsMargins(20, 25, 20, 20);
-
-    rentLayout->addWidget(new QLabel("Mois:"));
-    cbMonthRent = new QComboBox();
-    cbMonthRent->setObjectName("cbMonthRent");
-    cbMonthRent->addItems({QString::fromUtf8("Janvier"), QString::fromUtf8("Février"), QString::fromUtf8("Mars"), QString::fromUtf8("Avril"), QString::fromUtf8("Mai"), QString::fromUtf8("Juin"),
-                           QString::fromUtf8("Juillet"), QString::fromUtf8("Août"), QString::fromUtf8("Septembre"), QString::fromUtf8("Octobre"), QString::fromUtf8("Novembre"), QString::fromUtf8("Décembre")});
-    cbMonthRent->setMinimumWidth(150);
-    cbMonthRent->setMaximumWidth(250);
-    rentLayout->addWidget(cbMonthRent);
-
-    btnCalcRent = new QPushButton(QString::fromUtf8("Calculer Rentabilité"));
-    btnCalcRent->setObjectName("btnCalcRent");
-    btnCalcRent->setCursor(Qt::PointingHandCursor);
-    btnCalcRent->setMinimumWidth(150);
-    rentLayout->addWidget(btnCalcRent);
-
-    rentLayout->addStretch(); 
-
-    rentLayout->addWidget(new QLabel(QString::fromUtf8("Résultat:")));
-    lblRent = new QLabel("N/A");
-    lblRent->setObjectName("lblRent");
-    lblRent->setStyleSheet("font-weight: bold; color: #1B4332; font-size: 14pt; margin-left: 10px;");
-    rentLayout->addWidget(lblRent);
-
-    mainLayout->addWidget(rentGroup);
-
-    // =========================================================================
-    // 2. DÉTECTION DÉPENSES ANORMALES SECTION
-    // =========================================================================
-    QGroupBox *anomalyGroup = new QGroupBox(QString::fromUtf8("Détection Dépenses Anormales"), contentWidget);
-    anomalyGroup->setObjectName("anomalyGroup");
-    QVBoxLayout *anomalyLayout = new QVBoxLayout(anomalyGroup);
-    anomalyLayout->setSpacing(15);
-    anomalyLayout->setContentsMargins(20, 25, 20, 20);
-
-    QHBoxLayout *anomalyRow = new QHBoxLayout();
-    anomalyRow->addWidget(new QLabel("Seuil d'Alerte (DT):"));
-    spinSeuil = new QDoubleSpinBox();
-    spinSeuil->setObjectName("spinSeuil");
-    spinSeuil->setMaximum(9999999.99);
-    spinSeuil->setMinimumWidth(120);
-    spinSeuil->setMaximumWidth(200);
-    anomalyRow->addWidget(spinSeuil);
-
-    btnDetect = new QPushButton(QString::fromUtf8("Détecter"));
-    btnDetect->setObjectName("btnDetect");
-    btnDetect->setCursor(Qt::PointingHandCursor);
-    btnDetect->setMinimumWidth(120);
-    anomalyRow->addWidget(btnDetect);
-    anomalyRow->addStretch();
-    anomalyLayout->addLayout(anomalyRow);
-
-    tableAnomaly = new QTableWidget();
-    tableAnomaly->setObjectName("tableAnomaly");
-    tableAnomaly->setColumnCount(5);
-    tableAnomaly->setHorizontalHeaderLabels({"Date", QString::fromUtf8("Catégorie"), "Montant", QString::fromUtf8("Écart %"), "Alerte"});
-    tableAnomaly->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    tableAnomaly->setAlternatingRowColors(true);
-    tableAnomaly->setSelectionBehavior(QAbstractItemView::SelectRows);
-    tableAnomaly->setMinimumHeight(180);
-    anomalyLayout->addWidget(tableAnomaly);
-
-    mainLayout->addWidget(anomalyGroup);
-
-    // =========================================================================
-    // 3. PRÉVISION SECTION
-    // =========================================================================
-    QGroupBox *predictGroup = new QGroupBox(QString::fromUtf8("Prévision"), contentWidget);
-    predictGroup->setObjectName("predictGroup");
-    QVBoxLayout *predictMainLayout = new QVBoxLayout(predictGroup);
-    predictMainLayout->setSpacing(15);
-    predictMainLayout->setContentsMargins(20, 25, 20, 20);
-
-    QHBoxLayout *predictControls = new QHBoxLayout();
-    predictControls->addWidget(new QLabel(QString::fromUtf8("Période:")));
-    cbPeriod = new QComboBox();
-    cbPeriod->setObjectName("cbPeriod");
-    cbPeriod->addItems({"1 Mois", "3 Mois", "6 Mois", "1 An"});
-    cbPeriod->setMinimumWidth(150);
-    cbPeriod->setMaximumWidth(250);
-    predictControls->addWidget(cbPeriod);
-
-    btnPredict = new QPushButton(QString::fromUtf8("Prédire"));
-    btnPredict->setObjectName("btnPredict");
-    btnPredict->setCursor(Qt::PointingHandCursor);
-    btnPredict->setMinimumWidth(120);
-    predictControls->addWidget(btnPredict);
-    predictControls->addStretch();
-    predictMainLayout->addLayout(predictControls);
-
-    chartPredict = new QChartView();
-    chartPredict->setObjectName("chartPredict");
-    chartPredict->setMinimumHeight(400); // Plus grand pour les prévisions
-    chartPredict->setRenderHint(QPainter::Antialiasing);
-    chartPredict->setStyleSheet("background-color: white; border: 1px solid #ddd; border-radius: 8px;");
-    
-    predictMainLayout->addWidget(chartPredict);
-
-    mainLayout->addWidget(predictGroup);
-
-    // =========================================================================
-    // 4. CLASSEMENT CLIENTS SECTION
-    // =========================================================================
-    QGroupBox *clientGroup = new QGroupBox("Classement Clients", contentWidget);
-    clientGroup->setObjectName("clientGroup");
-    QVBoxLayout *clientLayout = new QVBoxLayout(clientGroup);
-    clientLayout->setSpacing(15);
-    clientLayout->setContentsMargins(20, 25, 20, 20);
-
-    QHBoxLayout *clientRow = new QHBoxLayout();
-    clientRow->addWidget(new QLabel("Classer par:"));
-    cbRank = new QComboBox();
-    cbRank->setObjectName("cbRank");
-    cbRank->addItems({QString::fromUtf8("Chiffre d'Affaires"), QString::fromUtf8("Fréquence"), QString::fromUtf8("Récemment Actif")});
-    cbRank->setMinimumWidth(200);
-    cbRank->setMaximumWidth(350);
-    clientRow->addWidget(cbRank);
-    clientRow->addStretch();
-    clientLayout->addLayout(clientRow);
-
-    tableClients = new QTableWidget();
-    tableClients->setObjectName("tableClients");
-    tableClients->setColumnCount(4);
-    tableClients->setHorizontalHeaderLabels({"Rang", "Client", "Montant Total", "Transactions"});
-    tableClients->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    tableClients->setAlternatingRowColors(true);
-    tableClients->setSelectionBehavior(QAbstractItemView::SelectRows);
-    tableClients->setMinimumHeight(180);
-    clientLayout->addWidget(tableClients);
-
-    mainLayout->addWidget(clientGroup);
-
-    // =========================================================================
-    // 5. SIMULATION FINANCIÈRE SECTION
-    // =========================================================================
-    QGroupBox *simGroup = new QGroupBox(QString::fromUtf8("Simulation Financière"), contentWidget);
-    simGroup->setObjectName("simGroup");
-    
-    QGridLayout *simGrid = new QGridLayout(simGroup);
-    simGrid->setHorizontalSpacing(30);
-    simGrid->setVerticalSpacing(20);
-    simGrid->setContentsMargins(20, 25, 20, 20);
-
-    // Row 0
-    simGrid->addWidget(new QLabel("Prix Unitaire (DT):"), 0, 0);
-    spinPrice = new QDoubleSpinBox();
-    spinPrice->setObjectName("spinPrice");
-    spinPrice->setMaximum(999999.99);
-    spinPrice->setMinimumWidth(120);
-    spinPrice->setMaximumWidth(200);
-    simGrid->addWidget(spinPrice, 0, 1);
-    
-    simGrid->addWidget(new QLabel("Frais (DT):"), 0, 2);
-    spinCharge = new QDoubleSpinBox();
-    spinCharge->setObjectName("spinCharge");
-    spinCharge->setMaximum(999999.99);
-    spinCharge->setMinimumWidth(120);
-    spinCharge->setMaximumWidth(200);
-    simGrid->addWidget(spinCharge, 0, 3);
-
-    // Row 1
-    simGrid->addWidget(new QLabel(QString::fromUtf8("Ventes (Qtés):")), 1, 0);
-    spinSales = new QDoubleSpinBox();
-    spinSales->setObjectName("spinSales");
-    spinSales->setMaximum(999999.99);
-    spinSales->setMinimumWidth(120);
-    spinSales->setMaximumWidth(200);
-    simGrid->addWidget(spinSales, 1, 1);
-
-    btnSimulate = new QPushButton("Simuler");
-    btnSimulate->setObjectName("btnSimulate");
-    btnSimulate->setCursor(Qt::PointingHandCursor);
-    btnSimulate->setMinimumWidth(120);
-    btnSimulate->setMaximumWidth(200);
-    simGrid->addWidget(btnSimulate, 1, 3);
-
-    // Row 2 - Result
-    QHBoxLayout *simResultLayout = new QHBoxLayout();
-    simResultLayout->addStretch();
-    simResultLayout->addWidget(new QLabel(QString::fromUtf8("Résultat de simulation :")));
-    lblResult = new QLabel("N/A");
-    lblResult->setObjectName("lblResult");
-    lblResult->setStyleSheet("font-weight: bold; font-size: 16px; color: #1B4332; padding: 6px 15px; border: 2px solid #1B4332; border-radius: 6px; background-color: #e6fffa;");
-    simResultLayout->addWidget(lblResult);
-    simResultLayout->addStretch();
-    
-    simGrid->addLayout(simResultLayout, 2, 0, 1, 4);
-
-    mainLayout->addWidget(simGroup);
-    
-    // Add finishing touch - bottom spacer
-    mainLayout->addStretch();
-    
-    // Finalize Scroll Area
-    scrollArea->setWidget(contentWidget);
-    outerLayout->addWidget(scrollArea);
-    
-    setLayout(outerLayout);
-}
-
-void AdvancedTab::setupConnections()
-{
-    connect(btnCalcRent, &QPushButton::clicked, this, &AdvancedTab::calculerRentabilite);
-    connect(btnDetect, &QPushButton::clicked, this, &AdvancedTab::detecterAnomalies);
-    connect(btnPredict, &QPushButton::clicked, this, &AdvancedTab::predire);
-    connect(btnSimulate, &QPushButton::clicked, this, &AdvancedTab::simuler);
-}
-
-void AdvancedTab::calculerRentabilite()
-{
-    QString monthName = cbMonthRent->currentText();
-    QStringList frMonths = {QString::fromUtf8("Janvier"), QString::fromUtf8("Février"), QString::fromUtf8("Mars"), QString::fromUtf8("Avril"), QString::fromUtf8("Mai"), QString::fromUtf8("Juin"),
-                           QString::fromUtf8("Juillet"), QString::fromUtf8("Août"), QString::fromUtf8("Septembre"), QString::fromUtf8("Octobre"), QString::fromUtf8("Novembre"), QString::fromUtf8("Décembre")};
-    int monthIdx = frMonths.indexOf(monthName) + 1;
-    QString mStr = QString("%1").arg(monthIdx, 2, 10, QChar('0'));
-
-    QSqlDatabase db = dbConn->getDatabase();
-    QSqlQuery q(db);
-    q.prepare("SELECT SUM(CASE WHEN UPPER(ctype)='REVENU' THEN montant ELSE -montant END) FROM finance WHERE TO_CHAR(date_trans, 'MM') = :m");
-    q.bindValue(":m", mStr);
-    
-    if (q.exec() && q.next()) {
-        double rent = q.value(0).toDouble();
-        lblRent->setText(QString::number(rent, 'f', 2) + " DT");
-        lblRent->setStyleSheet(QString("font-weight: bold; font-size: 14pt; color: %1;").arg(rent >= 0 ? "#27ae60" : "#e74c3c"));
-    }
-}
-
-void AdvancedTab::detecterAnomalies()
-{
-    double seuil = spinSeuil->value();
-    if (seuil <= 0) return;
-
-    tableAnomaly->setRowCount(0);
-    QSqlDatabase db = dbConn->getDatabase();
-    QSqlQuery q(db);
-    q.prepare("SELECT TO_CHAR(date_trans, 'YYYY-MM-DD'), categorie, montant FROM finance WHERE montant > :s AND UPPER(ctype) IN ('DEPENSE', 'DÉPENSE')");
-    q.bindValue(":s", seuil);
-    
-    if (q.exec()) {
-        while (q.next()) {
-            int row = tableAnomaly->rowCount();
-            tableAnomaly->insertRow(row);
-            tableAnomaly->setItem(row, 0, new QTableWidgetItem(q.value(0).toString()));
-            tableAnomaly->setItem(row, 1, new QTableWidgetItem(q.value(1).toString()));
-            tableAnomaly->setItem(row, 2, new QTableWidgetItem(q.value(2).toString() + " DT"));
-            tableAnomaly->setItem(row, 3, new QTableWidgetItem("> Seuil"));
-            
-            QLabel *lblAlert = new QLabel("ALERTE");
-            lblAlert->setStyleSheet("color: white; background-color: #e74c3c; font-weight: bold; border-radius: 4px; padding: 2px;");
-            lblAlert->setAlignment(Qt::AlignCenter);
-            tableAnomaly->setCellWidget(row, 4, lblAlert);
-        }
-    }
-}
-
-void AdvancedTab::predire()
-{
-    QString period = cbPeriod->currentText();
-    int months = 1;
-    if (period.contains("3")) months = 3;
-    else if (period.contains("6")) months = 6;
-    else if (period.contains("1 An")) months = 12;
-
-    QChart *chart = new QChart();
-    chart->setTitle("Prevision de Croissance Financiere");
-    chart->setAnimationOptions(QChart::SeriesAnimations);
-
-    QLineSeries *histSeries = new QLineSeries();
-    histSeries->setName("Historique");
-    QLineSeries *predSeries = new QLineSeries();
-    predSeries->setName(QString::fromUtf8("Prévision"));
-    QPen penPred(Qt::DashLine);
-    penPred.setWidth(2);
-    penPred.setColor(QColor("#C9A227"));
-    predSeries->setPen(penPred);
-
-    // Get last 6 months historical average
-    double totalRev = 0;
-    QSqlDatabase db = dbConn->getDatabase();
-    QSqlQuery q(db);
-    q.prepare("SELECT SUM(montant) FROM finance WHERE UPPER(ctype)='REVENU' AND date_trans > ADD_MONTHS(SYSDATE, -6)");
-    if (q.exec() && q.next()) totalRev = q.value(0).toDouble() / 6.0;
-
-    for (int i = 0; i < 6; i++) histSeries->append(i, totalRev * (1.0 + (i*0.05))); // Dummy growth
-    for (int i = 5; i < 5 + months; i++) predSeries->append(i, totalRev * (1.0 + (i*0.05)));
-
-    chart->addSeries(histSeries);
-    chart->addSeries(predSeries);
-    chart->createDefaultAxes();
-    chartPredict->setChart(chart);
-}
-
-void AdvancedTab::classerClients()
-{
-    // Not strictly needed for the "graph works" request but good to have
-}
-
-void AdvancedTab::simuler()
-{
-    double price = spinPrice->value();
-    double qty = spinSales->value();
-    double charges = spinCharge->value();
-    
-    double res = (price * qty) - charges;
-    lblResult->setText(QString::number(res, 'f', 2) + " DT");
-    lblResult->setStyleSheet(QString("font-weight: bold; font-size: 16px; border: 2px solid %1; border-radius: 6px; background-color: #e6fffa; color: %1;")
-                             .arg(res >= 0 ? "#1B4332" : "#e74c3c"));
-}
 // ========================================================================
 // IMPLÉMENTATION: SearchTab
 // ========================================================================
@@ -1837,10 +1523,10 @@ void SearchTab::chargerTransactions()
 
     QSqlQuery query(db);
     QString baseQuery = "SELECT f.id_transaction, f.ctype, f.categorie, f.montant, TO_CHAR(f.date_trans, 'DD/MM/YYYY'), "
-                        "COALESCE(c.NOM || ' ' || c.PRENOM, m.NOM_MACHINE, 'N/A') as tiers, f.description "
+                        "COALESCE(e.USERNAME, 'N/A') as tiers, f.description "
                         "FROM finance f "
-                        "LEFT JOIN CLIENT c ON f.id_machine = c.ID_CLIENT AND f.ctype = 'REVENU' "
-                        "LEFT JOIN MACHINE m ON f.id_machine = m.ID_MACHINE AND f.ctype != 'REVENU' "
+                        "LEFT JOIN EMPLOYEES e ON f.ID_EMPLOYEE = e.USER_ID "
+                        "WHERE f.TYPE_LIGNE = 'TRANSACTION' "
                         "ORDER BY f.date_trans DESC";
 
     if (!query.exec(baseQuery)) {
@@ -1872,18 +1558,17 @@ void SearchTab::rechercher()
     if (!db.isOpen()) return;
 
     QString sql = "SELECT f.id_transaction, f.ctype, f.categorie, f.montant, TO_CHAR(f.date_trans, 'DD/MM/YYYY'), "
-                  "COALESCE(c.NOM || ' ' || c.PRENOM, m.NOM_MACHINE, 'N/A') as tiers, f.description "
+                  "COALESCE(e.USERNAME, 'N/A') as tiers, f.description "
                   "FROM finance f "
-                  "LEFT JOIN CLIENT c ON f.id_machine = c.ID_CLIENT AND f.ctype = 'REVENU' "
-                  "LEFT JOIN MACHINE m ON f.id_machine = m.ID_MACHINE AND f.ctype != 'REVENU' "
-                  "WHERE f.date_trans BETWEEN :d1 AND :d2";
+                  "LEFT JOIN EMPLOYEES e ON f.ID_EMPLOYEE = e.USER_ID "
+                  "WHERE f.TYPE_LIGNE = 'TRANSACTION' AND TRUNC(f.date_trans) BETWEEN :d1 AND :d2";
 
     int searchIdx = cbSearchType->currentIndex(); 
     if (!searchText.isEmpty()) {
-        if (searchIdx == 1) sql += " AND (LOWER(c.NOM) LIKE LOWER(:s) OR LOWER(c.PRENOM) LIKE LOWER(:s) OR LOWER(m.NOM_MACHINE) LIKE LOWER(:s))";
+        if (searchIdx == 1) sql += " AND (LOWER(e.USERNAME) LIKE LOWER(:s))";
         else if (searchIdx == 2) sql += " AND LOWER(f.categorie) LIKE LOWER(:s)";
         else if (searchIdx == 3) sql += " AND LOWER(f.description) LIKE LOWER(:s)";
-        else sql += " AND (LOWER(f.ctype) LIKE LOWER(:s) OR LOWER(f.categorie) LIKE LOWER(:s) OR LOWER(f.description) LIKE LOWER(:s) OR LOWER(c.NOM) LIKE LOWER(:s) OR LOWER(m.NOM_MACHINE) LIKE LOWER(:s))";
+        else sql += " AND (LOWER(f.ctype) LIKE LOWER(:s) OR LOWER(f.categorie) LIKE LOWER(:s) OR LOWER(f.description) LIKE LOWER(:s) OR LOWER(e.USERNAME) LIKE LOWER(:s))";
     }
 
     int sortIdx = cbSortBy->currentIndex(); 
@@ -2008,7 +1693,11 @@ Finance::Finance(QWidget *parent)
     ui->setupUi(this);
     initializeUI();
     applyStyles();
-    m_lightStyleSheet = qApp->styleSheet();  // Capture light theme after applyStyles()
+    
+    // Delay the stylesheet capture to ensure all widgets are fully styled
+    QTimer::singleShot(100, this, [this]() {
+        m_lightStyleSheet = qApp->styleSheet();
+    });
 
     // Initialize DateTime Display
     dateTimeTimer = new QTimer(this);
@@ -2187,11 +1876,13 @@ void Finance::initializeUI()
     transactionTab = new TransactionTab(1);  // userId = 1 (utilisateur par défaut/admin)
     statsTab = new StatsTab();
     advancedTab = new AdvancedTab();
+    historiqueAuditTab = new HistoriqueAuditTab();
 
     // Ajouter les tabs
     mainTabWidget->addTab(transactionTab, QString::fromUtf8("💸 Transactions"));
     mainTabWidget->addTab(statsTab, QString::fromUtf8("📊 Statistiques"));
     mainTabWidget->addTab(advancedTab, QString::fromUtf8("🔬 Analyse Avancée"));
+    mainTabWidget->addTab(historiqueAuditTab, QString::fromUtf8("📋 Historique Audit"));
 
     // Connections Globales
     connect(transactionTab, &TransactionTab::dataChanged, statsTab, &StatsTab::calculerStats);
@@ -2777,6 +2468,8 @@ void Finance::applyTheme()
     
     // Propagate dark mode to Statistics tab
     if (statsTab) statsTab->setDarkMode(m_isDarkMode);
+    if (advancedTab) advancedTab->setDarkMode(m_isDarkMode);
+    if (historiqueAuditTab) historiqueAuditTab->setDarkMode(m_isDarkMode);
 }
 
 void Finance::onToggleDarkMode()

@@ -40,7 +40,9 @@ SOURCES += \
     ../machine/connexionmachine.cpp \
     ../machine/chatbot.cpp \
     ../finance/finance/finance.cpp \
-    ../finance/finance/connexionfinance.cpp
+    ../finance/finance/connexionfinance.cpp \
+    ../finance/finance/advancedtab.cpp \
+    ../finance/finance/historiqueaudit.cpp
 
 qtHaveModule(httpserver) {
     SOURCES += \
@@ -71,7 +73,9 @@ HEADERS += \
     ../machine/connexionmachine.h \
     ../machine/chatbot.h \
     ../finance/finance/finance.h \
-    ../finance/finance/connexionfinance.h
+    ../finance/finance/connexionfinance.h \
+    ../finance/finance/advancedtab.h \
+    ../finance/finance/historiqueaudit.h
 
 qtHaveModule(httpserver) {
     HEADERS += \

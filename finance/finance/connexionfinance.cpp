@@ -25,6 +25,9 @@ bool ConnexionFinance::open() {
     }
 
     if (db.open()) {
+        // Forcer autocommit OFF pour Oracle
+        db.exec("SET AUTOCOMMIT OFF");
+        
         qDebug() << "========================================";
         qDebug() << "[Finance] Connexion a la base de donnees reussie !";
         qDebug() << "[Finance] Host : 127.0.0.1:1521/XE | User : zitouna";

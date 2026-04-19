@@ -42,6 +42,20 @@ BEGIN EXECUTE IMMEDIATE 'DROP SEQUENCE SEQ_MACHINE'; EXCEPTION WHEN OTHERS THEN 
 /
 BEGIN EXECUTE IMMEDIATE 'DROP SEQUENCE USERS_SEQ'; EXCEPTION WHEN OTHERS THEN NULL; END;
 /
+BEGIN EXECUTE IMMEDIATE 'DROP TRIGGER TRG_FINANCE_ID'; EXCEPTION WHEN OTHERS THEN NULL; END;
+/
+BEGIN EXECUTE IMMEDIATE 'DROP TRIGGER TRG_FINANCE_AUDIT'; EXCEPTION WHEN OTHERS THEN NULL; END;
+/
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE FINANCE CASCADE CONSTRAINTS'; EXCEPTION WHEN OTHERS THEN NULL; END;
+/
+BEGIN EXECUTE IMMEDIATE 'DROP SEQUENCE SEQ_FINANCE'; EXCEPTION WHEN OTHERS THEN NULL; END;
+/
+BEGIN EXECUTE IMMEDIATE 'DROP FUNCTION CALC_IMPACT'; EXCEPTION WHEN OTHERS THEN NULL; END;
+/
+BEGIN EXECUTE IMMEDIATE 'DROP FUNCTION IS_ANOMALY_FUNC'; EXCEPTION WHEN OTHERS THEN NULL; END;
+/
+BEGIN EXECUTE IMMEDIATE 'DROP FUNCTION CALC_SEVERITY'; EXCEPTION WHEN OTHERS THEN NULL; END;
+/
 
 -- ============================================================================
 -- 2. Sequence CLIENT
@@ -310,7 +324,205 @@ VALUES ('Khemiri', 'Youssef', '99887766', 'Kairouan, Zone industrielle', 'yousse
 COMMIT;
 
 -- ============================================================================
--- 14. Verification
+-- 14. Sequence FINANCE
+-- ============================================================================
+CREATE SEQUENCE SEQ_FINANCE START WITH 1 INCREMENT BY 1 NOCACHE;
+
+-- ============================================================================
+-- 15. Table FINANCE (Transactions & Historique Audit Unifies en UNE SEULE table)
+-- ============================================================================
+CREATE TABLE FINANCE (
+    ID_TRANSACTION          NUMBER PRIMARY KEY,
+    
+    -- Colonnes pour une TRANSACTION NORMALE
+    ID_EMPLOYEE             NUMBER,
+    CTYPE                   VARCHAR2(20) CHECK (UPPER(CTYPE) IN ('REVENU', 'DÉPENSE', 'DEPENSE')),
+    CATEGORIE               VARCHAR2(100),
+    MONTANT                 NUMBER(15,2),
+    DATE_TRANS              TIMESTAMP DEFAULT SYSTIMESTAMP,
+    DESCRIPTION             VARCHAR2(500),
+    ID_MACHINE              NUMBER,
+    CREATED_AT              TIMESTAMP DEFAULT SYSTIMESTAMP,
+    UPDATED_AT              TIMESTAMP DEFAULT SYSTIMESTAMP,
+    
+    -- Colonnes pour l'AUDIT (AUTO-REFERENCE dans la meme table)
+    TYPE_LIGNE              VARCHAR2(20) DEFAULT 'TRANSACTION' CHECK (TYPE_LIGNE IN ('TRANSACTION', 'AUDIT')),
+    PARENT_TRANSACTION_ID   NUMBER,
+    AUDIT_ACTION            VARCHAR2(20) CHECK (UPPER(AUDIT_ACTION) IN ('INSERT', 'UPDATE', 'DELETE')),
+    AUDIT_CHAMP             VARCHAR2(100),
+    AUDIT_OLD_VALUE         CLOB,
+    AUDIT_NEW_VALUE         CLOB,
+    AUDIT_OPERATION_TYPE    VARCHAR2(100),
+    AUDIT_SEVERITE          VARCHAR2(20) DEFAULT 'LOW',
+    AUDIT_EST_ANOMALIE      NUMBER(1) DEFAULT 0,
+    AUDIT_IMPACT_SCORE      NUMBER(5,2) DEFAULT 0,
+    AUDIT_VERSION           NUMBER DEFAULT 1,
+    
+    CONSTRAINT FK_FINANCE_EMPLOYEE FOREIGN KEY (ID_EMPLOYEE) REFERENCES EMPLOYEES(USER_ID),
+    CONSTRAINT FK_FINANCE_MACHINE FOREIGN KEY (ID_MACHINE) REFERENCES MACHINE(ID_MACHINE)
+);
+
+-- Index pour performance
+CREATE INDEX IDX_FINANCE_TYPE ON FINANCE(TYPE_LIGNE);
+CREATE INDEX IDX_FINANCE_PARENT ON FINANCE(PARENT_TRANSACTION_ID);
+CREATE INDEX IDX_FINANCE_DATE ON FINANCE(CREATED_AT);
+
+-- Trigger auto-increment FINANCE
+CREATE OR REPLACE TRIGGER TRG_FINANCE_ID
+BEFORE INSERT ON FINANCE
+FOR EACH ROW
+BEGIN
+    IF :NEW.ID_TRANSACTION IS NULL THEN
+        SELECT SEQ_FINANCE.NEXTVAL INTO :NEW.ID_TRANSACTION FROM DUAL;
+    END IF;
+END;
+/
+
+-- ============================================================================
+-- 16. Fonctions de detection et statistiques (Impact, Anomalie, Sévérité)
+-- ============================================================================
+CREATE OR REPLACE FUNCTION CALC_IMPACT(p_old_val NUMBER, p_new_val NUMBER) 
+RETURN NUMBER IS
+    v_impact NUMBER;
+BEGIN
+    IF p_old_val = 0 OR p_old_val IS NULL THEN
+        v_impact := 100;
+    ELSE
+        v_impact := ABS((p_new_val - p_old_val) / p_old_val) * 100;
+    END IF;
+    RETURN v_impact;
+END CALC_IMPACT;
+/
+
+CREATE OR REPLACE FUNCTION IS_ANOMALY_FUNC(p_action VARCHAR2, p_impact NUMBER, p_montant NUMBER) 
+RETURN NUMBER IS
+    v_is_anomaly NUMBER := 0;
+BEGIN
+    IF UPPER(p_action) = 'DELETE' THEN v_is_anomaly := 1;
+    ELSIF UPPER(p_action) = 'UPDATE' AND p_impact > 50 THEN v_is_anomaly := 1;
+    ELSIF p_montant > 15000 THEN v_is_anomaly := 1;
+    END IF;
+    RETURN v_is_anomaly;
+END IS_ANOMALY_FUNC;
+/
+
+CREATE OR REPLACE FUNCTION CALC_SEVERITY(p_action VARCHAR2, p_montant NUMBER, p_impact NUMBER) 
+RETURN VARCHAR2 IS
+    v_severity VARCHAR2(20) := 'LOW';
+BEGIN
+    IF UPPER(p_action) = 'DELETE' THEN v_severity := 'CRITICAL';
+    ELSIF p_montant > 15000 THEN v_severity := 'CRITICAL';
+    ELSIF p_montant > 10000 OR p_impact > 50 THEN v_severity := 'HIGH';
+    ELSIF p_montant > 5000 OR p_impact > 25 THEN v_severity := 'MEDIUM';
+    ELSE v_severity := 'LOW';
+    END IF;
+    RETURN v_severity;
+END CALC_SEVERITY;
+/
+
+-- ============================================================================
+-- 17. Trigger COMPOUND sur FINANCE (Genere l'historique automatiquement)
+-- ============================================================================
+CREATE OR REPLACE TRIGGER TRG_FINANCE_AUDIT
+FOR INSERT OR UPDATE OR DELETE ON FINANCE
+COMPOUND TRIGGER
+
+    TYPE t_audit_rec IS RECORD (
+        action VARCHAR2(20),
+        parent_id NUMBER,
+        champ VARCHAR2(100),
+        old_val VARCHAR2(4000),
+        new_val VARCHAR2(4000),
+        op_type VARCHAR2(100),
+        emp_id NUMBER,
+        sev VARCHAR2(20),
+        anom NUMBER,
+        imp NUMBER
+    );
+    TYPE t_audit_tab IS TABLE OF t_audit_rec INDEX BY PLS_INTEGER;
+    v_audits t_audit_tab;
+    v_idx PLS_INTEGER := 0;
+
+    PROCEDURE add_audit(
+        p_action VARCHAR2, p_parent NUMBER, p_champ VARCHAR2, p_old VARCHAR2, p_new VARCHAR2,
+        p_op VARCHAR2, p_emp NUMBER, p_sev VARCHAR2, p_anom NUMBER, p_imp NUMBER
+    ) IS
+    BEGIN
+        v_idx := v_idx + 1;
+        v_audits(v_idx).action := p_action;
+        v_audits(v_idx).parent_id := p_parent;
+        v_audits(v_idx).champ := p_champ;
+        v_audits(v_idx).old_val := p_old;
+        v_audits(v_idx).new_val := p_new;
+        v_audits(v_idx).op_type := p_op;
+        v_audits(v_idx).emp_id := p_emp;
+        v_audits(v_idx).sev := p_sev;
+        v_audits(v_idx).anom := p_anom;
+        v_audits(v_idx).imp := p_imp;
+    END add_audit;
+
+    AFTER EACH ROW IS
+        v_impact NUMBER;
+        v_sev VARCHAR2(20);
+        v_anom NUMBER;
+    BEGIN
+        IF INSERTING AND :NEW.TYPE_LIGNE = 'TRANSACTION' THEN
+            add_audit('INSERT', :NEW.ID_TRANSACTION, 'MONTANT', NULL, TO_CHAR(:NEW.MONTANT),
+                      'TRANSACTION_CREATED', :NEW.ID_EMPLOYEE, CALC_SEVERITY('INSERT', :NEW.MONTANT, 0),
+                      IS_ANOMALY_FUNC('INSERT', 0, :NEW.MONTANT), 0);
+            
+            add_audit('INSERT', :NEW.ID_TRANSACTION, 'CATEGORIE', NULL, :NEW.CATEGORIE,
+                      'CATEGORY_SET', :NEW.ID_EMPLOYEE, CALC_SEVERITY('INSERT', :NEW.MONTANT, 0),
+                      IS_ANOMALY_FUNC('INSERT', 0, :NEW.MONTANT), 0);
+                      
+        ELSIF UPDATING AND :NEW.TYPE_LIGNE = 'TRANSACTION' THEN
+            IF :NEW.MONTANT != :OLD.MONTANT THEN
+                v_impact := CALC_IMPACT(:OLD.MONTANT, :NEW.MONTANT);
+                v_sev := CALC_SEVERITY('UPDATE', :NEW.MONTANT, v_impact);
+                v_anom := IS_ANOMALY_FUNC('UPDATE', v_impact, :NEW.MONTANT);
+                add_audit('UPDATE', :NEW.ID_TRANSACTION, 'MONTANT', TO_CHAR(:OLD.MONTANT), TO_CHAR(:NEW.MONTANT),
+                          'MONTANT_CHANGE', :NEW.ID_EMPLOYEE, v_sev, v_anom, v_impact);
+            END IF;
+            
+            IF :NEW.CATEGORIE != :OLD.CATEGORIE THEN
+                add_audit('UPDATE', :NEW.ID_TRANSACTION, 'CATEGORIE', :OLD.CATEGORIE, :NEW.CATEGORIE,
+                          'CATEGORIE_CHANGE', :NEW.ID_EMPLOYEE, 'MEDIUM', 0, 0);
+            END IF;
+            
+            IF NVL(:NEW.DESCRIPTION, 'NULL') != NVL(:OLD.DESCRIPTION, 'NULL') THEN
+                add_audit('UPDATE', :NEW.ID_TRANSACTION, 'DESCRIPTION', :OLD.DESCRIPTION, :NEW.DESCRIPTION,
+                          'DESCRIPTION_CHANGE', :NEW.ID_EMPLOYEE, 'LOW', 0, 0);
+            END IF;
+            
+        ELSIF DELETING AND :OLD.TYPE_LIGNE = 'TRANSACTION' THEN
+            add_audit('DELETE', :OLD.ID_TRANSACTION, 'TRANSACTION', TO_CHAR(:OLD.MONTANT), NULL,
+                      'TRANSACTION_DELETED', :OLD.ID_EMPLOYEE, 'CRITICAL', 1, 100);
+        END IF;
+    END AFTER EACH ROW;
+
+    AFTER STATEMENT IS
+        v_version NUMBER;
+    BEGIN
+        FOR i IN 1 .. v_idx LOOP
+            SELECT NVL(MAX(AUDIT_VERSION), 0) + 1 INTO v_version 
+            FROM FINANCE 
+            WHERE PARENT_TRANSACTION_ID = v_audits(i).parent_id AND TYPE_LIGNE = 'AUDIT';
+            
+            INSERT INTO FINANCE (
+                TYPE_LIGNE, PARENT_TRANSACTION_ID, AUDIT_ACTION, AUDIT_CHAMP, AUDIT_OLD_VALUE, AUDIT_NEW_VALUE,
+                AUDIT_OPERATION_TYPE, ID_EMPLOYEE, AUDIT_SEVERITE, AUDIT_EST_ANOMALIE, AUDIT_IMPACT_SCORE, AUDIT_VERSION
+            ) VALUES (
+                'AUDIT', v_audits(i).parent_id, v_audits(i).action, v_audits(i).champ, v_audits(i).old_val, v_audits(i).new_val,
+                v_audits(i).op_type, v_audits(i).emp_id, v_audits(i).sev, v_audits(i).anom, v_audits(i).imp, v_version
+            );
+        END LOOP;
+    END AFTER STATEMENT;
+
+END TRG_FINANCE_AUDIT;
+/
+
+-- ============================================================================
+-- 18. Verification
 -- ============================================================================
 SELECT 'CLIENT' AS TABLE_NAME, COUNT(*) AS NB_ROWS FROM CLIENT
 UNION ALL
@@ -318,7 +530,9 @@ SELECT 'STOCK', COUNT(*) FROM STOCK
 UNION ALL
 SELECT 'MACHINE', COUNT(*) FROM MACHINE
 UNION ALL
-SELECT 'PRODUCTION', COUNT(*) FROM PRODUCTION;
+SELECT 'PRODUCTION', COUNT(*) FROM PRODUCTION
+UNION ALL
+SELECT 'FINANCE', COUNT(*) FROM FINANCE;
 
 -- ============================================================================
 -- FIN DU SCRIPT

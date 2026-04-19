@@ -25,18 +25,20 @@
 
 // QtCharts
 #include <QtCharts/QChartView>
-#include <QtCharts/QPieSeries>
-#include <QtCharts/QPieSlice>
-#include <QtCharts/QBarSeries>
-#include <QtCharts/QBarSet>
-#include <QtCharts/QLegend>
-#include <QtCharts/QBarCategoryAxis>
-#include <QtCharts/QValueAxis>
 #include <QtCharts/QLineSeries>
+#include <QtCharts/QValueAxis>
+#include <QtCharts/QDateTimeAxis>
+#include <QtCharts/QChart>
 
-QT_USE_NAMESPACE
+#include "connexionfinance.h"
+#include "advancedtab.h" // NOUVEAU: Inclusion du fichier séparé
+
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+using namespace QtCharts;
+#endif
 
 class ConnexionFinance; // Forward declaration pour éviter les conflits avec d'autres modules
+class HistoriqueAuditTab; // Forward declaration for Audit Tab
 
 #include <QFileDialog>
 #include <QFile>
@@ -211,7 +213,7 @@ private:
     bool m_isDarkMode{false};
     QGroupBox *summaryGroup = nullptr;
     QGroupBox *controlGroup = nullptr;
-    QGroupBox *chartGroup = nullptr;
+
     QWidget *revCard = nullptr;
     QWidget *depCard = nullptr;
     QWidget *benCard = nullptr;
@@ -221,7 +223,8 @@ private:
 
     // Graphiques
     QComboBox *cbChartType;
-    QChartView *chartView;
+    QGroupBox *chartGroup;
+
     QPushButton *btnGenerate;
 
     ConnexionFinance *dbConn;
@@ -230,52 +233,7 @@ private:
 // ========================================================================
 // CLASSE 4: AdvancedTab
 // ========================================================================
-class AdvancedTab : public QWidget
-{
-    Q_OBJECT
-
-public:
-    explicit AdvancedTab(QWidget *parent = nullptr);
-
-private slots:
-    void calculerRentabilite();
-    void detecterAnomalies();
-    void predire();
-    void classerClients();
-    void simuler();
-
-private:
-    void initializeUI();
-    void setupConnections();
-
-    // Rentabilité
-    QComboBox *cbMonthRent;
-    QPushButton *btnCalcRent;
-    QLabel *lblRent;
-
-    // Dépenses Anormales
-    QDoubleSpinBox *spinSeuil;
-    QPushButton *btnDetect;
-    QTableWidget *tableAnomaly;
-
-    // Prévision
-    QComboBox *cbPeriod;
-    QPushButton *btnPredict;
-    QChartView *chartPredict;
-
-    // Classement Clients
-    QComboBox *cbRank;
-    QTableWidget *tableClients;
-
-    // Simulation
-    QDoubleSpinBox *spinPrice;
-    QDoubleSpinBox *spinCharge;
-    QDoubleSpinBox *spinSales;
-    QPushButton *btnSimulate;
-    QLabel *lblResult;
-
-    ConnexionFinance *dbConn;
-};
+// La classe AdvancedTab a été déplacée vers advancedtab.h
 
 // ========================================================================
 // CLASSE PRINCIPALE: Finance
@@ -313,6 +271,7 @@ private:
     TransactionTab *transactionTab;
     StatsTab *statsTab;
     AdvancedTab *advancedTab;
+    HistoriqueAuditTab *historiqueAuditTab;
 
     // DateTime
     QTimer *dateTimeTimer;
