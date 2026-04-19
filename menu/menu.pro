@@ -1,4 +1,9 @@
-QT       += core gui sql printsupport charts serialport network httpserver
+QT       += core gui sql printsupport charts serialport network
+
+qtHaveModule(httpserver) {
+    QT += httpserver
+    DEFINES += MACHINE_HAS_HTTPSERVER
+}
 
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
@@ -30,10 +35,14 @@ SOURCES += \
     ../stock/connexion.cpp \
     ../machine/machine.cpp \
     ../machine/connexionmachine.cpp \
-    ../machine/MachineServer.cpp \
     ../machine/chatbot.cpp \
     ../finance/finance/finance.cpp \
     ../finance/finance/connexionfinance.cpp
+
+qtHaveModule(httpserver) {
+    SOURCES += \
+        ../machine/MachineServer.cpp
+}
 
 HEADERS += \
     menu.h \
@@ -54,10 +63,14 @@ HEADERS += \
     ../stock/connexion.h \
     ../machine/machine.h \
     ../machine/connexionmachine.h \
-    ../machine/MachineServer.h \
     ../machine/chatbot.h \
     ../finance/finance/finance.h \
     ../finance/finance/connexionfinance.h
+
+qtHaveModule(httpserver) {
+    HEADERS += \
+        ../machine/MachineServer.h
+}
 
 FORMS += \
     menu.ui \

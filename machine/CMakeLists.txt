@@ -18,8 +18,9 @@ find_package(Qt6 REQUIRED COMPONENTS
     Network
     Multimedia
     TextToSpeech
-    HttpServer
 )
+
+find_package(Qt6 QUIET COMPONENTS HttpServer)
 
 find_package(PkgConfig QUIET)
 if(PkgConfig_FOUND)
@@ -32,11 +33,17 @@ add_executable(machine
     connexionmachine.h
     machine.cpp
     machine.h
-    MachineServer.cpp
-    MachineServer.h
     machine.ui
     resources.qrc
 )
+
+if(TARGET Qt6::HttpServer)
+    target_sources(machine PRIVATE
+        MachineServer.cpp
+        MachineServer.h
+    )
+    target_compile_definitions(machine PRIVATE MACHINE_HAS_HTTPSERVER)
+endif()
 
 target_link_libraries(machine PRIVATE
     Qt6::Core
@@ -48,8 +55,11 @@ target_link_libraries(machine PRIVATE
     Qt6::Network
     Qt6::Multimedia
     Qt6::TextToSpeech
-    Qt6::HttpServer
 )
+
+if(TARGET Qt6::HttpServer)
+    target_link_libraries(machine PRIVATE Qt6::HttpServer)
+endif()
 
 # whisper.cpp integration (Windows):
 # - Option A: set WHISPER_CPP_DIR to the whisper.cpp source folder (containing CMakeLists.txt)
