@@ -2,6 +2,9 @@
 machine/build/
 build/
 .qtc_clangd/
+debug/
+release/
+config.h
 
 # Qt Creator user files
 .qtcreator/*.pro.user
