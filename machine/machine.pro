@@ -1,9 +1,4 @@
-QT       += core gui sql printsupport charts network multimedia texttospeech
-
-qtHaveModule(httpserver) {
-    QT += httpserver
-    DEFINES += MACHINE_HAS_HTTPSERVER
-}
+QT       += core gui sql serialport printsupport charts network httpserver multimedia texttospeech
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -15,25 +10,19 @@ QMAKE_CXXFLAGS += -finput-charset=UTF-8 -fexec-charset=UTF-8
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    MachineServer.cpp \
+    arduino.cpp \
     connexionmachine.cpp \
     main.cpp \
     machine.cpp \
     chatbot.cpp
 
-qtHaveModule(httpserver) {
-    SOURCES += \
-        MachineServer.cpp
-}
-
 HEADERS += \
+    MachineServer.h \
+    arduino.h \
     connexionmachine.h \
     machine.h \
     chatbot.h
-
-qtHaveModule(httpserver) {
-    HEADERS += \
-        MachineServer.h
-}
 
 FORMS += \
     machine.ui

@@ -1,7 +1,5 @@
 #include "machine.h"
-#if defined(MACHINE_HAS_HTTPSERVER)
 #include "MachineServer.h"
-#endif
 #include "chatbot.h"
 #include "connexionmachine.h"
 #include "ui_machine.h"
@@ -29,19 +27,24 @@
 #include <QPrinter>
 #include <QRegularExpression>
 #include <QScrollBar>
+#include <QSerialPort>
+#include <QSerialPortInfo>
 #include <QSignalBlocker>
 #include <QSpacerItem>
 #include <QSpinBox>
 #include <QSet>
 #include <QSqlError>
 #include <QSqlQuery>
+#include <QSqlRecord>
 #include <QTextDocumentWriter>
 #include <QTableWidgetItem>
 #include <QButtonGroup>
 #include <QRadioButton>
 #include <QFile>
+#include <QGroupBox>
 #include <QTextStream>
 #include <QVBoxLayout>
+#include <functional>
 #include <utility>
 #include <QtCharts/QBarCategoryAxis>
 #include <QtCharts/QBarSeries>
@@ -169,6 +172,7 @@ QString makeDarkStyleFromLight(QString style) {
   }
   return style;
 }
+
 } // namespace
 // ============================================================================
 // NavigationBar Implementation
@@ -464,11 +468,11 @@ machine::machine(QWidget *parent)
     connect(ui->btnGenererQrMachine, &QPushButton::clicked,
             this, &machine::on_btnGenererQrMachine_clicked);
     resetQrPreviewLabel();
+    setupArduinoTab();
         ui->lblQrPreviewMachine->setCursor(Qt::PointingHandCursor);
         ui->lblQrPreviewMachine->installEventFilter(this);
 
     m_serverHostIp = resolveLocalIpv4();
-#if defined(MACHINE_HAS_HTTPSERVER)
     m_machineServer = new MachineServer(this);
     connect(m_machineServer, &MachineServer::machineRequested,
             this, &machine::onMachineRequestedFromHttp, Qt::UniqueConnection);
@@ -476,12 +480,6 @@ machine::machine(QWidget *parent)
     if (!m_machineServer->start(8181)) {
       qDebug() << "[MachineServer] Echec au demarrage du serveur HTTP sur le port 8181.";
     }
-#else
-    ui->btnGenererQrMachine->setEnabled(false);
-    ui->btnGenererQrMachine->setToolTip(
-        m_isFrench ? "Qt HttpServer non installe: QR indisponible"
-                   : "Qt HttpServer not installed: QR unavailable");
-#endif
 
   // Export PDF button
   connect(ui->btnExporter_machine, &QPushButton::clicked, this,
@@ -1546,6 +1544,27 @@ void machine::refreshAIMachineSelector() {
   updateAICarnetForSelectedMachine();
 }
 
+QString machine::machineTableName() const {
+  if (!m_machineTableCache.isEmpty()) {
+    return m_machineTableCache;
+  }
+
+  QSqlQuery query(ConnectionMachine::getInstance().getDatabase());
+  query.prepare("SELECT TABLE_NAME "
+                "FROM USER_TABLES "
+                "WHERE TABLE_NAME IN ('MACHINE', 'MACHINES') "
+                "ORDER BY CASE TABLE_NAME WHEN 'MACHINE' THEN 1 ELSE 2 END");
+
+  if (query.exec() && query.next()) {
+    m_machineTableCache = query.value(0).toString().trimmed();
+  }
+
+  if (m_machineTableCache.isEmpty()) {
+    m_machineTableCache = "MACHINE";
+  }
+  return m_machineTableCache;
+}
+
 QString machine::resolveLocalIpv4() const {
   const QList<QHostAddress> addresses = QNetworkInterface::allAddresses();
   for (const QHostAddress &address : addresses) {
@@ -1648,14 +1667,6 @@ void machine::resetQrPreviewLabel() {
 }
 
 void machine::on_btnGenererQrMachine_clicked() {
-#if !defined(MACHINE_HAS_HTTPSERVER)
-  QMessageBox::warning(this,
-                       m_isFrench ? "Module manquant" : "Missing module",
-                       m_isFrench
-                           ? "Qt HttpServer n'est pas installe. Installez le composant Qt HttpServer pour activer le QR et la fiche web machine."
-                           : "Qt HttpServer is not installed. Install the Qt HttpServer component to enable QR and web machine card.");
-  return;
-#else
   const QString machineId = ui->comboDecisionMachine->currentData().toString();
   if (machineId.isEmpty()) {
     QMessageBox::warning(this,
@@ -1705,7 +1716,6 @@ void machine::on_btnGenererQrMachine_clicked() {
       m_isFrench
           ? QString("%1\n(Cliquez pour ouvrir la fiche complète)").arg(targetUrl)
           : QString("%1\n(Click to open full machine sheet)").arg(targetUrl));
-#endif
 }
 
 void machine::onMachineRequestedFromHttp(const QString &machineId) {
@@ -1824,7 +1834,8 @@ void machine::updateAICarnetForSelectedMachine() {
 
   QDateTime baseTime = QDateTime::currentDateTime();
   QSqlQuery query(ConnectionMachine::getInstance().getDatabase());
-  query.prepare("SELECT DATE_MISE_A_JOUR FROM MACHINE WHERE ID_MACHINE = :id");
+  query.prepare(QString("SELECT DATE_MISE_A_JOUR FROM %1 WHERE ID_MACHINE = :id")
+                    .arg(machineTableName()));
   query.bindValue(":id", selectedId);
   if (query.exec() && query.next()) {
     const QDateTime dbDateTime = query.value(0).toDateTime();
@@ -3020,6 +3031,9 @@ void machine::appliquerFiltres() {
   const QColor premiumGreen = m_isDarkMode ? QColor("#6ED6A2") : QColor("#2E7D32");
   const QColor premiumOrange = m_isDarkMode ? QColor("#F3A35A") : QColor("#E65100");
   const QColor premiumRed = m_isDarkMode ? QColor("#EF6B77") : QColor("#C62828");
+  const QColor bgGreen = m_isDarkMode ? QColor("#1E3A30") : QColor("#E6F4EC");
+  const QColor bgOrange = m_isDarkMode ? QColor("#3E2B1C") : QColor("#FDEBD8");
+  const QColor bgRed = m_isDarkMode ? QColor("#432226") : QColor("#FDE2E2");
   const QColor baseText = m_isDarkMode ? QColor("#DCE4EF") : QColor("#333333");
   const QColor disabledBg = m_isDarkMode ? QColor("#1A2533") : QColor("#E8E8E8");
   const QColor disabledFg = m_isDarkMode ? QColor("#6F8197") : QColor("#999999");
@@ -3148,6 +3162,25 @@ void machine::appliquerFiltres() {
         row[8]->setForeground(premiumOrange);
       else if (m.criticite == "Critique")
         row[8]->setForeground(premiumRed);
+
+      const QString etat = m.fonctionnement.trimmed().toLower();
+      const QString crit = m.criticite.trimmed().toLower();
+      const QString alerte = m.alerte.trimmed().toLower();
+
+      QColor riskBg = bgGreen;
+      if (etat == "panne" || crit == "critique" || alerte.contains("sécur") ||
+          alerte.contains("secur")) {
+        riskBg = bgRed;
+      } else if (etat == "alerte" || crit.contains("moyen") ||
+                 crit.contains("élev") || crit.contains("eleve") ||
+                 alerte.contains("temp") || alerte.contains("maintenance")) {
+        riskBg = bgOrange;
+      }
+
+      const QList<int> realtimeCols = {4, 14, 6, 7, 8, 5, 11, 16, 15, 12};
+      for (const int col : realtimeCols) {
+        row[col]->setBackground(riskBg);
+      }
     }
 
     machineTableModel->appendRow(row);
@@ -3694,7 +3727,7 @@ void machine::on_btnModifierMachine_machine_clicked() {
   cmbAlerte->setCurrentText(machineTableModel->item(m_selectedRow, 7)->text());
 
   QComboBox *cmbCrit = new QComboBox();
-  cmbCrit->addItems({"Faible", "Moyen", QString::fromUtf8("\xC3\x89lev\xC3\xa9"), "Critique"});
+  cmbCrit->addItems({"Faible", "Moyen", QString::fromUtf8("\xC3\x89lev\xC3\xA9"), "Critique"});
   cmbCrit->setCurrentText(machineTableModel->item(m_selectedRow, 8)->text());
 
   QDateEdit *dateMaint = new QDateEdit(QDate::fromString(
@@ -4466,7 +4499,7 @@ void machine::exporterPDF() {
   QString criticiteColor;
   if (criticite == "Faible")
     criticiteColor = "#2E7D32";
-  else if (criticite == QString::fromUtf8("\xC3\x89lev\xC3\xa9"))
+  else if (criticite == QString::fromUtf8("\xC3\x89lev\xC3\xA9"))
     criticiteColor = "#E65100";
   else
     criticiteColor = "#C62828";
@@ -4516,7 +4549,7 @@ void machine::exporterPDF() {
           // ===== INFORMATIONS GENERALES =====
           "<div class='section'>"
           "  <div class='section-title'>\xF0\x9F\x93\x8B  Informations "
-          "g\xC3\xa9n\xC3\xa9rales</div>"
+          "g\xC3\xA9n\xC3\xA9rales</div>"
           "  <div class='field'>\xF0\x9F\x94\xA2 <span class='field-label'>ID "
           "Machine</span>&nbsp;&nbsp;&nbsp;"
           "    <span class='field-value'>%1</span></div>"
@@ -4536,7 +4569,7 @@ void machine::exporterPDF() {
           "  <div class='section-title'>\xF0\x9F\x93\x8A  Param\xC3\xA8tres "
           "techniques</div>"
           "  <div class='field'>\xF0\x9F\x8C\xA1 <span "
-          "class='field-label'>Temp\xC3\xa9rature (\xC2\xB0""C)</span>&nbsp;"
+          "class='field-label'>Temp\xC3\xA9rature (\xC2\xB0C)</span>&nbsp;"
           "    <span class='field-value'>%6</span></div>"
           "  <div class='field'>\xE2\x9A\xA1 <span class='field-label'>Charge "
           "(%%)</span>&nbsp;&nbsp;&nbsp;"
@@ -4548,10 +4581,10 @@ void machine::exporterPDF() {
           "class='field-label'>Alerte</span>&nbsp;&nbsp;&nbsp;"
           "    <span class='field-value'>%9</span></div>"
           "  <div class='field'>\xF0\x9F\x94\xB0 <span "
-          "class='field-label'>Criticit\xC3\xa9</span>&nbsp;&nbsp;&nbsp;"
+          "class='field-label'>Criticit\xC3\xA9</span>&nbsp;&nbsp;&nbsp;"
           "    <span style='color:%10; font-weight:bold;'>%11</span></div>"
           "  <div class='field'>\xF0\x9F\x92\xAF <span "
-          "class='field-label'>Score Sant\xC3\xa9</span>&nbsp;&nbsp;&nbsp;"
+          "class='field-label'>Score Sant\xC3\xA9</span>&nbsp;&nbsp;&nbsp;"
           "    <span class='field-value'>%12</span></div>"
           "</div>"
 
@@ -4590,7 +4623,8 @@ void machine::exporterPDF() {
           // ===== FOOTER =====
           "<div class='footer'>"
           "  <div>Document g\xC3\xA9n\xC3\xA9r\xC3\xA9 le %20</div>"
-          "  <div class='footer-brand'>Systeme de Gestion des Machines - Zitouna</div>"
+          "  <div class='footer-brand'>\xF0\x9F\x8F\xAD  Syst\xC3\xA8me de "
+          "Gestion des Machines \xe2\x80\x94 Zitouna</div>"
           "</div>"
 
           "</body></html>")
@@ -4978,11 +5012,11 @@ void machine::showMachineCard() {
   addField(0, 0, "Nom:", nom);
   addField(0, 1, "Type:", type);
   addField(1, 0, QString::fromUtf8("\xC3\x89tat marche:"), etatMarche);
-  addField(1, 1, QString::fromUtf8("Temp\xC3\xa9rature:"), temperature + QString::fromUtf8(" \xC2\xB0""C"));
+  addField(1, 1, QString::fromUtf8("Temp\xC3\xA9rature:"), temperature + QString::fromUtf8(" \xC2\xB0C"));
   addField(2, 0, "Charge:", charge + " %");
   addField(2, 1, "Fonctionnement:", fonctionnement);
   addField(3, 0, "Alerte:", alerte);
-  addField(3, 1, QString::fromUtf8("Criticit\xC3\xa9:"), criticite);
+  addField(3, 1, QString::fromUtf8("Criticit\xC3\xA9:"), criticite);
   addField(4, 0, "Score Santé:", scoreSante);
   addField(4, 1, "Maintenance:", maintenance);
   addField(5, 0, "Installation:", installation);

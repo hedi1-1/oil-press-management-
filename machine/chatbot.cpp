@@ -43,10 +43,10 @@ static const QString SYSTEM_PROMPT =
 //  CONSTRUCTEUR
 // ============================================================
 Chatbot::Chatbot(QWidget *parent)
-    : QWidget(parent),
-      m_networkManager(new QNetworkAccessManager(this)),
-    m_dotCount(0),
-    m_isVisible(false)
+        : QWidget(parent),
+            m_networkManager(new QNetworkAccessManager(this)),
+            m_dotCount(0),
+            m_isVisible(false)
 {
     hide();
     setFixedWidth(400);
