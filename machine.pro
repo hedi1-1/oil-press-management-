@@ -1,4 +1,4 @@
-QT       += core gui sql printsupport charts network httpserver multimedia texttospeech
+QT       += core gui sql serialport printsupport charts network httpserver multimedia texttospeech
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -11,6 +11,7 @@ QMAKE_CXXFLAGS += -finput-charset=UTF-8 -fexec-charset=UTF-8
 
 SOURCES += \
     MachineServer.cpp \
+    arduino.cpp \
     connexionmachine.cpp \
     main.cpp \
     machine.cpp \
@@ -18,6 +19,7 @@ SOURCES += \
 
 HEADERS += \
     MachineServer.h \
+    arduino.h \
     connexionmachine.h \
     machine.h \
     chatbot.h

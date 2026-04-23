@@ -13,6 +13,7 @@ find_package(Qt6 REQUIRED COMPONENTS
     Gui
     Widgets
     Sql
+    SerialPort
     PrintSupport
     Charts
     Network
@@ -30,6 +31,8 @@ add_executable(machine
     main.cpp
     connexionmachine.cpp
     connexionmachine.h
+    arduino.cpp
+    arduino.h
     machine.cpp
     machine.h
     MachineServer.cpp
@@ -43,6 +46,7 @@ target_link_libraries(machine PRIVATE
     Qt6::Gui
     Qt6::Widgets
     Qt6::Sql
+    Qt6::SerialPort
     Qt6::PrintSupport
     Qt6::Charts
     Qt6::Network

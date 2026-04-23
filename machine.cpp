@@ -27,19 +27,24 @@
 #include <QPrinter>
 #include <QRegularExpression>
 #include <QScrollBar>
+#include <QSerialPort>
+#include <QSerialPortInfo>
 #include <QSignalBlocker>
 #include <QSpacerItem>
 #include <QSpinBox>
 #include <QSet>
 #include <QSqlError>
 #include <QSqlQuery>
+#include <QSqlRecord>
 #include <QTextDocumentWriter>
 #include <QTableWidgetItem>
 #include <QButtonGroup>
 #include <QRadioButton>
 #include <QFile>
+#include <QGroupBox>
 #include <QTextStream>
 #include <QVBoxLayout>
+#include <functional>
 #include <QtCharts/QBarCategoryAxis>
 #include <QtCharts/QBarSeries>
 #include <QtCharts/QBarSet>
@@ -166,6 +171,7 @@ QString makeDarkStyleFromLight(QString style) {
   }
   return style;
 }
+
 } // namespace
 // ============================================================================
 // NavigationBar Implementation
@@ -461,6 +467,7 @@ machine::machine(QWidget *parent)
     connect(ui->btnGenererQrMachine, &QPushButton::clicked,
             this, &machine::on_btnGenererQrMachine_clicked);
     resetQrPreviewLabel();
+    setupArduinoTab();
         ui->lblQrPreviewMachine->setCursor(Qt::PointingHandCursor);
         ui->lblQrPreviewMachine->installEventFilter(this);
 
@@ -1536,6 +1543,27 @@ void machine::refreshAIMachineSelector() {
   updateAICarnetForSelectedMachine();
 }
 
+QString machine::machineTableName() const {
+  if (!m_machineTableCache.isEmpty()) {
+    return m_machineTableCache;
+  }
+
+  QSqlQuery query(ConnectionMachine::getInstance().getDatabase());
+  query.prepare("SELECT TABLE_NAME "
+                "FROM USER_TABLES "
+                "WHERE TABLE_NAME IN ('MACHINE', 'MACHINES') "
+                "ORDER BY CASE TABLE_NAME WHEN 'MACHINE' THEN 1 ELSE 2 END");
+
+  if (query.exec() && query.next()) {
+    m_machineTableCache = query.value(0).toString().trimmed();
+  }
+
+  if (m_machineTableCache.isEmpty()) {
+    m_machineTableCache = "MACHINE";
+  }
+  return m_machineTableCache;
+}
+
 QString machine::resolveLocalIpv4() const {
   const QList<QHostAddress> addresses = QNetworkInterface::allAddresses();
   for (const QHostAddress &address : addresses) {
@@ -1805,7 +1833,8 @@ void machine::updateAICarnetForSelectedMachine() {
 
   QDateTime baseTime = QDateTime::currentDateTime();
   QSqlQuery query(ConnectionMachine::getInstance().getDatabase());
-  query.prepare("SELECT DATE_MISE_A_JOUR FROM MACHINE WHERE ID_MACHINE = :id");
+  query.prepare(QString("SELECT DATE_MISE_A_JOUR FROM %1 WHERE ID_MACHINE = :id")
+                    .arg(machineTableName()));
   query.bindValue(":id", selectedId);
   if (query.exec() && query.next()) {
     const QDateTime dbDateTime = query.value(0).toDateTime();
@@ -3001,6 +3030,9 @@ void machine::appliquerFiltres() {
   const QColor premiumGreen = m_isDarkMode ? QColor("#6ED6A2") : QColor("#2E7D32");
   const QColor premiumOrange = m_isDarkMode ? QColor("#F3A35A") : QColor("#E65100");
   const QColor premiumRed = m_isDarkMode ? QColor("#EF6B77") : QColor("#C62828");
+  const QColor bgGreen = m_isDarkMode ? QColor("#1E3A30") : QColor("#E6F4EC");
+  const QColor bgOrange = m_isDarkMode ? QColor("#3E2B1C") : QColor("#FDEBD8");
+  const QColor bgRed = m_isDarkMode ? QColor("#432226") : QColor("#FDE2E2");
   const QColor baseText = m_isDarkMode ? QColor("#DCE4EF") : QColor("#333333");
   const QColor disabledBg = m_isDarkMode ? QColor("#1A2533") : QColor("#E8E8E8");
   const QColor disabledFg = m_isDarkMode ? QColor("#6F8197") : QColor("#999999");
@@ -3129,6 +3161,25 @@ void machine::appliquerFiltres() {
         row[8]->setForeground(premiumOrange);
       else if (m.criticite == "Critique")
         row[8]->setForeground(premiumRed);
+
+      const QString etat = m.fonctionnement.trimmed().toLower();
+      const QString crit = m.criticite.trimmed().toLower();
+      const QString alerte = m.alerte.trimmed().toLower();
+
+      QColor riskBg = bgGreen;
+      if (etat == "panne" || crit == "critique" || alerte.contains("sécur") ||
+          alerte.contains("secur")) {
+        riskBg = bgRed;
+      } else if (etat == "alerte" || crit.contains("moyen") ||
+                 crit.contains("élev") || crit.contains("eleve") ||
+                 alerte.contains("temp") || alerte.contains("maintenance")) {
+        riskBg = bgOrange;
+      }
+
+      const QList<int> realtimeCols = {4, 14, 6, 7, 8, 5, 11, 16, 15, 12};
+      for (const int col : realtimeCols) {
+        row[col]->setBackground(riskBg);
+      }
     }
 
     machineTableModel->appendRow(row);

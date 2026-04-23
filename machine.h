@@ -3,11 +3,13 @@
 
 #include <QButtonGroup>
 #include <QCheckBox>
+#include <QComboBox>
 #include <QDate>
 #include <QRadioButton>
 #include <QProcess>
 #include <QDialog>
 #include <QEvent>
+#include <QGridLayout>
 #include <QHBoxLayout>
 #include <QKeyEvent>
 #include <QLabel>
@@ -120,6 +122,7 @@ private slots:
   void on_btnGenererStats_machine_clicked();
   void on_btnGenererQrMachine_clicked();
   void onMachineRequestedFromHttp(const QString &machineId);
+  void refreshEligibleArduinoMachines();
 
 private:
   struct MachineData {
@@ -165,6 +168,8 @@ private:
                                const QString &problematicName);
 
   void setupNavigationBar();
+  void setupArduinoTab();
+  QString machineTableName() const;
   QString resolveLocalIpv4() const;
   QPixmap generateMachineQrPixmap(const QString &payload,
                                   int moduleSize = 4,
@@ -234,5 +239,12 @@ private:
   void updateMachineCounts();
   void updateHistoriqueDisplay();
   bool selectMachineInTableById(const QString &machineId);
+  QComboBox *m_comboArduinoMode = nullptr;
+  QLabel *m_lblArduinoEligibleStatus = nullptr;
+  QPushButton *m_btnArduinoRefresh = nullptr;
+  QWidget *m_arduinoButtonsHost = nullptr;
+  QGridLayout *m_arduinoButtonsLayout = nullptr;
+  QTimer *m_arduinoEligibleRefreshTimer = nullptr;
+  mutable QString m_machineTableCache;
 };
 #endif // MACHINE_H
