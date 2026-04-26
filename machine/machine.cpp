@@ -1,5 +1,7 @@
 #include "machine.h"
+#if defined(QT_HTTPSERVER_LIB)
 #include "MachineServer.h"
+#endif
 #include "chatbot.h"
 #include "connexionmachine.h"
 #include "ui_machine.h"
@@ -473,6 +475,7 @@ machine::machine(QWidget *parent)
         ui->lblQrPreviewMachine->installEventFilter(this);
 
     m_serverHostIp = resolveLocalIpv4();
+#if defined(QT_HTTPSERVER_LIB)
     m_machineServer = new MachineServer(this);
     connect(m_machineServer, &MachineServer::machineRequested,
             this, &machine::onMachineRequestedFromHttp, Qt::UniqueConnection);
@@ -480,6 +483,7 @@ machine::machine(QWidget *parent)
     if (!m_machineServer->start(8181)) {
       qDebug() << "[MachineServer] Echec au demarrage du serveur HTTP sur le port 8181.";
     }
+#endif
 
   // Export PDF button
   connect(ui->btnExporter_machine, &QPushButton::clicked, this,
@@ -1677,6 +1681,14 @@ void machine::on_btnGenererQrMachine_clicked() {
     return;
   }
 
+#if !defined(QT_HTTPSERVER_LIB)
+  QMessageBox::warning(this,
+                       m_isFrench ? "Serveur HTTP indisponible" : "HTTP server unavailable",
+                       m_isFrench
+                           ? "Ce kit Qt n'inclut pas le module HttpServer."
+                           : "This Qt kit does not include the HttpServer module.");
+  return;
+#else
   if (!m_machineServer) {
     m_machineServer = new MachineServer(this);
     connect(m_machineServer, &MachineServer::machineRequested,
@@ -1716,6 +1728,7 @@ void machine::on_btnGenererQrMachine_clicked() {
       m_isFrench
           ? QString("%1\n(Cliquez pour ouvrir la fiche complète)").arg(targetUrl)
           : QString("%1\n(Click to open full machine sheet)").arg(targetUrl));
+#endif
 }
 
 void machine::onMachineRequestedFromHttp(const QString &machineId) {
