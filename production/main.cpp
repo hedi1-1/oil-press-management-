@@ -34,6 +34,6 @@ int main(int argc, char *argv[])
     }
     
     Production w;
-    w.show();
+    w.showFullScreen();
     return a.exec();
 }

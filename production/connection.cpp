@@ -1,44 +1,40 @@
 #include "connection.h"
 
-Connection::Connection()
-{
+Connection::Connection() {
+  db = QSqlDatabase::addDatabase("QODBC", "production_conn");
+  
+  // Connexion directe à Oracle - Base ZITOUNA
+  QString connectionString = "Driver={Oracle in XE};"
+                             "DBQ=127.0.0.1:1521/XE;"
+                             "UID=zitouna;"
+                             "PWD=zitouna;";
+  db.setDatabaseName(connectionString);
 }
 
-bool Connection::createconnect()
-{
-    bool test = false;
-    
-    // Utiliser QODBC avec le driver Oracle
-    db = QSqlDatabase::addDatabase("QODBC");
-    
-    // Connexion via ODBC - Driver "Oracle in XE" détecté sur ce système
-    QString connectionString = "Driver={Oracle in XE};"
-                               "DBQ=127.0.0.1:1521/XE;"
-                               "UID=hr;"
-                               "PWD=hr;";
-    
-    db.setDatabaseName(connectionString);
-    
-    if (db.open()) {
-        test = true;
-        qDebug() << "Database connection established successfully!";
-    } else {
-        qDebug() << "Database connection failed!";
-        qDebug() << "Error:" << db.lastError().text();
-    }
-    
-    return test;
+Connection &Connection::getInstance() {
+  static Connection instance;
+  return instance;
 }
 
-void Connection::closeconnect()
-{
-    if (db.isOpen()) {
-        db.close();
-        qDebug() << "Database connection closed.";
-    }
+bool Connection::createconnect() {
+  if (db.isOpen()) {
+    return true;
+  }
+
+  if (db.open()) {
+    qDebug() << "[Production] Connexion à la base de données réussie!";
+    return true;
+  } else {
+    qDebug() << "[Production] Échec de connexion:" << db.lastError().text();
+    return false;
+  }
 }
 
-QSqlDatabase Connection::getDatabase()
-{
-    return db;
+void Connection::closeconnect() {
+  if (db.isOpen()) {
+    db.close();
+    qDebug() << "[Production] Connexion fermée.";
+  }
 }
+
+QSqlDatabase Connection::getDatabase() { return db; }

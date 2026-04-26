@@ -9,12 +9,15 @@
 class Connection
 {
 public:
-    Connection();
+    static Connection& getInstance();
     bool createconnect();
     void closeconnect();
     QSqlDatabase getDatabase();
 
 private:
+    Connection();
+    Connection(const Connection&) = delete;
+    Connection& operator=(const Connection&) = delete;
     QSqlDatabase db;
 };
 
