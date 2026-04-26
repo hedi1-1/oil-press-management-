@@ -1,0 +1,82 @@
+CABlAGE FINAL - PRESSIQ STOCK ARDUINO
+====================================
+
+Projet:
+- Sketch: sketch.ino
+- Diagramme Wokwi: diagram.json
+
+Materiel:
+- Arduino UNO
+- LCD 16x2 I2C (adresse 0x27)
+- Joystick analogique (utilisation axe Y = VRy)
+- 2 afficheurs 7 segments (common cathode)
+- Plaque a essai (breadboard)
+
+1) Alimentation via plaque a essai
+----------------------------------
+1. Arduino 5V -> rail + haut (tp.1)
+2. Arduino GND -> rail - haut (tn.1)
+3. Pontage rail haut vers rail bas:
+   - tp.20 -> bp.20
+   - tn.20 -> bn.20
+
+2) LCD I2C (16x2)
+-----------------
+1. LCD VCC -> rail + (tp.4)
+2. LCD GND -> rail - (tn.4)
+3. LCD SDA -> A4 Arduino
+4. LCD SCL -> A5 Arduino
+
+3) Entree analogique (joystick)
+--------------------------------
+1. Joystick VCC -> rail + bas (bp.6)
+2. Joystick GND -> rail - bas (bn.6)
+3. Joystick VRx -> A0 Arduino
+4. Joystick VRy -> A1 Arduino
+5. Joystick SW  -> D2 Arduino
+
+Comportement analogique (code):
+- Un mouvement joystick vers le haut (VRy > 700) ajoute +1 L (une seule fois par geste)
+- Un mouvement joystick vers le bas (VRy < 300) retire -1 L (une seule fois par geste)
+- VRy (A1) 300..700  : zone neutre
+- SW (D2) : confirmer le poids (VALIDATED) si >= 10 L, sinon FAIBLE
+
+4) Afficheurs 7 segments (2 digits multiplexes)
+------------------------------------------------
+Digits (communs):
+1. D10 Arduino -> COM digit 1 (seg1)
+2. D11 Arduino -> COM digit 2 (seg2)
+
+Segments partages sur les 2 digits:
+1. D4  -> A
+2. D5  -> B
+3. D6  -> C
+4. D7  -> D
+5. D8  -> E
+6. D9  -> F
+7. D12 -> G
+8. D13 -> DP
+
+Important:
+- Le sketch est configure en COMMON_CATHODE.
+- Si ton materiel est common anode, modifier:
+  byte hardwareConfig = COMMON_ANODE;
+
+5) Donnees serie envoyees vers l'application Qt
+------------------------------------------------
+Frequence: toutes les 500 ms
+Format:
+- WEIGHT:x.x
+- STATUS:REMPLISSAGE / STABLE / FAIBLE / VALIDATED
+
+6) Regles metier
+----------------
+- Poids max: 20 L
+- Seuil minimum: 10 L
+- Si poids < 10 L: statut FAIBLE
+- Si poids >= 10 L apres stabilisation: statut STABLE
+
+Fichiers utiles:
+- stock/arduino/sketch.ino
+- stock/arduino/diagram.json
+- stock/arduino/libraries.txt

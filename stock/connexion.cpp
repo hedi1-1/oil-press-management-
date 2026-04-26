@@ -34,14 +34,14 @@ bool Connexion::createConnection()
         return true;
     }
     
-    // Créer la connexion avec le driver ODBC
-    db = QSqlDatabase::addDatabase("QODBC");
+    // Créer la connexion avec le driver ODBC - Base ZITOUNA
+    db = QSqlDatabase::addDatabase("QODBC", "stock_conn");
     
-    // MÉTHODE 1 : Utiliser une chaîne de connexion complète (RECOMMANDÉ)
+    // Connexion à la base de données ZITOUNA
     QString connectionString = "Driver={Oracle in XE};"
                                "DBQ=127.0.0.1:1521/XE;"
-                               "UID=hr;"
-                               "PWD=hr;";
+                               "UID=zitouna;"
+                               "PWD=zitouna;";
     
     db.setDatabaseName(connectionString);
     
@@ -55,7 +55,7 @@ bool Connexion::createConnection()
         qDebug() << "========================================";
         qDebug() << "✓ Connexion à la base de données réussie !";
         qDebug() << "✓ Host : 127.0.0.1:1521/XE";
-        qDebug() << "✓ User : hr";
+        qDebug() << "✓ User : zitouna";
         qDebug() << "✓ Driver : " << db.driverName();
         qDebug() << "========================================";
         
