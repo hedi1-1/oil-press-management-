@@ -240,6 +240,7 @@ userstaff::userstaff(const QString &loggedInUser, const QString &loggedInRole, Q
     , m_currentRole(loggedInRole)
 {
     ui->setupUi(this);
+    setAttribute(Qt::WA_ShowWithoutActivating, false);
     setWindowTitle("PressIQ - User & Staff Management");
 
     // connect DB
@@ -481,6 +482,17 @@ userstaff::userstaff(const QString &loggedInUser, const QString &loggedInRole, Q
     if (ui->mainTabWidget && ui->mainTabWidget->currentWidget() == ui->tabActivityLog) {
         refreshActivityLogTab();
     }
+
+    // Start in fullscreen by default; user can switch back with the toggle button.
+    QTimer::singleShot(0, this, [this]() {
+        Qt::WindowStates st = windowState();
+        if (!(st & Qt::WindowFullScreen)) {
+            st |= Qt::WindowFullScreen;
+            setWindowState(st);
+            show();
+        }
+        updateFullscreenButtonText();
+    });
 }
 
 userstaff::~userstaff()
@@ -681,9 +693,76 @@ void userstaff::setupIdentityHeader()
         ui->roleStatusDot->setText(st == "ACTIVE" ? QString::fromUtf8("\xf0\x9f\x9f\xa2") : QString::fromUtf8("\xf0\x9f\x94\xb4"));
     }
 
+    if (!m_btnFullscreenToggle) {
+        QFrame *sectionFrame = findChild<QFrame*>("sectionTitleFrame");
+        auto *sectionLayout = sectionFrame ? qobject_cast<QHBoxLayout*>(sectionFrame->layout()) : nullptr;
+        if (sectionLayout) {
+            m_btnFullscreenToggle = sectionFrame->findChild<QPushButton*>("btnFullscreenToggle");
+            if (!m_btnFullscreenToggle) {
+                m_btnFullscreenToggle = new QPushButton("FullScreen", sectionFrame);
+                m_btnFullscreenToggle->setObjectName("btnFullscreenToggle");
+                m_btnFullscreenToggle->setCursor(Qt::PointingHandCursor);
+                m_btnFullscreenToggle->setMinimumSize(110, 30);
+                m_btnFullscreenToggle->setMaximumHeight(30);
+                m_btnFullscreenToggle->setStyleSheet(
+                    "QPushButton {"
+                    "    background-color: transparent;"
+                    "    color: white;"
+                    "    border: 1px solid #d4a63a;"
+                    "    border-radius: 4px;"
+                    "    padding: 4px 10px;"
+                    "    font-size: 12px;"
+                    "    font-weight: 600;"
+                    "}"
+                    "QPushButton:hover {"
+                    "    background-color: #d4a63a;"
+                    "    color: #1f2937;"
+                    "}");
+
+                int insertIndex = sectionLayout->indexOf(ui->sectionTitleLabel);
+                if (insertIndex < 0) {
+                    insertIndex = 1;
+                } else {
+                    insertIndex += 1;
+                }
+                sectionLayout->insertWidget(insertIndex, m_btnFullscreenToggle);
+            }
+
+            connect(m_btnFullscreenToggle, &QPushButton::clicked, this, [this]() {
+                Qt::WindowStates st = windowState();
+                if (st & Qt::WindowFullScreen) {
+                    st &= ~Qt::WindowFullScreen;
+                } else {
+                    st |= Qt::WindowFullScreen;
+                }
+                setWindowState(st);
+                show();
+                raise();
+                activateWindow();
+                updateFullscreenButtonText();
+            });
+        }
+    }
+
+    updateFullscreenButtonText();
+
     // Reflect admin-only destructive permissions in the UI
     if (m_btnModifier) m_btnModifier->setEnabled(false);
     if (m_btnSupprimer) m_btnSupprimer->setEnabled(false);
+}
+
+void userstaff::updateFullscreenButtonText()
+{
+    if (!m_btnFullscreenToggle) return;
+    m_btnFullscreenToggle->setText(isFullScreen() ? "Windowed" : "FullScreen");
+}
+
+void userstaff::changeEvent(QEvent *event)
+{
+    QMainWindow::changeEvent(event);
+    if (event && event->type() == QEvent::WindowStateChange) {
+        updateFullscreenButtonText();
+    }
 }
 
 void userstaff::installActionBarButtons()
@@ -1070,7 +1149,9 @@ void userstaff::onShowResetRequests()
     dlg->setWindowTitle(QString::fromUtf8("\xf0\x9f\x94\x91 Demandes de réinitialisation de mot de passe"));
     dlg->setModal(true);
     dlg->resize(780, 520);
-    dlg->setStyleSheet("QDialog { background: #f3f6f5; }");
+    dlg->setStyleSheet(
+        "QDialog { background: #f3f6f5; color: #111827; }"
+        "QLabel { color: #111827; }");
 
     auto *root = new QVBoxLayout(dlg);
     root->setContentsMargins(12, 12, 12, 12);
@@ -1136,9 +1217,9 @@ void userstaff::onShowResetRequests()
     reqTable->setColumnWidth(5, 80);
     reqTable->setColumnWidth(6, 120);
     reqTable->setStyleSheet(
-        "QTableWidget { background: white; alternate-background-color: #f9fafb; gridline-color: #e5e7eb; }"
+        "QTableWidget { background: white; color: #111827; alternate-background-color: #f9fafb; gridline-color: #e5e7eb; selection-background-color: #dcfce7; selection-color: #111827; }"
         "QHeaderView::section { background: #2c3e2e; color: white; padding: 6px; font-weight: 800; border: none; }"
-        "QTableWidget::item { padding: 4px; }"
+        "QTableWidget::item { color: #111827; padding: 4px; }"
     );
     root->addWidget(reqTable, 1);
 
@@ -1272,7 +1353,7 @@ void userstaff::onAdminSetNewPassword(int requestId, int userId, const QString &
     dlg->setStyleSheet(
         "QDialog { background: #f3f6f5; }"
         "QLabel { color: #374151; font-size: 13px; }"
-        "QLineEdit { background: white; border: 1px solid #d1d5db; border-radius: 6px; padding: 7px 10px; font-size: 13px; }"
+        "QLineEdit { background: white; color: #111827; border: 1px solid #d1d5db; border-radius: 6px; padding: 7px 10px; font-size: 13px; }"
         "QLineEdit:focus { border: 2px solid #22c55e; }"
         "QCheckBox { color: #374151; font-size: 12px; }"
     );
@@ -1468,6 +1549,11 @@ QDialog* userstaff::buildEmployeeDialog(const QString &title,
         "QLineEdit, QComboBox {"
         "   background: white; border: 1px solid #d1d5db;"
         "   border-radius: 6px; padding: 7px 10px; font-size: 13px; color: #111827; }"
+        "QComboBox QAbstractItemView {"
+        "   background: white; color: #111827;"
+        "   selection-background-color: #dcfce7; selection-color: #111827;"
+        "   border: 1px solid #d1d5db; }"
+        "QComboBox QAbstractItemView::item { background: white; color: #111827; }"
         "QLineEdit:focus { border: 2px solid #22c55e; }"
         "QPushButton { border-radius: 6px; padding: 8px 20px; font-size: 13px; font-weight: 600; }"
         "QPushButton[text='Enregistrer'] { background-color: #16a34a; color: white; border: none; }"
@@ -1506,11 +1592,21 @@ QDialog* userstaff::buildEmployeeDialog(const QString &title,
     cbRole->setObjectName("cbRole");
     cbRole->addItems({"Admin", "Manager", "Opérateur"});
     cbRole->setCurrentText(role);
+    if (cbRole->view()) {
+        cbRole->view()->setStyleSheet(
+            "QListView { background: white; color: #111827; selection-background-color: #dcfce7; selection-color: #111827; }"
+            "QListView::item { background: white; color: #111827; }");
+    }
 
     auto *cbState = new QComboBox(dlg);
     cbState->setObjectName("cbState");
     cbState->addItems({"ACTIVE", "INACTIVE", "LOCKED"});
     cbState->setCurrentText(state);
+    if (cbState->view()) {
+        cbState->view()->setStyleSheet(
+            "QListView { background: white; color: #111827; selection-background-color: #dcfce7; selection-color: #111827; }"
+            "QListView::item { background: white; color: #111827; }");
+    }
 
     form->addRow("Nom d'utilisateur :", leUsername);
     form->addRow("Email :",             leEmail);
@@ -2654,7 +2750,7 @@ void userstaff::onExportSecurityReport()
     {
         QSqlQuery q(db);
         q.exec("SELECT USERNAME, EMAIL, ROLE, FAILED_ATTEMPTS "
-               "FROM EMPLOYEES WHERE FAILED_ATTEMPTS >= 2 AND NVL(STATE,'ACTIVE') != 'LOCKED' "
+               "FROM EMPLOYEES WHERE FAILED_ATTEMPTS >= 2 AND   NVL(STATE,'ACTIVE') != 'LOCKED' "
                "ORDER BY FAILED_ATTEMPTS DESC");
         while (q.next()) {
             DS4Row r; r.u=q.value(0).toString(); r.e=q.value(1).toString(); r.r=q.value(2).toString(); r.failed=q.value(3).toInt();
@@ -3016,17 +3112,63 @@ void AnalyticsWidget::refreshData()
         return;
     }
 
-    // QUERY 1: Top failed attempts
+    // QUERY 1: Top failed attempts (historical, from audit log)
     {
         QSqlQuery q(m_db);
-        q.exec("SELECT USERNAME, FAILED_ATTEMPTS FROM EMPLOYEES "
-               "WHERE FAILED_ATTEMPTS > 0 ORDER BY FAILED_ATTEMPTS DESC "
-               "FETCH FIRST 10 ROWS ONLY");
-        while (q.next()) {
-            UserFailRow r;
-            r.username = q.value(0).toString();
-            r.failed = q.value(1).toInt();
-            m_topFails << r;
+        q.prepare(
+            "SELECT USERNAME, FAIL_COUNT FROM ("
+            "  SELECT NVL(USERNAME,'(inconnu)') AS USERNAME, COUNT(*) AS FAIL_COUNT "
+            "  FROM AUDIT_LOG "
+            "  WHERE EVENT_TYPE = 'LOGIN_FAIL' "
+            "    AND LOG_TIME >= SYSDATE - ? "
+            "  GROUP BY NVL(USERNAME,'(inconnu)') "
+            "  ORDER BY COUNT(*) DESC"
+            ") WHERE ROWNUM <= 10");
+        q.addBindValue(30);
+        const bool ok = q.exec();
+
+        if (ok) {
+            while (q.next()) {
+                UserFailRow r;
+                r.username = q.value(0).toString();
+                r.failed = q.value(1).toInt();
+                m_topFails << r;
+            }
+        }
+
+        if (!ok || m_topFails.isEmpty()) {
+            // Fallback 1: current counter from EMPLOYEES.
+            QSqlQuery qFallback(m_db);
+            qFallback.exec(
+                "SELECT USERNAME, FAILED_ATTEMPTS FROM ("
+                "  SELECT USERNAME, NVL(FAILED_ATTEMPTS,0) AS FAILED_ATTEMPTS "
+                "  FROM EMPLOYEES "
+                "  WHERE NVL(FAILED_ATTEMPTS,0) > 0 "
+                "  ORDER BY NVL(FAILED_ATTEMPTS,0) DESC"
+                ") WHERE ROWNUM <= 10");
+            while (qFallback.next()) {
+                UserFailRow r;
+                r.username = qFallback.value(0).toString();
+                r.failed = qFallback.value(1).toInt();
+                m_topFails << r;
+            }
+        }
+
+        if (m_topFails.isEmpty()) {
+            // Fallback 2: show locked accounts as at least 3 failed attempts.
+            QSqlQuery qLocked(m_db);
+            qLocked.exec(
+                "SELECT USERNAME, 3 AS FAILED_ATTEMPTS FROM ("
+                "  SELECT USERNAME FROM EMPLOYEES "
+                "  WHERE UPPER(NVL(STATE,'ACTIVE')) = 'LOCKED' "
+                "  ORDER BY USERNAME"
+                ") WHERE ROWNUM <= 10");
+            while (qLocked.next()) {
+                UserFailRow r;
+                r.username = qLocked.value(0).toString();
+                r.failed = qLocked.value(1).toInt();
+                m_topFails << r;
+            }
         }
     }
 
@@ -3105,7 +3247,7 @@ void AnalyticsWidget::paintEvent(QPaintEvent *event)
         p.drawText(QRect(r.x() + 12, r.y() + 10, r.width() - 24, 18), Qt::AlignLeft | Qt::AlignVCenter, title);
     };
 
-    drawPanel(r1, "Tentatives échouées par utilisateur");
+    drawPanel(r1, "Tentatives échouées (30 derniers jours)");
     drawPanel(r2, "Répartition des états de compte");
     drawPanel(r3, "Activité de connexion (7 derniers jours)");
     drawPanel(r4, "Indicateurs de risque");
@@ -3129,7 +3271,7 @@ void AnalyticsWidget::paintEvent(QPaintEvent *event)
         }
         if (m_topFails.isEmpty()) {
             p.setPen(QColor("#6b7280"));
-            p.drawText(area, Qt::AlignCenter, "Aucune tentative échouée");
+            p.drawText(area, Qt::AlignCenter, "Aucune tentative échouée (30 jours)");
         }
     }
 

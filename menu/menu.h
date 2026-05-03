@@ -44,5 +44,8 @@ private:
     Stock *stockWindow;
     Finance *financeWindow;
     QTimer *dateTimeTimer;
+    bool m_userStaffGateBusy = false;
+
+    bool showUserStaffAccessGate();
 };
 #endif // MENU_H
