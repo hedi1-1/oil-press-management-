@@ -23,6 +23,7 @@
 #include <QDateTime>
 #include <QCryptographicHash>
 #include <QTableWidgetItem>
+#include <QEvent>
 
 class AnalyticsWidget;
 
@@ -66,6 +67,9 @@ private slots:
 
     void onShowResetRequests();
 
+protected:
+    void changeEvent(QEvent *event) override;
+
 private:
     Ui::userstaff *ui;
 
@@ -73,6 +77,7 @@ private:
     QString m_currentRole;
 
     QPushButton *btnResetRequests = nullptr;
+    QPushButton *m_btnFullscreenToggle = nullptr;
     QPushButton *m_btnModifier = nullptr;
     QPushButton *m_btnSupprimer = nullptr;
     int m_pendingResets = 0;
@@ -99,6 +104,7 @@ private:
     bool tableExists(const QString &tableName) const;
     bool ensureUserstaffSchema();
     void setupIdentityHeader();
+    void updateFullscreenButtonText();
     void installActionBarButtons();
     void setupGraphTab();
     void refreshGraphTab();

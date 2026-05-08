@@ -37,8 +37,8 @@ SOURCES += \
     ../stock/historique.cpp \
     ../stock/stock.cpp \
     ../stock/connexion.cpp \
-    ../machine/arduino.cpp \
     ../machine/machine.cpp \
+    ../machine/arduino.cpp \
     ../machine/connexionmachine.cpp \
     ../machine/chatbot.cpp \
     ../finance/finance/finance.cpp \
@@ -72,8 +72,8 @@ HEADERS += \
     ../stock/historique.h \
     ../stock/stock.h \
     ../stock/connexion.h \
-    ../machine/arduino.h \
     ../machine/machine.h \
+    ../machine/arduino.h \
     ../machine/connexionmachine.h \
     ../machine/chatbot.h \
     ../finance/finance/finance.h \
